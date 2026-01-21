@@ -27,7 +27,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
         <div className="text-center max-w-4xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Shield className="w-4 h-4" />
-            National Skills-Verified Hiring Platform
+            National Skill-Based Employment Infrastructure
           </div>
           
           <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
@@ -36,7 +36,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
           </h1>
           
           <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
-            Connecting skills, certifications, and jobs into one trusted hiring system
+            A national digital infrastructure that verifies skills, issues certifications, 
+            and connects talent to employment through trusted, data-driven matching.
           </p>
 
           {/* Primary CTAs */}
@@ -46,8 +47,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
               size="lg" 
               className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-lg w-full sm:w-auto"
             >
-              For Job Seekers → SkillLink™
-              <ArrowRight className="ml-2 w-5 h-5" />
+              Job Seekers → Enter SkillLink™
+              {/* <ArrowRight className="ml-2 w-5 h-5" /> */}
             </Button>
             <Button 
               onClick={onSelectJobBridge}
@@ -55,8 +56,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
               variant="outline"
               className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-10 py-7 text-lg w-full sm:w-auto"
             >
-              For Employers → JobBridge™
-              <ArrowRight className="ml-2 w-5 h-5" />
+              Employers → Access JobBridge™
+              {/* <ArrowRight className="ml-2 w-5 h-5" /> */}
             </Button>
           </div>
 
@@ -64,25 +65,22 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Government-Aligned
+              Aligned to National Skills Frameworks
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              SETA-Recognized
+              Built for Enterprise Hiring
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Enterprise-Trusted
-            </div>
+
           </div>
         </div>
 
         {/* Stats Bar */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
           {[
-            { value: "250,000+", label: "Skills Verified" },
-            { value: "15,000+", label: "Active Job Seekers" },
-            { value: "2,500+", label: "Hiring Employers" },
+            { value: "250,000+", label: "Skills Verification Capacity" },
+            { value: "15,000+", label: "Candidate Profiles Supported" },
+            { value: "2,500+", label: "Employers Served" },
             { value: "100%", label: "Skills-Based Matching" }
           ].map((stat, index) => (
             <div key={index} className="bg-white rounded-lg p-5 text-center shadow-sm border border-gray-200">
@@ -100,7 +98,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
             Choose Your Path
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            ApexSight serves two connected communities. Select your journey below.
+            ApexSight operates two connected platforms within one unified talent system.
+            Select the experience that applies to you.
           </p>
         </div>
 
@@ -121,8 +120,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 SkillLink™
               </h3>
               <p className="text-gray-600 text-lg mb-6">
-                Turn your skills into verified opportunities. Complete assessments, 
-                earn certifications, and unlock jobs based on what you can do.
+                Verify your skills through assessments and certifications.
+                Once verified, gain access to real job opportunities matched to your abilities.
               </p>
             </div>
 
@@ -131,7 +130,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 { icon: Target, text: "Complete skills assessments" },
                 { icon: Award, text: "Earn verified certifications" },
                 { icon: TrendingUp, text: "Build your readiness score" },
-                { icon: Briefcase, text: "Access skill-matched jobs" }
+                { icon: Briefcase, text: "Unlock access to skill-matched jobs" }
               ].map((item, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -168,8 +167,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 JobBridge™
               </h3>
               <p className="text-gray-600 text-lg mb-6">
-                Hire based on skills, not CVs. Access South Africa's largest pool 
-                of skill-verified talent with complete confidence.
+                Hire based on verified skills, not CVs.
+                Access a trusted pool of candidates whose abilities are independently assessed.
               </p>
             </div>
 
@@ -177,7 +176,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
               {[
                 { icon: Shield, text: "100% skills-verified candidates" },
                 { icon: Users, text: "Bias-free, fair hiring" },
-                { icon: TrendingUp, text: "60% faster time-to-hire" },
+                { icon: TrendingUp, text: "Reduced time-to-hire" },
                 { icon: BarChart3, text: "Data-driven matching" }
               ].map((item, index) => (
                 <div key={index} className="flex items-center gap-3">
@@ -217,21 +216,21 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
             {
               step: "1",
               title: "Skills Are Verified",
-              description: "Job seekers complete comprehensive, SETA-aligned assessments and earn verified certifications",
+              description: "Candidates complete SkillLink assessments aligned to national skills frameworks and receive verified certifications.",
               icon: Target,
               color: "bg-blue-600"
             },
             {
               step: "2",
               title: "Jobs Are Posted",
-              description: "Employers define skill-based requirements and access only verified, qualified candidates",
+              description: "Employers use JobBridge to define skill-based roles and access only verified candidates.",
               icon: Briefcase,
               color: "bg-purple-600"
             },
             {
               step: "3",
               title: "Matches Happen",
-              description: "AI-powered matching connects verified skills to job requirements with zero bias",
+              description: "Matching technology connects verified skills to job requirements, reducing bias and improving hiring outcomes.",
               icon: Shield,
               color: "bg-green-600"
             }
@@ -249,36 +248,6 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
       </section>
 
       {/* Trusted By */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Trusted by Leading Organizations
-          </h2>
-          <p className="text-lg text-gray-600">
-            Government departments, SETAs, and enterprises nationwide
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            "Standard Bank",
-            "Department of Health",
-            "Discovery Health",
-            "Capitec Bank",
-            "Nedbank",
-            "Services SETA",
-            "City of Johannesburg",
-            "Shoprite Group"
-          ].map((org, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 flex items-center justify-center">
-              <div className="text-center">
-                <Building2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <div className="font-medium text-gray-700 text-sm">{org}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Final CTA */}
       <section className="max-w-7xl mx-auto px-6 py-20">
@@ -288,7 +257,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
               Ready to Get Started?
             </h2>
             <p className="text-lg text-blue-100 mb-8">
-              Join South Africa's trusted skill-verified talent infrastructure
+              Become part of South Africa’s skill-based employment infrastructure
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button 
@@ -303,7 +272,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 onClick={onSelectJobBridge}
                 size="lg"
                 variant="outline"
-                className="border-2 border-white text-white hover:bg-white/10 px-8 py-6 text-lg w-full sm:w-auto"
+                className="border-2 border-white text-black hover:bg-white/10 px-8 py-6 text-lg w-full sm:w-auto"
               >
                 I'm an Employer
                 <ArrowRight className="ml-2 w-5 h-5" />

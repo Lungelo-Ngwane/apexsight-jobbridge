@@ -1,0 +1,76 @@
+# ==============================
+# Node / JS
+# ==============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+
+# ==============================
+# Build outputs
+# ==============================
+dist/
+build/
+out/
+
+# Vite
+.vite/
+
+# ==============================
+# Environment variables (CRITICAL)
+# ==============================
+.env
+.env.*
+!.env.example
+
+# Supabase
+.supabase/
+supabase/.env
+supabase/.temp/
+
+# ==============================
+# OS files
+# ==============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================
+# Editors / IDEs
+# ==============================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+
+# ==============================
+# TypeScript
+# ==============================
+*.tsbuildinfo
+
+# ==============================
+# Tests & Coverage
+# ==============================
+coverage/
+.nyc_output/
+
+# ==============================
+# Temporary files
+# ==============================
+.cache/
+.tmp/
+temp/
+
+# ==============================
+# Database / ORM (future-proof)
+# ==============================
+*.db
+*.sqlite
+prisma/migrations/
+
+# ==============================
+# Docker
+# ==============================
+docker-data/
