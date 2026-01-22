@@ -1,6 +1,9 @@
 import { supabase } from "./supabase";
-import { v4 as uuidv4 } from "uuid";
 
+/**
+ * Register a new user (candidate or employer)
+ * Uses Supabase Auth + trigger to auto-create profiles/employer_profiles
+ */
 export async function registerUser(
   email: string,
   password: string,
@@ -9,65 +12,68 @@ export async function registerUser(
   company?: string,
 ) {
   try {
-    // 1️⃣ Create user in Supabase Auth
-    console.log("Registering:", email, fullName, role, company, password);
+    console.log("Registering:", email, fullName, role, company);
+
+    // Prepare data for raw_user_meta_data
+    const userData: Record<string, string> = {
+      full_name: fullName,
+      role,
+    };
+
+    console.log(userData);
+    if (role === "employer") {
+      if (!company || company.trim() === "") {
+        throw new Error("Company name is required for employers");
+      }
+      userData.company_name = company;
+    }
+
+    console.log(userData);
+    // Sign up user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: { data: userData },
     });
+
+    console.log(" This error =====>", authData);
+
     if (authError) throw new Error(authError.message);
+    console.log("User signed up:", authData);
 
-    console.log(authData);
-
-    const userId = authData.user?.id;
-    if (!userId) throw new Error("Failed to get user ID");
-
-    // Now insert into profiles only
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ full_name: fullName, role })
-      .eq("id", userId); // update default profile created by trigger
-    if (profileError) throw new Error(profileError.message);
-
-    // Insert employer profile if applicable
-    if (role === "employer" && company) {
-      const { error: empError } = await supabase
-        .from("employer_profiles")
-        .insert({ user_id: userId, company_name: company });
-      if (empError) throw new Error(empError.message);
-    }
-
-    return userId;
+    return authData.user?.id || null;
   } catch (err: any) {
     console.error("Registration failed:", err);
     throw err;
   }
 }
 
+/**
+ * Log in a user with email and password
+ */
 export async function loginUser(email: string, password: string) {
   try {
     console.log("loginUser started");
 
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Login timed out after 10s")), 10000)
-    );
-
-    const authPromise = supabase.auth.signInWithPassword({ email, password });
-
-    const { data: authData, error: authError } = await Promise.race([
-      authPromise,
-      timeoutPromise,
-    ]) as any;
+    // Supabase signIn
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (authError) throw authError;
 
-    console.log("signInWithPassword resolved!", authData);
+    console.log("User logged in:", authData);
 
-    // Check if session actually exists despite hang
-    const { data: sessionData } = await supabase.auth.getSession();
-    console.log("Current session after login attempt:", sessionData);
+    // Optional: check session
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+    if (sessionError) console.warn("Could not get session:", sessionError);
 
-    // rest of code...
+    console.log("Current session:", sessionData);
+
+    return authData.user || null;
   } catch (err: any) {
     console.error("loginUser error:", err);
     throw err;
