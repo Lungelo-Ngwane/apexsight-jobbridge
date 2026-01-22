@@ -2,7 +2,7 @@ import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
 import { Badge } from "@/app/components/ui/badge";
-import { 
+import {
   Award,
   CheckCircle2,
   Clock,
@@ -13,6 +13,7 @@ import {
   Star,
   Briefcase
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface CandidateDashboardProps {
   onViewJobs: () => void;
@@ -20,6 +21,20 @@ interface CandidateDashboardProps {
 }
 
 export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateDashboardProps) {
+  const { user, role, loading } = useAuth();
+
+  if (loading) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (!user || role !== 'candidate') {
+    return (
+      <div className="p-8 text-center text-gray-600">
+        Access denied
+      </div>
+    );
+  }
+  console.log(user);
   const readinessScore = 78;
 
   return (
@@ -57,13 +72,13 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 Complete 2 more certifications to reach 90% and unlock premium opportunities
               </p>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 flex flex-col justify-between">
               <div>
                 <div className="text-sm text-blue-100 mb-2">You are ready for</div>
                 <div className="text-2xl font-bold mb-4">34 Job Roles</div>
               </div>
-              <Button 
+              <Button
                 onClick={onViewJobs}
                 className="w-full bg-white text-blue-600 hover:bg-blue-50"
               >
@@ -126,14 +141,14 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Score</span>
                       <span className="font-semibold text-gray-900">{item.score}%</span>
                     </div>
                     <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`absolute left-0 top-0 h-full ${item.color}`}
                         style={{ width: `${item.score}%` }}
                       />
@@ -186,8 +201,8 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                         </Button>
                       )}
                       {assessment.progress === 0 && (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={onStartAssessment}
                         >

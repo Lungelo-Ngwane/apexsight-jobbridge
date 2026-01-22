@@ -1,7 +1,7 @@
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
-import { 
+import {
   Plus,
   Users,
   Briefcase,
@@ -15,6 +15,7 @@ import {
   MoreVertical
 } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
+import { useAuth } from "../context/AuthContext";
 
 interface EmployerDashboardProps {
   onPostJob: () => void;
@@ -22,6 +23,19 @@ interface EmployerDashboardProps {
 }
 
 export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashboardProps) {
+  const { user, role, loading } = useAuth();
+
+  if (loading) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (!user || role !== 'employer') {
+    return (
+      <div className="p-8 text-center text-gray-600">
+        Access denied
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -31,8 +45,8 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Employer Dashboard</h1>
             <p className="text-gray-600">Nedbank - Talent Acquisition</p>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={onPostJob}
             className="bg-blue-600 hover:bg-blue-700 text-white"
             size="lg"
@@ -179,7 +193,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button 
+                    <Button
                       onClick={onViewCandidates}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                     >
@@ -204,9 +218,9 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             <Card className="p-6 border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-2">
-                <Button 
+                <Button
                   onClick={onPostJob}
-                  variant="outline" 
+                  variant="outline"
                   className="w-full justify-start"
                 >
                   <Plus className="w-4 h-4 mr-2" />

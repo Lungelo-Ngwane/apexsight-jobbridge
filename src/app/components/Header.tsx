@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 export function Header({ currentProduct, onProductSwitch, onSignInClick }: HeaderProps) {
-  const { role, loading } = useAuth();
+  const { role, loading, signOut } = useAuth();
 
   // Optional: don't show anything fancy while loading
   if (loading) {
@@ -40,21 +40,19 @@ export function Header({ currentProduct, onProductSwitch, onSignInClick }: Heade
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => onProductSwitch?.('skilllink')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  currentProduct === 'skilllink'
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${currentProduct === 'skilllink'
                     ? 'bg-white text-blue-700 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 SkillLink™
               </button>
               <button
                 onClick={() => onProductSwitch?.('jobbridge')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  currentProduct === 'jobbridge'
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${currentProduct === 'jobbridge'
                     ? 'bg-white text-blue-700 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 JobBridge™
               </button>
@@ -79,8 +77,12 @@ export function Header({ currentProduct, onProductSwitch, onSignInClick }: Heade
                   {role === 'employer' ? 'Employer Account' : 'Candidate Account'}
                 </span>
               </div>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-5 h-5" />
+              <Button
+                variant="ghost"
+                onClick={signOut}
+                className="text-red-600 hover:text-red-700"
+              >
+                Logout
               </Button>
             </div>
           )}

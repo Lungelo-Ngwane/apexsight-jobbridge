@@ -38,34 +38,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRole(null);
     }
   };
-useEffect(() => {
-  // Initial session...
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    const currentUser = session?.user ?? null;
-    setUser(currentUser);
-    if (currentUser) loadUserProfile(currentUser.id);  // no await here
-    else setRole(null);
-    setLoading(false);
-  });
-
-  const { data: listener } = supabase.auth.onAuthStateChange(
-    (_event, session) => {          // ← NO async!
+  useEffect(() => {
+    // Initial session...
+    supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
-        loadUserProfile(currentUser.id); // fire and forget
-      } else {
-        setRole(null);
-      }
+      if (currentUser) loadUserProfile(currentUser.id);  // no await here
+      else setRole(null);
       setLoading(false);
-    }
-  );
+    });
 
-  return () => listener.subscription.unsubscribe();
-}, []);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {          // ← NO async!
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          loadUserProfile(currentUser.id); // fire and forget
+        } else {
+          setRole(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
   const signOut = async () => {
     await supabase.auth.signOut();
-    // listener will handle state update
+    setUser(null);
+    setRole(null);
   };
 
   const value: AuthContextType = {
