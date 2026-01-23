@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -15,7 +16,22 @@ import {
   MoreVertical
 } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
+// import { PostJobModal } from "./components/PostJobModal";
 import { useAuth } from "../context/AuthContext";
+import {
+  createJob,
+  getEmployerJobs,
+  getJobApplicants,
+  updateJobStatus,
+  updateApplicationStatus,
+  getEmployerAnalytics
+} from '@/lib/employer';
+import { StatBox } from "./ui/statbox";
+import { PostJobModal } from "./PostJobModal";
+import { JobCandidatesModal } from "./JobCandidatesModal";
+
+// import { getEmployerOpenJobs } from "../../lib/employer";
+
 
 interface EmployerDashboardProps {
   onPostJob: () => void;
@@ -24,6 +40,37 @@ interface EmployerDashboardProps {
 
 export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashboardProps) {
   const { user, role, loading } = useAuth();
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [showPostJob, setShowPostJob] = useState(false);
+  const [totalOpenJobs, setTotalOpenJobs] = useState(0);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [stats, setStats] = useState<any>(null);
+
+
+  useEffect(() => {
+    getEmployerAnalytics().then(setStats);
+  }, []);
+
+
+  useEffect(() => {
+    async function loadJobs() {
+      try {
+        const data = await getEmployerJobs();
+        setJobs(data || []);
+      } catch (err) {
+        console.error("Failed to load jobs", err);
+      } finally {
+        setJobsLoading(false);
+      }
+    }
+
+    loadJobs();
+  }, []);
+
+  const openJobs = jobs.filter((job) => job.status === 'open');
+
+
 
   if (loading) {
     return <div className="p-8">Loading...</div>;
@@ -43,11 +90,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Employer Dashboard</h1>
-            <p className="text-gray-600">Nedbank - Talent Acquisition</p>
+            <p className="text-gray-600">{user.user_metadata.company_name} - Talent Acquisition</p>
           </div>
 
           <Button
-            onClick={onPostJob}
+            onClick={() => setShowPostJob(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white"
             size="lg"
           >
@@ -60,29 +107,29 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[
             {
-              label: "Active Job Postings",
-              value: "12",
+              label: "Open Job Postings",
+              value: stats?.activeJobs ?? "—",
               change: "+3 this month",
               icon: Briefcase,
               color: "bg-blue-500"
             },
             {
               label: "Total Applicants",
-              value: "847",
+              value: stats?.totalApplicants,
               change: "+124 this week",
               icon: Users,
               color: "bg-emerald-500"
             },
             {
               label: "Avg. Time-to-Hire",
-              value: "18 days",
+              value: `${stats.avgTimeToHire} days`,
               change: "-7 days vs. avg",
               icon: Clock,
               color: "bg-purple-500"
             },
             {
               label: "Interview Ready",
-              value: "34",
+              value: stats?.shortlisted,
               change: "Across all roles",
               icon: Star,
               color: "bg-amber-500"
@@ -116,95 +163,75 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             </div>
 
             <div className="space-y-4">
-              {[
-                {
-                  title: "Senior Data Analyst",
-                  department: "Analytics",
-                  location: "Johannesburg",
-                  posted: "5 days ago",
-                  applicants: 127,
-                  shortlisted: 12,
-                  status: "Active",
-                  views: 1240
-                },
-                {
-                  title: "Python Developer",
-                  department: "Engineering",
-                  location: "Remote",
-                  posted: "12 days ago",
-                  applicants: 203,
-                  shortlisted: 18,
-                  status: "Active",
-                  views: 2150
-                },
-                {
-                  title: "Business Analyst",
-                  department: "Operations",
-                  location: "Cape Town",
-                  posted: "8 days ago",
-                  applicants: 156,
-                  shortlisted: 9,
-                  status: "Active",
-                  views: 980
-                }
-              ].map((job, index) => (
-                <Card key={index} className="p-6 border-gray-200 hover:shadow-md transition-shadow">
+              {jobsLoading && (
+                <Card className="p-6 text-center text-gray-500">
+                  Loading job postings...
+                </Card>
+              )}
+
+              {!jobsLoading && jobs.length === 0 && (
+                <Card className="p-6 text-center text-gray-500">
+                  No jobs posted yet
+                </Card>
+              )}
+
+              {jobs.map((job) => (
+                <Card
+                  key={job.id}
+                  className="p-6 border-gray-200 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-                        <Badge className="bg-green-100 text-green-700">{job.status}</Badge>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {job.title}
+                        </h3>
+                        <Badge className="bg-green-100 text-green-700">
+                          {job.status}
+                        </Badge>
                       </div>
+
                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>{job.department}</span>
+                        {/* <span>{job.department ?? "—"}</span>
+                        <span>•</span> */}
+                        <span>{job.location ?? "Remote"}</span>
                         <span>•</span>
-                        <span>{job.location}</span>
-                        <span>•</span>
-                        <span>{job.posted}</span>
+                        <span>
+                          {new Date(job.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
+
                     <Button variant="ghost" size="icon">
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-blue-600 mb-1">
-                        <Users className="w-4 h-4" />
-                        <span className="text-xs font-medium">Applicants</span>
-                      </div>
-                      <div className="text-xl font-bold text-gray-900">{job.applicants}</div>
-                    </div>
-                    <div className="bg-emerald-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                        <Star className="w-4 h-4" />
-                        <span className="text-xs font-medium">Shortlisted</span>
-                      </div>
-                      <div className="text-xl font-bold text-gray-900">{job.shortlisted}</div>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-purple-600 mb-1">
-                        <Eye className="w-4 h-4" />
-                        <span className="text-xs font-medium">Views</span>
-                      </div>
-                      <div className="text-xl font-bold text-gray-900">{job.views}</div>
-                    </div>
+                    <StatBox icon={Users} label="Applicants" value={job.applicant_count ?? 0} />
+                    <StatBox icon={Star} label="Shortlisted" value={job.shortlisted_count ?? 0} />
+                    <StatBox icon={Eye} label="Views" value={job.view_count ?? 0} />
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Button
-                      onClick={onViewCandidates}
+                      onClick={() => setSelectedJobId(job.id)}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       View Candidates
                     </Button>
-                    <Button variant="outline" className="flex-1">
-                      Edit Posting
+
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => updateJobStatus(job.id, "closed")}
+                    >
+                      Close Job
                     </Button>
                   </div>
                 </Card>
               ))}
+
             </div>
 
             <Button variant="outline" className="w-full">
@@ -219,7 +246,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
               <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-2">
                 <Button
-                  onClick={onPostJob}
+                  onClick={() => setShowPostJob(true)}
                   variant="outline"
                   className="w-full justify-start"
                 >
@@ -305,6 +332,22 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
           </div>
         </div>
       </div>
+      {showPostJob && (
+        <PostJobModal
+          onClose={() => setShowPostJob(false)}
+          onSuccess={() => {
+            // reload jobs
+            getEmployerJobs().then(setJobs);
+          }}
+        />
+      )}
+      {selectedJobId && (
+        <JobCandidatesModal
+          jobId={selectedJobId}
+          onClose={() => setSelectedJobId(null)}
+        />
+      )}
+
     </div>
   );
 }
