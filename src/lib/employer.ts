@@ -18,10 +18,18 @@ export async function createJob(data: {
 
   if (userError || !user) throw new Error("User not authenticated");
 
+  const { data: employer } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!employer) throw new Error("Employer profile not found");
+
   const { data: job, error } = await supabase
     .from("jobs")
     .insert({
-      employer_id: user.id, // ✅ important for RLS
+      employer_id: employer.id,
       title: data.title,
       description: data.description,
       location: data.location,
@@ -39,9 +47,34 @@ export async function createJob(data: {
    GET EMPLOYER JOBS
 ========================= */
 export async function getEmployerJobs() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: employer } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!employer) throw new Error("Employer profile not found");
+
   const { data, error } = await supabase
     .from("jobs")
-    .select("*")
+    .select(
+      `
+      id,
+      title,
+      status,
+      location,
+      description,
+      employment_type,
+      created_at,
+      job_applications ( id, status )
+    `,
+    )
+    .eq("employer_id", employer.id)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -88,10 +121,22 @@ export async function updateJobStatus(
   jobId: string,
   status: "open" | "closed" | "archived",
 ) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: employer } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
   const { error } = await supabase
     .from("jobs")
     .update({ status })
-    .eq("id", jobId);
+    .eq("id", jobId)
+    .eq("employer_id", employer?.id);
 
   if (error) throw error;
 }
@@ -101,15 +146,21 @@ export async function updateJobStatus(
 ========================= */
 export async function getJobApplicants(jobId: string) {
   const { data, error } = await supabase
-    .from("applications")
+    .from("job_applications")
     .select(
       `
       id,
       status,
+      score,
       created_at,
-      candidate:profiles (
+      candidate:candidate_profiles (
         id,
-        full_name
+        full_name,
+        headline,
+        location,
+        years_experience,
+        bio,
+        cv_url
       )
     `,
     )
@@ -128,7 +179,7 @@ export async function updateApplicationStatus(
   status: "shortlisted" | "rejected" | "hired",
 ) {
   const { error } = await supabase
-    .from("applications")
+    .from("job_applications")
     .update({ status })
     .eq("id", applicationId);
 
@@ -140,50 +191,119 @@ export async function updateApplicationStatus(
 ========================= */
 
 export async function getEmployerAnalytics() {
-  // 1️⃣ Active jobs
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: employer } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!employer) throw new Error("Employer profile not found");
+
+  // Active jobs
   const { count: activeJobs } = await supabase
     .from("jobs")
     .select("*", { count: "exact", head: true })
+    .eq("employer_id", employer.id)
     .eq("status", "open");
 
-  // 2️⃣ Total applicants
+  // Total applicants
   const { count: totalApplicants } = await supabase
-    .from("applications")
-    .select("*", { count: "exact", head: true });
+    .from("job_applications")
+    .select("id, jobs!inner(employer_id)", { count: "exact", head: true })
+    .eq("jobs.employer_id", employer.id);
 
-  // 3️⃣ Interview ready
+  // Shortlisted
   const { count: shortlisted } = await supabase
-    .from("applications")
-    .select("*", { count: "exact", head: true })
+    .from("job_applications")
+    .select("id, jobs!inner(employer_id)", { count: "exact", head: true })
+    .eq("jobs.employer_id", employer.id)
     .eq("status", "shortlisted");
-
-  // 4️⃣ Avg time to hire
-  const { data: hires } = await supabase
-    .from("applications")
-    .select(`
-      created_at,
-      job:jobs(created_at)
-    `)
-    .eq("status", "hired");
-
-  let avgTimeToHire = 0;
-
-  if (hires && hires.length > 0) {
-    const days = hires.map((h: any) => {
-      const start = new Date(h.job.created_at).getTime();
-      const end = new Date(h.created_at).getTime();
-      return (end - start) / (1000 * 60 * 60 * 24);
-    });
-
-    avgTimeToHire = Math.round(
-      days.reduce((a, b) => a + b, 0) / days.length
-    );
-  }
 
   return {
     activeJobs: activeJobs ?? 0,
     totalApplicants: totalApplicants ?? 0,
     shortlisted: shortlisted ?? 0,
-    avgTimeToHire
+    avgTimeToHire: 0,
   };
+}
+
+/* =========================
+   Candidate Deep View
+========================= */
+
+export async function getCandidateDeepView(applicationId: string) {
+  const { data, error } = await supabase
+    .from("job_applications")
+    .select(
+      `
+      id,
+      status,
+      score,
+      created_at,
+      candidate_profiles (
+        id,
+        full_name,
+        location,
+        bio,
+        years_experience,
+        headline,
+        cv_url,
+        candidate_skills (
+          skill,
+          level
+        )
+      )
+    `,
+    )
+    .eq("id", applicationId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getCandidateProfile(applicationId: string) {
+  const { data, error } = await supabase
+    .from("job_applications")
+    .select(
+      `
+      id,
+      status,
+      score,
+      candidate:candidate_profiles (
+        id,
+        full_name,
+        headline,
+        bio,
+        location,
+        years_experience,
+        candidate_skills ( skill, level ),
+        candidate_resumes ( file_path )
+      ),
+      candidate_activities (
+        type,
+        description,
+        created_at
+      )
+    `,
+    )
+    .eq("id", applicationId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getCandidateCV(cvPath: string) {
+  const { data, error } = await supabase.storage
+    .from("resumes")
+    .createSignedUrl(cvPath, 60 * 10); // 10 minutes
+
+  if (error) throw error;
+  return data.signedUrl;
 }

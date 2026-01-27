@@ -1,0 +1,82 @@
+import { useEffect, useState } from "react";
+import { getCandidateDeepView } from "../../lib/employer";
+import { Badge } from "./ui/badge";
+import { Button } from "@/app/components/ui/button";
+
+export function CandidateProfileDrawer({
+  applicationId,
+  onClose
+}: {
+  applicationId: string;
+  onClose: () => void;
+}) {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    getCandidateDeepView(applicationId).then(setData);
+  }, [applicationId]);
+
+  console.log("Candidate Data:", data);
+
+  if (!data) return null;
+
+  console.log("Rendering Candidate Profile Drawer with data:", data);
+
+  return (
+    <aside className="fixed right-0 top-0 h-full w-[420px] bg-white shadow-xl p-6 overflow-y-auto">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-bold">{data.candidate_profiles.full_name}</h2>
+          <p className="text-sm text-gray-600">{data.candidate_profiles.location || "Location"}</p>
+        </div>
+        <Badge>{data.score} %</Badge>
+      </div>
+
+      {/* About */}
+      <section className="mt-6">
+        <h4 className="font-semibold mb-2">About</h4>
+        <p className="text-sm text-gray-700">{data.candidate_profiles.bio}</p>
+      </section>
+
+      {/* Skills */}
+      <section className="mt-6">
+        <h4 className="font-semibold mb-2">Skills</h4>
+        <div className="flex flex-wrap gap-2">
+          {data.candidate_profiles.candidate_skills.map((s: any) => (
+            <Badge key={s.skill} variant="secondary">
+              {s.skill}
+            </Badge>
+          ))}
+
+        </div>
+      </section>
+
+      {/* CV */}
+      <section className="mt-6">
+        <h4 className="font-semibold mb-2">CV</h4>
+
+        {data.candidate_profiles.cv_url ? (
+          <a
+            href={data.candidate_profiles.cv_url}
+            target="_blank"
+            className="text-blue-600 text-sm underline"
+          >
+            Download CV
+          </a>
+        ) : (
+          <p className="text-sm text-gray-500">No CV uploaded</p>
+        )}
+      </section>
+
+
+      {/* Actions */}
+      <div className="mt-8 space-y-2">
+        <Button className="w-full">Shortlist</Button>
+        <Button variant="outline" className="w-full">
+          Message Candidate
+        </Button>
+      </div>
+    </aside>
+  );
+}

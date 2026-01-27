@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { getCandidateDashboardData } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
@@ -14,6 +16,10 @@ import {
   Briefcase
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { applyForJob, uploadCandidateCV } from "../../lib/candidate";
+import { calculateProfileCompletion } from "@/lib/profileCompletion";
+import { AddSkillModal } from "./AddSkillModal";
+
 
 interface CandidateDashboardProps {
   onViewJobs: () => void;
@@ -22,6 +28,39 @@ interface CandidateDashboardProps {
 
 export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateDashboardProps) {
   const { user, role, loading } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [loadingData, setLoadingData] = useState(true);
+  const [showAddSkill, setShowAddSkill] = useState(false);
+  const [cvName, setCvName] = useState<string | null>(null);
+  const [cvUploading, setCvUploading] = useState(false);
+
+  useEffect(() => {
+    if (profile?.cv_url) {
+      setCvName(profile.cv_url.split("/").pop() ?? null);
+    } else {
+      setCvName(null);
+    }
+  }, [profile?.cv_url]);
+
+
+
+
+
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        const data = await getCandidateDashboardData();
+        setProfile(data);
+      } catch (err) {
+        console.error("Failed to load candidate dashboard", err);
+      } finally {
+        setLoadingData(false);
+      }
+    }
+
+    loadDashboard();
+  }, []);
+
 
   if (loading) {
     return <div className="p-8">Loading...</div>;
@@ -34,15 +73,35 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
       </div>
     );
   }
-  console.log(user);
-  const readinessScore = 78;
+  const skillsCount = profile?.candidate_skills?.length ?? 0;
+  const certsCount = profile?.candidate_certifications?.length ?? 0;
+  const readinessScore = Math.min(
+    100,
+    Math.round(skillsCount * 15 + certsCount * 10)
+  );
+
+  const completion = profile
+    ? calculateProfileCompletion(profile)
+    : 0;
+
+  // const applicantCount = job.job_applications.length;
+  // const shortlistedCount = job.job_applications.filter(
+  //   a => a.status === "shortlisted"
+  // ).length;
+
+  if (loading || loadingData) {
+    return <div className="p-8">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, Thabo</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {profile?.full_name}
+          </h1>
+
           <p className="text-gray-600">Your skills journey continues. Keep building your verified profile.</p>
         </div>
 
@@ -99,119 +158,37 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                {
-                  skill: "Data Analysis",
-                  score: 85,
-                  level: "Advanced",
-                  verified: true,
-                  color: "bg-emerald-500"
-                },
-                {
-                  skill: "Python Programming",
-                  score: 72,
-                  level: "Intermediate",
-                  verified: true,
-                  color: "bg-blue-500"
-                },
-                {
-                  skill: "Project Management",
-                  score: 68,
-                  level: "Intermediate",
-                  verified: true,
-                  color: "bg-yellow-500"
-                },
-                {
-                  skill: "Communication",
-                  score: 90,
-                  level: "Expert",
-                  verified: true,
-                  color: "bg-purple-500"
-                }
-              ].map((item, index) => (
-                <Card key={index} className="p-5 hover:shadow-md transition-shadow border-gray-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">{item.skill}</h3>
-                      <Badge variant="secondary" className="text-xs">
-                        {item.level}
-                      </Badge>
-                    </div>
-                    {item.verified && (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Score</span>
-                      <span className="font-semibold text-gray-900">{item.score}%</span>
-                    </div>
-                    <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`absolute left-0 top-0 h-full ${item.color}`}
-                        style={{ width: `${item.score}%` }}
-                      />
-                    </div>
-                  </div>
+              {profile?.candidate_skills?.map((item) => (
+                <Card key={item.skill} className="p-5">
+                  <h3 className="font-semibold">{item.skill}</h3>
+                  <Badge>{item.level}</Badge>
                 </Card>
               ))}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddSkill(true)}
+              >
+                + Add Skill
+              </Button>
             </div>
 
             {/* Assessment Progress */}
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Assessment Progress</h2>
               <Card className="p-6 border-gray-200">
-                <div className="space-y-4">
-                  {[
-                    {
-                      name: "Digital Marketing Fundamentals",
-                      progress: 100,
-                      status: "Completed",
-                      icon: CheckCircle2,
-                      iconColor: "text-green-600"
-                    },
-                    {
-                      name: "SQL Database Management",
-                      progress: 65,
-                      status: "In Progress",
-                      icon: Clock,
-                      iconColor: "text-blue-600"
-                    },
-                    {
-                      name: "Business Analytics",
-                      progress: 0,
-                      status: "Not Started",
-                      icon: Target,
-                      iconColor: "text-gray-400"
-                    }
-                  ].map((assessment, index) => (
-                    <div key={index} className="flex items-center gap-4">
-                      <assessment.icon className={`w-5 h-5 ${assessment.iconColor} flex-shrink-0`} />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-gray-900">{assessment.name}</span>
-                          <span className="text-sm text-gray-600">{assessment.progress}%</span>
-                        </div>
-                        <Progress value={assessment.progress} className="h-1.5" />
-                      </div>
-                      {assessment.progress > 0 && assessment.progress < 100 && (
-                        <Button size="sm" variant="ghost" className="text-blue-600">
-                          Continue
-                        </Button>
-                      )}
-                      {assessment.progress === 0 && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={onStartAssessment}
-                        >
-                          Start
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {profile?.candidate_assessments.map((assessment, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <span className="font-medium">{assessment.name}</span>
+                    <Progress value={assessment.progress} />
+                    <span>{assessment.status}</span>
+                  </div>
+                ))}
+                {/* <Button onClick={() => applyForJob(job.id)}>
+                  Apply
+                </Button> */}
+
               </Card>
             </div>
           </div>
@@ -222,7 +199,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Certifications Earned</h2>
               <Card className="p-6 border-gray-200">
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   {[
                     {
                       name: "Data Analysis Professional",
@@ -250,10 +227,70 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> */}
+                {profile?.candidate_assessments?.length === 0 && (
+                  <p className="text-sm text-gray-500">No assessments started yet</p>
+                )}
+
+                {profile?.candidate_certifications.map((cert, index) => (
+                  <div key={index}>
+                    <h3 className="font-medium">{cert.name}</h3>
+                    <p className="text-xs text-gray-600">
+                      {cert.issuer} · {cert.issued_at}
+                    </p>
+                  </div>
+                ))}
+
                 <Button variant="ghost" className="w-full mt-4 text-blue-600">
                   View All Certificates
                 </Button>
+              </Card>
+            </div>
+
+            {/* Documents */}
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Documents</h2>
+
+              <Card className="p-6 border-gray-200 space-y-3">
+
+                {/* CV status */}
+                {cvName ? (
+                  <div className="flex items-center gap-2 text-sm text-green-700">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="truncate">{cvName}</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No CV uploaded yet
+                  </p>
+                )}
+
+                {/* Upload */}
+                <input
+                  type="file"
+                  accept=".pdf"
+                  disabled={cvUploading}
+                  onChange={async (e) => {
+                    if (!e.target.files?.[0]) return;
+
+                    try {
+                      setCvUploading(true);
+                      const path = await uploadCandidateCV(e.target.files[0]);
+                      setCvName(path.split("/").pop() ?? null);
+                      const data = await getCandidateDashboardData();
+                      setProfile(data);
+                    } catch (err) {
+                      console.error("CV upload failed", err);
+                    } finally {
+                      setCvUploading(false);
+                    }
+                  }}
+                />
+
+                {cvUploading && (
+                  <p className="text-xs text-blue-600">Uploading CV…</p>
+                )}
               </Card>
             </div>
 
@@ -302,12 +339,27 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                   </p>
                 </div>
               </div>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Complete Profile
+              <Button
+                disabled={completion === 100}
+                className="w-full bg-blue-600"
+              >
+                {completion < 100
+                  ? `Complete Profile (${completion}%)`
+                  : "Profile Complete 🎉"}
               </Button>
+
             </Card>
           </div>
         </div>
+        {showAddSkill && (
+          <AddSkillModal
+            onClose={() => setShowAddSkill(false)}
+            onSuccess={async () => {
+              const data = await getCandidateDashboardData();
+              setProfile(data);
+            }}
+          />
+        )}
       </div>
     </div>
   );

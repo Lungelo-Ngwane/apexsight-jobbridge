@@ -3,6 +3,8 @@ import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { getJobApplicants, updateApplicationStatus } from "@/lib/employer";
+import { CandidateProfileDrawer } from "./CandidateProfileDrawer";
+
 
 interface Props {
     jobId: string;
@@ -21,6 +23,8 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeStage, setActiveStage] = useState("applied");
+    const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+
 
 
     useEffect(() => {
@@ -42,6 +46,8 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     const filteredCandidates = candidates.filter(
         (c) => c.status === activeStage
     );
+
+    console.log("Rendering JobCandidatesModal with candidates:", candidates);
 
 
 
@@ -89,10 +95,19 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
                                     <p className="font-medium">
                                         {app.candidate.full_name}
                                     </p>
+
                                     <Badge className="mt-1">{app.status}</Badge>
                                 </div>
 
                                 <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setSelectedApplicationId(app.id)}
+                                    >
+                                        View Profile
+                                    </Button>
+
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -101,6 +116,7 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
                                     >
                                         Shortlist
                                     </Button>
+
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -110,11 +126,18 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
                                         Reject
                                     </Button>
                                 </div>
+
                             </div>
                         ))}
                     </div>
                 )}
             </Card>
+            {selectedApplicationId && (
+                <CandidateProfileDrawer
+                    applicationId={selectedApplicationId}
+                    onClose={() => setSelectedApplicationId(null)}
+                />
+            )}
         </div>
     );
 }

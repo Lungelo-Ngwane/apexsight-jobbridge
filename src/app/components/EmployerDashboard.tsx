@@ -70,7 +70,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
   const openJobs = jobs.filter((job) => job.status === 'open');
 
-
+  console.log("Rendering EmployerDashboard with jobs:", selectedJobId);
 
   if (loading) {
     return <div className="p-8">Loading...</div>;
@@ -83,6 +83,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       </div>
     );
   }
+  console.log(jobs);
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -122,7 +123,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             },
             {
               label: "Avg. Time-to-Hire",
-              value: `${stats.avgTimeToHire} days`,
+              value: `1 days`,
               change: "-7 days vs. avg",
               icon: Clock,
               color: "bg-purple-500"
@@ -192,13 +193,18 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                        {/* <span>{job.department ?? "—"}</span>
-                        <span>•</span> */}
+                        <span>{job.employment_type ?? "—"}</span>
+                        <span>•</span>
                         <span>{job.location ?? "Remote"}</span>
                         <span>•</span>
                         <span>
                           {new Date(job.created_at).toLocaleDateString()}
                         </span>
+                      </div>
+                      <div>
+                        <p className="mt-2 text-sm text-gray-700">
+                          {job.description}
+                        </p>
                       </div>
                     </div>
 
@@ -208,8 +214,21 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-4">
-                    <StatBox icon={Users} label="Applicants" value={job.applicant_count ?? 0} />
-                    <StatBox icon={Star} label="Shortlisted" value={job.shortlisted_count ?? 0} />
+                    <StatBox
+                      icon={Users}
+                      label="Applicants"
+                      value={job.job_applications?.length ?? 0}
+                    />
+                    <StatBox
+                      icon={Star}
+                      label="Shortlisted"
+                      value={
+                        job.job_applications?.filter(
+                          (a) => a.status === "shortlisted"
+                        ).length ?? 0
+                      }
+                    />
+
                     <StatBox icon={Eye} label="Views" value={job.view_count ?? 0} />
                   </div>
 
