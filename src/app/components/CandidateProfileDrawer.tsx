@@ -30,7 +30,47 @@ export function CandidateProfileDrawer({
           <h2 className="text-xl font-bold">{data.candidate_profiles.full_name}</h2>
           <p className="text-sm text-gray-600">{data.candidate_profiles.location || "Location"}</p>
         </div>
-        <Badge>{data.score} %</Badge>
+        <Badge className="text-base px-3 py-1">
+          {data.score}%
+        </Badge>
+
+      </div>
+      {data.score_breakdown && (
+        <section className="mt-6">
+          <h4 className="font-semibold mb-2">Match Breakdown</h4>
+
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span>Required skills</span>
+              <span>{data.score_breakdown.required} / 50</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Optional skills</span>
+              <span>{data.score_breakdown.optional} / 20</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Experience level</span>
+              <span>{data.score_breakdown.experience} / 15</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Skill proficiency</span>
+              <span>{data.score_breakdown.skill_level} / 15</span>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <div className="mt-6">
+        <h2 className="font-semibold mb-2">Headline</h2>
+        <p className="text-sm text-gray-600">{data.candidate_profiles.headline || "Location"}</p>
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-semibold mb-2">Experience</h2>
+        <p className="text-sm text-gray-600">{data.candidate_profiles.years_experience || "Location"} Years</p>
       </div>
 
       {/* About */}

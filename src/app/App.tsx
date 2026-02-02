@@ -5,8 +5,11 @@ import Login from '@/app/components/Login';
 import { HomePage } from '@/app/components/HomePage';
 import { CandidateDashboard } from '@/app/components/CandidateDashboard';
 import { EmployerDashboard } from '@/app/components/EmployerDashboard';
+import { CandidateProfile } from "@/app/components/CandidateProfile";
+import { EmployerProfile } from "@/app/components/EmployerProfile";
 import { useAuth } from './context/AuthContext';
-import  CandidateJobsPage  from "./components/CandidateJobsPage";
+import CandidateJobsPage from "./components/CandidateJobsPage";
+import { EmployerApp } from "./components/EmployerApp";
 // import { useAuth } from '../context/AuthContext'; // adjust path
 
 type View = 'home' | 'candidate-dashboard' | 'employer-dashboard';
@@ -30,23 +33,36 @@ export default function App() {
   // }, [user, role, loading]);
   const navigate = useNavigate();
 
-useEffect(() => {
-  if (loading) return;
+  useEffect(() => {
+    if (loading) return;
 
-  // Only redirect on initial load, not every role change
-  if (!user) {
-    navigate('/');
-  } else if (role === 'candidate' && window.location.pathname === '/') {
-    navigate('/candidate/dashboard');
-  } else if (role === 'employer' && window.location.pathname === '/') {
-    navigate('/employer/dashboard');
-  }
-}, [user, role, loading, navigate]);
+    // Only redirect on initial load, not every role change
+    if (!user) {
+      navigate('/');
+    } else if (role === 'candidate' && window.location.pathname === '/') {
+      navigate('/candidate/dashboard');
+    } else if (role === 'employer' && window.location.pathname === '/') {
+      navigate('/employer/dashboard');
+    }
+  }, [user, role, loading, navigate]);
 
   const getCurrentProduct = (): 'skilllink' | 'jobbridge' | 'landing' => {
     if (currentView === 'home') return 'landing';
     return role === 'candidate' ? 'skilllink' : 'jobbridge';
   };
+
+  const handleProfileClick = () => {
+    if (!role) return;
+
+    if (role === "candidate") {
+      navigate("/candidate/profile");
+    }
+
+    if (role === "employer") {
+      navigate("/employer/profile");
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -54,6 +70,7 @@ useEffect(() => {
         currentProduct={getCurrentProduct()}
         userType={role}                      // ← now from context
         onSignInClick={() => setShowLoginModal(true)}
+        onProfileClick={handleProfileClick}
       />
 
       {/* {currentView === 'home' && <HomePage />}
@@ -61,13 +78,19 @@ useEffect(() => {
       {currentView === 'employer-dashboard' && <EmployerDashboard />} */}
       <Routes>
         <Route path="/" element={<HomePage />} />
+
         <Route
           path="/candidate/dashboard"
           element={<CandidateDashboard onViewJobs={() => navigate("/candidate/jobs")} />}
         />
         <Route path="/candidate/jobs" element={<CandidateJobsPage />} />
-        <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+        <Route path="/candidate/profile" element={<CandidateProfile />} />
+
+        <Route path="/employer/dashboard" element={<EmployerApp />} />
+        
+        <Route path="/employer/profile" element={<EmployerProfile />} />
       </Routes>
+
 
       {showLoginModal && (
         <div

@@ -9,8 +9,10 @@ export async function createJob(data: {
   location?: string;
   employment_type?: string;
   status: string;
+  experience_level: string;
+  skills?: { skill_id: string; is_required: boolean }[];
 }) {
-  // Get current user
+  // 1️⃣ Get current user
   const {
     data: { user },
     error: userError,
@@ -18,6 +20,7 @@ export async function createJob(data: {
 
   if (userError || !user) throw new Error("User not authenticated");
 
+  // 2️⃣ Get employer profile
   const { data: employer } = await supabase
     .from("employer_profiles")
     .select("id")
@@ -26,22 +29,43 @@ export async function createJob(data: {
 
   if (!employer) throw new Error("Employer profile not found");
 
-  const { data: job, error } = await supabase
+  // 3️⃣ Insert the job
+  const { data: job, error: jobError } = await supabase
     .from("jobs")
     .insert({
       employer_id: employer.id,
       title: data.title,
       description: data.description,
-      location: data.location,
-      employment_type: data.employment_type,
+      location: data.location || null,
+      employment_type: data.employment_type || null,
       status: data.status,
+      experience_level: data.experience_level,
     })
     .select()
     .single();
 
-  if (error) throw error;
+  if (jobError || !job) throw jobError || new Error("Failed to create job");
+
+// 4️⃣ Insert job skills if provided
+if (data.skills && data.skills.length > 0) {
+  const { error: skillsError } = await supabase
+    .from("job_skills")
+    .insert(
+      data.skills.map((s) => ({
+        job_id: job.id,
+        skill_id: s.skill_id,
+        required: s.is_required, // <--- map to the correct column
+        min_score: null,         // optional, can be set later
+      }))
+    );
+
+  if (skillsError) throw skillsError;
+}
+
+
   return job;
 }
+
 
 /* =========================
    GET EMPLOYER JOBS
@@ -147,8 +171,7 @@ export async function updateJobStatus(
 export async function getJobApplicants(jobId: string) {
   const { data, error } = await supabase
     .from("job_applications")
-    .select(
-      `
+    .select(`
       id,
       status,
       score,
@@ -160,16 +183,20 @@ export async function getJobApplicants(jobId: string) {
         location,
         years_experience,
         bio,
-        cv_url
+        candidate_skills (
+          skills ( name ),
+          level
+        )
       )
-    `,
-    )
+    `)
     .eq("job_id", jobId)
+    .order("score", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error) throw error;
   return data;
 }
+
 
 /* =========================
    UPDATE APPLICATION STATUS
@@ -244,6 +271,7 @@ export async function getCandidateDeepView(applicationId: string) {
       id,
       status,
       score,
+      score_breakdown,
       created_at,
       candidate_profiles (
         id,
@@ -306,4 +334,62 @@ export async function getCandidateCV(cvPath: string) {
 
   if (error) throw error;
   return data.signedUrl;
+}
+
+export async function getAllSkills() {
+  const { data, error } = await supabase
+    .from("skills")
+    .select("id, name")
+    .order("name");
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getRankedCandidates(jobId: string) {
+  const { data, error } = await supabase
+  .from("job_applications")
+  .select(`
+    id,
+    status,
+    score,
+    score_breakdown,
+    created_at,
+    candidate:candidate_profiles (
+      id,
+      full_name,
+      headline,
+      years_experience
+    )
+  `)
+  .eq("job_id", jobId)
+  .order("score", { ascending: false });
+
+}
+
+export async function updateEmployerProfile(payload: {
+  company_name?: string;
+  industry?: string | null;
+  company_size?: string | null;
+  onboarding_step?: number;
+  plan?: string;
+}) {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Not authenticated");
+  }
+
+  const { error } = await supabase
+    .from("employer_profiles")
+    .update(payload)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to update employer profile", error);
+    throw error;
+  }
 }

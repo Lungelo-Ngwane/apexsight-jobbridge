@@ -29,6 +29,7 @@ import {
 import { StatBox } from "./ui/statbox";
 import { PostJobModal } from "./PostJobModal";
 import { JobCandidatesModal } from "./JobCandidatesModal";
+import { useEmployerProfile } from "../../hooks/useEmployerProfile";
 
 // import { getEmployerOpenJobs } from "../../lib/employer";
 
@@ -46,6 +47,10 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const [totalOpenJobs, setTotalOpenJobs] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
+  const JOBS_PER_PAGE = 3;
+  const [visibleCount, setVisibleCount] = useState(JOBS_PER_PAGE);
+  const { profile } = useEmployerProfile();
+
 
 
   useEffect(() => {
@@ -58,6 +63,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       try {
         const data = await getEmployerJobs();
         setJobs(data || []);
+        setVisibleCount(JOBS_PER_PAGE);
       } catch (err) {
         console.error("Failed to load jobs", err);
       } finally {
@@ -91,7 +97,9 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Employer Dashboard</h1>
-            <p className="text-gray-600">{user.user_metadata.company_name} - Talent Acquisition</p>
+            <p className="text-gray-600">
+              {profile?.company_name ?? "Your Company"} - Talent Acquisition
+            </p>
           </div>
 
           <Button
@@ -176,7 +184,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                 </Card>
               )}
 
-              {jobs.map((job) => (
+              {jobs.slice(0, visibleCount).map((job) => (
                 <Card
                   key={job.id}
                   className="p-6 border-gray-200 hover:shadow-md transition-shadow"
@@ -201,11 +209,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                           {new Date(job.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <div>
+                      {/* <div>
                         <p className="mt-2 text-sm text-gray-700">
                           {job.description}
                         </p>
-                      </div>
+                      </div> */}
                     </div>
 
                     <Button variant="ghost" size="icon">
@@ -214,12 +222,19 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-4">
-                    <StatBox
+                    <div className="bg-blue-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-blue-600 mb-1">
+                        <Users className="w-4 h-4" />
+                        <span className="text-xs font-medium">Applicants</span>
+                      </div>
+                      <div className="text-xl font-bold text-gray-900">{job.job_applications?.length ?? 0}</div>
+                    </div>
+                    {/* <StatBox
                       icon={Users}
                       label="Applicants"
                       value={job.job_applications?.length ?? 0}
-                    />
-                    <StatBox
+                    /> */}
+                    {/* <StatBox
                       icon={Star}
                       label="Shortlisted"
                       value={
@@ -227,9 +242,26 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                           (a) => a.status === "shortlisted"
                         ).length ?? 0
                       }
-                    />
+                    /> */}
+                    <div className="bg-emerald-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                        <Star className="w-4 h-4" />
+                        <span className="text-xs font-medium">Shortlisted</span>
+                      </div>
+                      <div className="text-xl font-bold text-gray-900">{job.job_applications?.filter(
+                        (a) => a.status === "shortlisted"
+                      ).length ?? 0}</div>
+                    </div>
 
-                    <StatBox icon={Eye} label="Views" value={job.view_count ?? 0} />
+                    <div className="bg-purple-50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-purple-600 mb-1">
+                        <Eye className="w-4 h-4" />
+                        <span className="text-xs font-medium">Views</span>
+                      </div>
+                      <div className="text-xl font-bold text-gray-900">{job.view_count ?? 0}</div>
+                    </div>
+
+                    {/* <StatBox icon={Eye} label="Views" value={job.view_count ?? 0} /> */}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -253,9 +285,16 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
             </div>
 
-            <Button variant="outline" className="w-full">
-              View All Job Postings
-            </Button>
+            {visibleCount < jobs.length && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setVisibleCount((prev) => prev + JOBS_PER_PAGE)}
+              >
+                Show more jobs
+              </Button>
+            )}
+
           </div>
 
           {/* Sidebar */}

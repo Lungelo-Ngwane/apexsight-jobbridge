@@ -8,12 +8,15 @@ export async function getCandidateDashboardData() {
       id,
       full_name,
       headline,
+      bio,
+      location,
+      years_experience,
       cv_url,
       candidate_skills (
         skill,
         level
       ),
-      candidate_assessments!candidate_assessments_candidate_id_fkey (
+      candidate_assessments (
         name,
         progress,
         status
@@ -98,11 +101,9 @@ export async function uploadCandidateCV(file: File) {
 }
 
 export async function getOpenJobs() {
-  // 1️⃣ Get all open jobs
   const { data: jobs, error: jobsError } = await supabase
     .from("jobs")
-    .select(
-      `
+    .select(`
       id,
       title,
       description,
@@ -110,46 +111,45 @@ export async function getOpenJobs() {
       employment_type,
       created_at,
       employer_id
-    `,
-    )
+    `)
     .eq("status", "open")
     .order("created_at", { ascending: false });
 
   if (jobsError) throw jobsError;
   if (!jobs || jobs.length === 0) return [];
 
-  // 2️⃣ Get all employers referenced by these jobs
-  const employerIds = [...new Set(jobs.map((job) => job.employer_id))]; // unique ids
-  const { data: employers, error: empError } = await supabase
-    .from("employer_profiles")
-    .select("id, company_name")
-    .in("id", employerIds);
+  // Convert all employer_ids to strings
+const employerIds = [...new Set(jobs.map(job => String(job.employer_id)))]; // array of strings
 
-  if (empError) throw empError;
+const { data: employers, error: empError } = await supabase
+  .from("employer_profiles")
+  .select("id, company_name")
+  .in("id", employerIds); // <-- must be an array
+if (empError) throw empError;
 
-  // 3️⃣ Map employer_id -> company_name
-  const employerMap =
-    employers?.reduce(
-      (acc, emp) => {
-        acc[emp.id] = emp.company_name;
-        return acc;
-      },
-      {} as Record<string, string>,
-    ) || {};
-  console.log(employerMap);
+console.log("Employers fetched:", employers);
 
-  // 4️⃣ Attach employer info to jobs
-  const jobsWithEmployer = jobs.map((job) => ({
+
+  // Map employer_id -> company_name
+  const employerMap = (employers || []).reduce((acc, emp) => {
+    acc[String(emp.id)] = emp.company_name;
+    return acc;
+  }, {} as Record<string, string>);
+
+  console.log("Employer Map:", employerMap);
+
+  // Attach employer info to jobs
+  const jobsWithEmployer = jobs.map(job => ({
     ...job,
     employer: {
-      company_name: employerMap[job.employer_id] || "Unknown",
-    },
+      company_name: employerMap[String(job.employer_id)] || "Unknown Company"
+    }
   }));
-
-  console.log("Jobs with Employer:", jobsWithEmployer);
 
   return jobsWithEmployer;
 }
+
+
 
 export async function applyForJob(jobId: string) {
   const {
@@ -165,7 +165,7 @@ export async function applyForJob(jobId: string) {
 
   if (!profile) throw new Error("Candidate profile not found");
 
-  // prevent duplicate
+  // Prevent duplicate
   const { data: existing } = await supabase
     .from("job_applications")
     .select("id")
@@ -175,11 +175,43 @@ export async function applyForJob(jobId: string) {
 
   if (existing) throw new Error("Already applied");
 
+  // 🔥 Calculate match score
+  const { data: matchScore, error: scoreError } = await supabase.rpc(
+    "calculate_skill_match",
+    {
+      p_job_id: jobId,
+      p_candidate_profile_id: profile.id,
+    },
+  );
+
+  if (scoreError) throw scoreError;
+
   const { error } = await supabase.from("job_applications").insert({
     job_id: jobId,
     candidate_profile_id: profile.id,
     status: "applied",
+    score: matchScore,
   });
+
+  if (error) throw error;
+}
+
+export async function updateCandidateProfile(input: {
+  headline?: string;
+  bio?: string;
+  location?: string;
+  years_experience?: number;
+}) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("candidate_profiles")
+    .update(input)
+    .eq("user_id", user.id);
 
   if (error) throw error;
 }

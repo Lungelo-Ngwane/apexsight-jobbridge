@@ -11,8 +11,12 @@ import {
   TrendingUp,
   Building2,
   GraduationCap,
-  BarChart3
+  BarChart3,
+  Sparkles,
+  Zap,
+  Globe
 } from "lucide-react";
+import logo from "../assets/ApexSight_logo.png";
 
 interface HomePageProps {
   onSelectSkillLink: () => void;
@@ -21,72 +25,108 @@ interface HomePageProps {
 
 export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-blue-50">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-16 pb-20">
-        <div className="text-center max-w-4xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Shield className="w-4 h-4" />
-            National Skill-Based Employment Infrastructure
-          </div>
-          
-          <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            South Africa's Skill-Verified<br />
-            <span className="text-blue-600">Talent Infrastructure</span>
-          </h1>
-          
-          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
-            A national digital infrastructure that verifies skills, issues certifications, 
-            and connects talent to employment through trusted, data-driven matching.
-          </p>
-
-          {/* Primary CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <Button 
-              onClick={onSelectSkillLink}
-              size="lg" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-lg w-full sm:w-auto"
-            >
-              Job Seekers → Enter SkillLink™
-              {/* <ArrowRight className="ml-2 w-5 h-5" /> */}
-            </Button>
-            <Button 
-              onClick={onSelectJobBridge}
-              size="lg" 
-              variant="outline"
-              className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-10 py-7 text-lg w-full sm:w-auto"
-            >
-              Employers → Access JobBridge™
-              {/* <ArrowRight className="ml-2 w-5 h-5" /> */}
-            </Button>
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Aligned to National Skills Frameworks
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Built for Enterprise Hiring
-            </div>
-
-          </div>
+      <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
-        {/* Stats Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
-          {[
-            { value: "250,000+", label: "Skills Verification Capacity" },
-            { value: "15,000+", label: "Candidate Profiles Supported" },
-            { value: "2,500+", label: "Employers Served" },
-            { value: "100%", label: "Skills-Based Matching" }
-          ].map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg p-5 text-center shadow-sm border border-gray-200">
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
+        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-28">
+          <div className="text-center max-w-5xl mx-auto">
+            {/* Logo Badge */}
+            {/* <div className="flex items-center justify-center gap-3 mb-8">
+              <img 
+                src={logo} 
+                alt="ApexSight" 
+                className="h-16 w-auto"
+              />
+            </div> */}
+
+            {/* Trust Badge */}
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold mb-8 shadow-lg">
+              <Shield className="w-4 h-4" />
+              South Africa's National Skills-Verified Hiring Platform
             </div>
+            
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+              Transform Skills Into
+              <br />
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                Verified Opportunities
+              </span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+              The trusted infrastructure connecting <span className="font-semibold text-gray-900">skill-verified job seekers</span> with <span className="font-semibold text-gray-900">South Africa's leading employers</span>
+            </p>
+
+            {/* Primary CTAs */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <Button 
+                onClick={onSelectSkillLink}
+                size="lg" 
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-10 py-7 text-lg w-full sm:w-auto shadow-xl hover:shadow-2xl transition-all group"
+              >
+                <GraduationCap className="w-5 h-5 mr-2" />
+                For Job Seekers
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button 
+                onClick={onSelectJobBridge}
+                size="lg" 
+                variant="outline"
+                className="border-2 border-gray-300 text-gray-900 hover:bg-gray-50 hover:border-gray-400 px-10 py-7 text-lg w-full sm:w-auto shadow-lg hover:shadow-xl transition-all group"
+              >
+                <Building2 className="w-5 h-5 mr-2" />
+                For Employers
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap items-center justify-center gap-8 text-sm font-medium">
+              <div className="flex items-center gap-2 text-gray-700">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                </div>
+                Government-Aligned
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                </div>
+                SETA-Recognized
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                </div>
+                Enterprise-Trusted
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Bar */}
+      <section className="relative -mt-12 max-w-7xl mx-auto px-6 pb-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { value: "250K+", label: "Skills Verified", icon: Award },
+            { value: "15K+", label: "Active Job Seekers", icon: Users },
+            { value: "2.5K+", label: "Hiring Employers", icon: Building2 },
+            { value: "100%", label: "Skills-Based", icon: Target }
+          ].map((stat, index) => (
+            <Card key={index} className="bg-white p-6 text-center shadow-xl border-0 hover:shadow-2xl transition-all hover:-translate-y-1">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <stat.icon className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
+              <div className="text-sm text-gray-600 font-medium">{stat.label}</div>
+            </Card>
           ))}
         </div>
       </section>
@@ -98,8 +138,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
             Choose Your Path
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            ApexSight operates two connected platforms within one unified talent system.
-            Select the experience that applies to you.
+            ApexSight serves two connected communities. Select your journey below.
           </p>
         </div>
 
@@ -120,8 +159,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 SkillLink™
               </h3>
               <p className="text-gray-600 text-lg mb-6">
-                Verify your skills through assessments and certifications.
-                Once verified, gain access to real job opportunities matched to your abilities.
+                Turn your skills into verified opportunities. Complete assessments, 
+                earn certifications, and unlock jobs based on what you can do.
               </p>
             </div>
 
@@ -130,7 +169,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 { icon: Target, text: "Complete skills assessments" },
                 { icon: Award, text: "Earn verified certifications" },
                 { icon: TrendingUp, text: "Build your readiness score" },
-                { icon: Briefcase, text: "Unlock access to skill-matched jobs" }
+                { icon: Briefcase, text: "Access skill-matched jobs" }
               ].map((item, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -167,8 +206,8 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 JobBridge™
               </h3>
               <p className="text-gray-600 text-lg mb-6">
-                Hire based on verified skills, not CVs.
-                Access a trusted pool of candidates whose abilities are independently assessed.
+                Hire based on skills, not CVs. Access South Africa's largest pool 
+                of skill-verified talent with complete confidence.
               </p>
             </div>
 
@@ -176,7 +215,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
               {[
                 { icon: Shield, text: "100% skills-verified candidates" },
                 { icon: Users, text: "Bias-free, fair hiring" },
-                { icon: TrendingUp, text: "Reduced time-to-hire" },
+                { icon: TrendingUp, text: "60% faster time-to-hire" },
                 { icon: BarChart3, text: "Data-driven matching" }
               ].map((item, index) => (
                 <div key={index} className="flex items-center gap-3">
@@ -216,21 +255,21 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
             {
               step: "1",
               title: "Skills Are Verified",
-              description: "Candidates complete SkillLink assessments aligned to national skills frameworks and receive verified certifications.",
+              description: "Job seekers complete comprehensive, SETA-aligned assessments and earn verified certifications",
               icon: Target,
               color: "bg-blue-600"
             },
             {
               step: "2",
               title: "Jobs Are Posted",
-              description: "Employers use JobBridge to define skill-based roles and access only verified candidates.",
+              description: "Employers define skill-based requirements and access only verified, qualified candidates",
               icon: Briefcase,
               color: "bg-purple-600"
             },
             {
               step: "3",
               title: "Matches Happen",
-              description: "Matching technology connects verified skills to job requirements, reducing bias and improving hiring outcomes.",
+              description: "AI-powered matching connects verified skills to job requirements with zero bias",
               icon: Shield,
               color: "bg-green-600"
             }
@@ -248,6 +287,36 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
       </section>
 
       {/* Trusted By */}
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Trusted by Leading Organizations
+          </h2>
+          <p className="text-lg text-gray-600">
+            Government departments, SETAs, and enterprises nationwide
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[
+            "Standard Bank",
+            "Department of Health",
+            "Discovery Health",
+            "Capitec Bank",
+            "Nedbank",
+            "Services SETA",
+            "City of Johannesburg",
+            "Shoprite Group"
+          ].map((org, index) => (
+            <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 flex items-center justify-center">
+              <div className="text-center">
+                <Building2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <div className="font-medium text-gray-700 text-sm">{org}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Final CTA */}
       <section className="max-w-7xl mx-auto px-6 py-20">
@@ -257,7 +326,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
               Ready to Get Started?
             </h2>
             <p className="text-lg text-blue-100 mb-8">
-              Become part of South Africa’s skill-based employment infrastructure
+              Join South Africa's trusted skill-verified talent infrastructure
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button 
@@ -272,7 +341,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
                 onClick={onSelectJobBridge}
                 size="lg"
                 variant="outline"
-                className="border-2 border-white text-black hover:bg-white/10 px-8 py-6 text-lg w-full sm:w-auto"
+                className="border-2 border-white text-white hover:bg-white/10 px-8 py-6 text-lg w-full sm:w-auto"
               >
                 I'm an Employer
                 <ArrowRight className="ml-2 w-5 h-5" />

@@ -19,6 +19,7 @@ import { useAuth } from "../context/AuthContext";
 import { applyForJob, uploadCandidateCV } from "../../lib/candidate";
 import { calculateProfileCompletion } from "@/lib/profileCompletion";
 import { AddSkillModal } from "./AddSkillModal";
+import { EditProfileModal } from "./EditProfileModal";
 
 
 interface CandidateDashboardProps {
@@ -33,6 +34,8 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [cvName, setCvName] = useState<string | null>(null);
   const [cvUploading, setCvUploading] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+
 
   useEffect(() => {
     if (profile?.cv_url) {
@@ -103,6 +106,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
           </h1>
 
           <p className="text-gray-600">Your skills journey continues. Keep building your verified profile.</p>
+
         </div>
 
         {/* Readiness Score Card */}
@@ -159,9 +163,30 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {profile?.candidate_skills?.map((item) => (
-                <Card key={item.skill} className="p-5">
-                  <h3 className="font-semibold">{item.skill}</h3>
-                  <Badge>{item.level}</Badge>
+                <Card key={item.skill} className="p-5 hover:shadow-md transition-shadow border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">{item.skill}</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {item.level}
+                      </Badge>
+                    </div>
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Score</span>
+                      <span className="font-semibold text-gray-900">{60}%</span>
+                    </div>
+                    <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`absolute left-0 top-0 h-full bg-purple-500`}
+                        style={{ width: `${60}%` }}
+                      />
+                    </div>
+                  </div>
                 </Card>
               ))}
 
@@ -354,6 +379,16 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
         {showAddSkill && (
           <AddSkillModal
             onClose={() => setShowAddSkill(false)}
+            onSuccess={async () => {
+              const data = await getCandidateDashboardData();
+              setProfile(data);
+            }}
+          />
+        )}
+        {showEditProfile && (
+          <EditProfileModal
+            profile={profile}
+            onClose={() => setShowEditProfile(false)}
             onSuccess={async () => {
               const data = await getCandidateDashboardData();
               setProfile(data);

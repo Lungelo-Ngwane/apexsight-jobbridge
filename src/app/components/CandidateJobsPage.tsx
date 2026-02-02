@@ -57,6 +57,8 @@ export default function CandidateJobsPage() {
     });
   }, [searchQuery, selectedTypes]);
 
+  console.log('Filtered Jobs:', jobs);
+
   // Pagination
   const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
   const startIndex = (currentPage - 1) * JOBS_PER_PAGE;

@@ -33,21 +33,34 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
             .finally(() => setLoading(false));
     }, [jobId]);
 
-    async function changeStatus(appId: string, status: string) {
-        await updateApplicationStatus(appId, status);
+async function changeStatus(appId: string, status: string) {
+    await updateApplicationStatus(appId, status);
 
-        setCandidates((prev) =>
-            prev.map((c) =>
-                c.id === appId ? { ...c, status } : c
-            )
+    console.log(`Updated application ${appId} to status ${status}`);
+
+    setCandidates((prev) => {
+        const updated = prev.map((c) =>
+            c.id === appId ? { ...c, status } : c
         );
-    }
+        console.log("Candidates after status change:", updated);
+        return updated;
+    });
+}
 
-    const filteredCandidates = candidates.filter(
-        (c) => c.status === activeStage
-    );
+
+    const filteredCandidates = candidates
+        .filter((c) => c.status === activeStage)
+        .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
 
     console.log("Rendering JobCandidatesModal with candidates:", candidates);
+
+    function getMatchColor(score: number) {
+        if (score >= 80) return "bg-green-100 text-green-700";
+        if (score >= 60) return "bg-yellow-100 text-yellow-700";
+        return "bg-red-100 text-red-700";
+    }
+
 
 
 
@@ -89,8 +102,12 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
                         {filteredCandidates.map((app) => (
                             <div
                                 key={app.id}
-                                className="border rounded-lg p-4 flex justify-between items-center"
+                                className={`border rounded-lg p-4 flex justify-between items-center ${app.status === "rejected" || app.status === "hired"
+                                    ? "opacity-60"
+                                    : ""
+                                    }`}
                             >
+
                                 <div>
                                     <p className="font-medium">
                                         {app.candidate.full_name}
@@ -98,6 +115,18 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
 
                                     <Badge className="mt-1">{app.status}</Badge>
                                 </div>
+                                <div className="flex items-center gap-3">
+                                    {typeof app.score === "number" && (
+                                        <span
+                                            className={`text-sm font-semibold px-2 py-1 rounded-full ${getMatchColor(
+                                                app.score
+                                            )}`}
+                                        >
+                                            {app.score}%
+                                        </span>
+                                    )}
+                                </div>
+
 
                                 <div className="flex gap-2">
                                     <Button
