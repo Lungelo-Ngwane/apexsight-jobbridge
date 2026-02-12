@@ -1,7 +1,7 @@
 import { EmployerLayout } from "./EmployerLayout";
-import { EmployerDashboard } from "./EmployerDashboard";
 import { EmployerOnboarding } from "./EmployerOnboarding";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
+import { Outlet } from "react-router-dom";
 
 export function EmployerApp() {
   const { profile, loading } = useEmployerProfile();
@@ -32,7 +32,7 @@ export function EmployerApp() {
 
   return (
     <EmployerLayout>
-      <EmployerDashboard />
+      <Outlet />
     </EmployerLayout>
   );
 }

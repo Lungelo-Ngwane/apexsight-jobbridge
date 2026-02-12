@@ -64,7 +64,7 @@ export function EmployerOnboarding({
                 <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
             </div>
 
-            <div className="w-full max-w-2xl relative">
+            <div className="w-full max-w-4xl relative">
                 {/* Logo */}
                 <div className="text-center mb-4">
                     {/* <img
@@ -98,7 +98,7 @@ export function EmployerOnboarding({
                 </div>
 
                 {/* Main Content Card */}
-                <Card className="p-8 md:p-10 shadow-2xl border-0 bg-white/80 backdrop-blur-sm w-4xl">
+                <Card className="w-full mx-auto p-8 md:p-10 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
                     {step === 0 && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">

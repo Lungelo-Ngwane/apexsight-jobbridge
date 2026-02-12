@@ -10,6 +10,9 @@ import { EmployerProfile } from "@/app/components/EmployerProfile";
 import { useAuth } from './context/AuthContext';
 import CandidateJobsPage from "./components/CandidateJobsPage";
 import { EmployerApp } from "./components/EmployerApp";
+import { EmployerJobsPage } from "./components/employer/EmployerJobsPage";
+import { EmployerBillingPage } from "./components/employer/EmployerBillingPage";
+import { EmployerSettingsPage } from "./components/employer/EmployerSettingsPage";
 // import { useAuth } from '../context/AuthContext'; // adjust path
 
 type View = 'home' | 'candidate-dashboard' | 'employer-dashboard';
@@ -86,8 +89,13 @@ export default function App() {
         <Route path="/candidate/jobs" element={<CandidateJobsPage />} />
         <Route path="/candidate/profile" element={<CandidateProfile />} />
 
-        <Route path="/employer/dashboard" element={<EmployerApp />} />
-        
+        <Route path="/employer" element={<EmployerApp />}>
+          <Route path="dashboard" element={<EmployerDashboard />} />
+          <Route path="jobs" element={<EmployerJobsPage />} />
+          <Route path="billing" element={<EmployerBillingPage />} />
+          <Route path="settings" element={<EmployerSettingsPage />} />
+        </Route>
+
         <Route path="/employer/profile" element={<EmployerProfile />} />
       </Routes>
 
