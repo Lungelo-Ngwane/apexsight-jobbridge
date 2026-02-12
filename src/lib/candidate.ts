@@ -186,23 +186,57 @@ export async function applyForJob(jobId: string) {
 
   if (scoreError) throw scoreError;
 
-  const { error } = await supabase.from("job_applications").insert({
-    job_id: jobId,
-    candidate_profile_id: profile.id,
-    status: "applied",
-    score: matchScore,
-  });
+  const { data: application, error } = await supabase
+    .from("job_applications")
+    .insert({
+      job_id: jobId,
+      candidate_profile_id: profile.id,
+      status: "applied",
+      score: matchScore,
+    })
+    .select("id")
+    .single();
 
   if (error) throw error;
 
-    await supabase.functions.invoke("send-notification-email", {
-    body: {
-      type: "APPLICATION_CREATED",
-      data: {
-        jobId,
+  if (application?.id) {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    let accessToken = session?.access_token;
+    const expiresAt = session?.expires_at ?? 0;
+
+    if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+      const { data: refreshed, error: refreshError } =
+        await supabase.auth.refreshSession();
+
+      accessToken = refreshed.session?.access_token;
+
+      if (refreshError || !accessToken) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+    }
+
+    if (sessionError || !accessToken) {
+      throw new Error("Not authenticated.");
+    }
+
+    const { error: invokeError } = await supabase.functions.invoke("send-notification-email", {
+      body: {
+        type: "APPLICATION_CREATED",
+        data: {
+          applicationId: application.id,
+        },
       },
-    },
-  });
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (invokeError) throw invokeError;
+  }
 }
 
 export async function updateCandidateProfile(input: {

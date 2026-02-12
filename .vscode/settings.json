@@ -1,7 +1,9 @@
 {
+  "deno.enable": true,
   "deno.enablePaths": [
     "supabase/functions"
   ],
+  "deno.importMap": "supabase/functions/send-notification-email/deno.json",
   "deno.lint": true,
   "deno.unstable": [
     "bare-node-builtins",

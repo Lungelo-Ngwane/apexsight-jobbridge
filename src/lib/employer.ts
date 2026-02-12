@@ -223,28 +223,52 @@ export async function updateApplicationStatus(
   applicationId: string,
   status: "shortlisted" | "rejected" | "hired",
 ) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  console.log(" Your Token ----> ", accessToken)
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
   const { error } = await supabase
     .from("job_applications")
     .update({ status })
     .eq("id", applicationId);
 
   if (error) throw error;
-  const { data, error: emailError } = await supabase.functions.invoke(
-    "send-notification-email",
-    {
+  if (status === "shortlisted") {
+    const { error: invokeError } = await supabase.functions.invoke("send-notification-email", {
       body: {
-        type: "APPLICATION_CREATED",
+        type: "CANDIDATE_SHORTLISTED",
         data: {
-          candidateEmail: "dlaminilungelo17@gmail.com",
-          employerEmail: "lungelongwane17@gmail.com",
-          jobTitle: "React Developer",
-          companyName: "ApexSight",
+          applicationId,
         },
       },
-    },
-  );
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
-  console.log("Email invoke result:", data, emailError);
+    if (invokeError) throw invokeError;
+  }
 }
 
 /* =========================
