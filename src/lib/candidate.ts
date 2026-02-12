@@ -194,6 +194,15 @@ export async function applyForJob(jobId: string) {
   });
 
   if (error) throw error;
+
+    await supabase.functions.invoke("send-notification-email", {
+    body: {
+      type: "APPLICATION_CREATED",
+      data: {
+        jobId,
+      },
+    },
+  });
 }
 
 export async function updateCandidateProfile(input: {

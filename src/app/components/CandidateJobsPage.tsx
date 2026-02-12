@@ -55,7 +55,7 @@ export default function CandidateJobsPage() {
 
       return matchesSearch && matchesType;
     });
-  }, [searchQuery, selectedTypes]);
+  }, [jobs, searchQuery, selectedTypes]);
 
   console.log('Filtered Jobs:', jobs);
 

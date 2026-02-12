@@ -56,16 +56,16 @@ export function Header({
   
 
   return (
-    <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+    <header className="border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-3">
+        <div className="flex items-center justify-between gap-8">
           {/* Logo + Products */}
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2.5">
               <img src={logo} alt="ApexSight Logo" className="h-10 w-auto" />
               <div className="flex flex-col">
-                <h1 className="text-xl font-semibold text-gray-900">ApexSight</h1>
-                <p className="text-xs text-gray-500">Talent Infrastructure</p>
+                <h1 className="text-lg font-bold text-gray-900">ApexSight</h1>
+                <p className="text-[10px] text-gray-500 leading-none">Talent Infrastructure</p>
               </div>
             </div>
 

@@ -13,7 +13,8 @@ import {
   MessageSquare,
   Filter,
   Search,
-  MoreVertical
+  MoreVertical,
+  Crown
 } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
 // import { PostJobModal } from "./components/PostJobModal";
@@ -30,6 +31,7 @@ import { StatBox } from "./ui/statbox";
 import { PostJobModal } from "./PostJobModal";
 import { JobCandidatesModal } from "./JobCandidatesModal";
 import { useEmployerProfile } from "../../hooks/useEmployerProfile";
+import { UpgradeModal } from "./UpgradeModal";
 
 // import { getEmployerOpenJobs } from "../../lib/employer";
 
@@ -50,6 +52,8 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const JOBS_PER_PAGE = 3;
   const [visibleCount, setVisibleCount] = useState(JOBS_PER_PAGE);
   const { profile } = useEmployerProfile();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
 
 
 
@@ -76,7 +80,46 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
   const openJobs = jobs.filter((job) => job.status === 'open');
 
-  console.log("Rendering EmployerDashboard with jobs:", selectedJobId);
+  const plan = profile?.plan ?? "free";
+  const hasAnalytics = plan !== "free";
+  const hasPremium = plan !== "free";
+
+  const analyticsStats = [
+    {
+      label: "Open Job Postings",
+      value: stats?.activeJobs ?? "—",
+      change: "+3 this month",
+      icon: Briefcase,
+      color: "bg-blue-500",
+      premium: false
+    },
+    {
+      label: "Total Applicants",
+      value: stats?.totalApplicants,
+      change: "+124 this week",
+      icon: Users,
+      color: "bg-emerald-500",
+      premium: false
+    },
+    {
+      label: "Avg. Time-to-Hire",
+      value: `1 days`,
+      change: "-7 days vs. avg",
+      icon: Clock,
+      color: "bg-purple-500",
+      premium: true
+    },
+    {
+      label: "Interview Ready",
+      value: stats?.shortlisted,
+      change: "Across all roles",
+      icon: Star,
+      color: "bg-amber-500",
+      premium: true
+    }
+  ];
+
+
 
   if (loading) {
     return <div className="p-8">Loading...</div>;
@@ -89,7 +132,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       </div>
     );
   }
-  console.log(jobs);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -114,48 +157,52 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {[
-            {
-              label: "Open Job Postings",
-              value: stats?.activeJobs ?? "—",
-              change: "+3 this month",
-              icon: Briefcase,
-              color: "bg-blue-500"
-            },
-            {
-              label: "Total Applicants",
-              value: stats?.totalApplicants,
-              change: "+124 this week",
-              icon: Users,
-              color: "bg-emerald-500"
-            },
-            {
-              label: "Avg. Time-to-Hire",
-              value: `1 days`,
-              change: "-7 days vs. avg",
-              icon: Clock,
-              color: "bg-purple-500"
-            },
-            {
-              label: "Interview Ready",
-              value: stats?.shortlisted,
-              change: "Across all roles",
-              icon: Star,
-              color: "bg-amber-500"
-            }
-          ].map((stat, index) => (
-            <Card key={index} className="p-6 border-gray-200">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5 text-white" />
-                </div>
+          {analyticsStats.map((stat, index) => {
+            const isLocked = stat.premium && !hasPremium;
+
+            return (
+              <div key={index} className="relative">
+                <Card
+                  className={`
+            p-6 border-gray-200 transition
+            ${isLocked ? "blur-sm pointer-events-none select-none" : ""}
+          `}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center`}>
+                      <stat.icon className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+
+                  <div className="text-3xl font-bold text-gray-900 mb-1">
+                    {stat.value}
+                  </div>
+                  <div className="text-sm text-gray-600 mb-2">
+                    {stat.label}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {stat.change}
+                  </div>
+                </Card>
+
+                {/* 🔒 Upgrade overlay */}
+                {isLocked && (
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg"
+                  >
+                    <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold rounded-full shadow-lg">
+                      <Crown className="w-4 h-4" />
+                      Upgrade to Unlock
+                    </div>
+                  </button>
+                )}
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
-              <div className="text-sm text-gray-600 mb-2">{stat.label}</div>
-              <div className="text-xs text-gray-500">{stat.change}</div>
-            </Card>
-          ))}
+            );
+          })}
         </div>
+
+
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -311,18 +358,42 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   <Plus className="w-4 h-4 mr-2" />
                   Post New Job
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Users className="w-4 h-4 mr-2" />
-                  Browse Talent Pool
-                </Button>
+
+                {hasAnalytics ? (
+                  <Button variant="outline" className="w-full justify-start">
+                    <Users className="w-4 h-4 mr-2" />
+                    Browse Talent Pool
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-blue-600"
+                    onClick={() => setShowUpgradeModal(true)}
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Upgrade to Browse Talent Pool
+                  </Button>
+                )}
                 <Button variant="outline" className="w-full justify-start">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Message Candidates
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  View Analytics
-                </Button>
+                {hasAnalytics ? (
+                  <Button variant="outline" className="w-full justify-start">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    View Analytics
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-blue-600"
+                    onClick={() => setShowUpgradeModal(true)}
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Upgrade to Analytics
+                  </Button>
+                )}
+
               </div>
             </Card>
 
@@ -365,28 +436,48 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             </Card>
 
             {/* Skill Insights */}
-            <Card className="p-6 border-gray-200 bg-blue-50">
-              <h3 className="font-semibold text-gray-900 mb-2">Talent Pool Insights</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Top skills available in your talent pool this week
-              </p>
-              <div className="space-y-2">
-                {[
-                  { skill: "Python", count: 1240 },
-                  { skill: "Data Analysis", count: 980 },
-                  { skill: "SQL", count: 850 },
-                  { skill: "Project Management", count: 720 }
-                ].map((item, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700">{item.skill}</span>
-                    <span className="font-medium text-gray-900">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-              <Button variant="outline" className="w-full mt-4">
-                View Full Report
-              </Button>
-            </Card>
+            {hasAnalytics && (
+              <Card className="p-6 border-gray-200 bg-blue-50">
+                <h3 className="font-semibold text-gray-900 mb-2">Talent Pool Insights</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Top skills available in your talent pool this week
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { skill: "Python", count: 1240 },
+                    { skill: "Data Analysis", count: 980 },
+                    { skill: "SQL", count: 850 },
+                    { skill: "Project Management", count: 720 }
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700">{item.skill}</span>
+                      <span className="font-medium text-gray-900">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="outline" className="w-full mt-4">
+                  View Full Report
+                </Button>
+              </Card>
+            )}
+            {!hasAnalytics && (
+              <Card className="p-6 border-dashed border-2 border-purple-300 bg-purple-50">
+                <h3 className="font-semibold text-purple-900 mb-2">
+                  Talent Insights (Premium)
+                </h3>
+                <p className="text-sm text-purple-700 mb-4">
+                  See top skills, candidate trends, and hiring performance.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUpgradeModal(true)}
+                >
+                  Upgrade to Unlock
+                </Button>
+              </Card>
+            )}
+
+
           </div>
         </div>
       </div>
@@ -405,7 +496,9 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
           onClose={() => setSelectedJobId(null)}
         />
       )}
-
+      {showUpgradeModal && (
+        <UpgradeModal plan={profile?.plan ?? "free"} onClose={() => setShowUpgradeModal(false)} />
+      )}
     </div>
   );
 }

@@ -20,7 +20,6 @@ export async function registerUser(
       role,
     };
 
-    console.log(userData);
     if (role === "employer") {
       if (!company || company.trim() === "") {
         throw new Error("Company name is required for employers");
@@ -28,7 +27,6 @@ export async function registerUser(
       userData.company_name = company;
     }
 
-    console.log(userData);
     // Sign up user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -36,10 +34,7 @@ export async function registerUser(
       options: { data: userData },
     });
 
-    console.log(" This error =====>", authData);
-
     if (authError) throw new Error(authError.message);
-    console.log("User signed up:", authData);
 
     return authData.user?.id || null;
   } catch (err: any) {
@@ -64,14 +59,10 @@ export async function loginUser(email: string, password: string) {
 
     if (authError) throw authError;
 
-    console.log("User logged in:", authData);
-
     // Optional: check session
     const { data: sessionData, error: sessionError } =
       await supabase.auth.getSession();
     if (sessionError) console.warn("Could not get session:", sessionError);
-
-    console.log("Current session:", sessionData);
 
     return authData.user || null;
   } catch (err: any) {

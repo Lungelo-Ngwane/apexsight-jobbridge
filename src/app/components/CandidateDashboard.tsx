@@ -200,7 +200,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             </div>
 
             {/* Assessment Progress */}
-            <div>
+            {/* <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Assessment Progress</h2>
               <Card className="p-6 border-gray-200">
                 {profile?.candidate_assessments.map((assessment, index) => (
@@ -210,10 +210,62 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                     <span>{assessment.status}</span>
                   </div>
                 ))}
-                {/* <Button onClick={() => applyForJob(job.id)}>
-                  Apply
-                </Button> */}
 
+              </Card>
+            </div> */}
+                        <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Assessment Progress</h2>
+              <Card className="p-6 border-gray-200">
+                <div className="space-y-4">
+                  {[
+                    {
+                      name: "Digital Marketing Fundamentals",
+                      progress: 100,
+                      status: "Completed",
+                      icon: CheckCircle2,
+                      iconColor: "text-green-600"
+                    },
+                    {
+                      name: "SQL Database Management",
+                      progress: 65,
+                      status: "In Progress",
+                      icon: Clock,
+                      iconColor: "text-blue-600"
+                    },
+                    {
+                      name: "Business Analytics",
+                      progress: 0,
+                      status: "Not Started",
+                      icon: Target,
+                      iconColor: "text-gray-400"
+                    }
+                  ].map((assessment, index) => (
+                    <div key={index} className="flex items-center gap-4">
+                      <assessment.icon className={`w-5 h-5 ${assessment.iconColor} flex-shrink-0`} />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-gray-900">{assessment.name}</span>
+                          <span className="text-sm text-gray-600">{assessment.progress}%</span>
+                        </div>
+                        <Progress value={assessment.progress} className="h-1.5" />
+                      </div>
+                      {assessment.progress > 0 && assessment.progress < 100 && (
+                        <Button size="sm" variant="ghost" className="text-blue-600">
+                          Continue
+                        </Button>
+                      )}
+                      {assessment.progress === 0 && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={onStartAssessment}
+                        >
+                          Start
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </Card>
             </div>
           </div>
