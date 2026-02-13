@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Eye,
   Star,
+  CheckCircle,
   MessageSquare,
   Filter,
   Search,
@@ -225,13 +226,13 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                 </Card>
               )}
 
-              {!jobsLoading && jobs.length === 0 && (
+              {!jobsLoading && openJobs.length === 0 && (
                 <Card className="p-6 text-center text-gray-500">
                   No jobs posted yet
                 </Card>
               )}
 
-              {jobs.slice(0, visibleCount).map((job) => (
+              {openJobs.slice(0, visibleCount).map((job) => (
                 <Card
                   key={job.id}
                   className="p-6 border-gray-200 hover:shadow-md transition-shadow"
@@ -268,8 +269,8 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="bg-blue-50 rounded-lg p-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-blue-600 mb-1">
                         <Users className="w-4 h-4" />
                         <span className="text-xs font-medium">Applicants</span>
@@ -290,8 +291,8 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                         ).length ?? 0
                       }
                     /> */}
-                    <div className="bg-emerald-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-amber-600 mb-1">
                         <Star className="w-4 h-4" />
                         <span className="text-xs font-medium">Shortlisted</span>
                       </div>
@@ -300,7 +301,17 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                       ).length ?? 0}</div>
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-3">
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                        <CheckCircle className="w-4 h-4" />
+                        <span className="text-xs font-medium">Interviewed</span>
+                      </div>
+                      <div className="text-xl font-bold text-gray-900">{job.job_applications?.filter(
+                        (a) => a.status === "interview"
+                      ).length ?? 0}</div>
+                    </div>
+
+                    <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-purple-600 mb-1">
                         <Eye className="w-4 h-4" />
                         <span className="text-xs font-medium">Views</span>
@@ -332,7 +343,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
             </div>
 
-            {visibleCount < jobs.length && (
+            {visibleCount < openJobs.length && (
               <Button
                 variant="outline"
                 className="w-full"

@@ -1,5 +1,7 @@
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
+import { getActivePlans, startSubscriptionCheckout, type BillingPlan, type BillingPlanName } from "@/lib/employer";
 import {
     X,
     Crown,
@@ -17,6 +19,38 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
+    const [loading, setLoading] = useState(false);
+    const [plans, setPlans] = useState<BillingPlan[]>([]);
+
+    const targetPlan = useMemo((): BillingPlanName => {
+        const normalizedPlan = plan.toLowerCase();
+        if (normalizedPlan === "free") return "starter";
+        if (normalizedPlan === "starter") return "professional";
+        return "enterprise";
+    }, [plan]);
+
+    const targetPlanDetails = useMemo(
+        () => plans.find((p) => p.name === targetPlan),
+        [plans, targetPlan],
+    );
+
+    useEffect(() => {
+        getActivePlans()
+            .then(setPlans)
+            .catch((error) => console.error("Failed to load plans", error));
+    }, []);
+
+    async function handleUpgrade() {
+        try {
+            setLoading(true);
+            await startSubscriptionCheckout(targetPlan);
+        } catch (error) {
+            console.error("Failed to start checkout", error);
+            alert("Unable to start checkout right now. Please try again.");
+            setLoading(false);
+        }
+    }
+
     return (
         <div
             className="fixed inset-0 bg-black/60  backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
@@ -107,9 +141,13 @@ export function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 mb-6 text-white">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-medium text-blue-100 mb-1">Starter Plan</div>
+                                <div className="text-sm font-medium text-blue-100 mb-1">
+                                    {(targetPlanDetails?.label ?? targetPlan).toString()} Plan
+                                </div>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-bold">R2,499</span>
+                                    <span className="text-4xl font-bold">
+                                        R{((targetPlanDetails?.priceMonthly ?? 0) / 100).toLocaleString()}
+                                    </span>
                                     <span className="text-blue-100">/ month</span>
                                 </div>
                             </div>
@@ -125,10 +163,12 @@ export function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
                     {/* Action buttons */}
                     <div className="flex flex-col sm:flex-row gap-3">
                         <Button
+                            onClick={handleUpgrade}
+                            disabled={loading}
                             className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
                         >
                             <Crown className="w-5 h-5 mr-2" />
-                            Upgrade Now
+                            {loading ? "Redirecting..." : "Upgrade Now"}
                         </Button>
                         <Button
                             variant="outline"

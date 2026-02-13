@@ -1,6 +1,15 @@
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
+import {
+  confirmSubscriptionCheckout,
+  getActivePlans,
+  startSubscriptionCheckout,
+  type BillingPlan,
+  type BillingPlanName,
+} from "@/lib/employer";
+import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { 
   CreditCard,
   Crown,
@@ -20,45 +29,124 @@ import {
 import { Progress } from "@/app/components/ui/progress";
 
 export function EmployerBillingPage() {
+  const { profile } = useEmployerProfile();
+  const [loadingSource, setLoadingSource] = useState<
+    "header" | "card" | "sidebar" | null
+  >(null);
+  const [verifyingCheckout, setVerifyingCheckout] = useState(false);
+  const [plans, setPlans] = useState<BillingPlan[]>([]);
+
+  useEffect(() => {
+    getActivePlans()
+      .then(setPlans)
+      .catch((error) => console.error("Failed to load plans", error));
+  }, []);
+
+  useEffect(() => {
+    async function confirmFromCallback() {
+      const params = new URLSearchParams(window.location.search);
+      const success = params.get("success");
+      const reference = params.get("reference");
+
+      if (success !== "true" || !reference) return;
+
+      try {
+        setVerifyingCheckout(true);
+        await confirmSubscriptionCheckout(reference);
+        alert("Plan upgraded successfully.");
+      } catch (error) {
+        console.error("Failed to confirm subscription", error);
+        alert("Payment received, but plan update failed. Please contact support.");
+      } finally {
+        setVerifyingCheckout(false);
+        window.history.replaceState({}, "", "/employer/billing");
+      }
+    }
+
+    confirmFromCallback();
+  }, []);
+
+  async function handleUpgrade(
+    plan: BillingPlanName,
+    source: "header" | "card" | "sidebar",
+  ) {
+    try {
+      setLoadingSource(source);
+      await startSubscriptionCheckout(plan);
+    } catch (error) {
+      console.error("Failed to start checkout", error);
+      alert("Unable to start checkout right now. Please try again.");
+      setLoadingSource(null);
+    }
+  }
+
+  const formatZarFromKobo = (amount: number) => `R ${Math.round(amount / 100).toLocaleString()}`;
+
+  const currentPlanName = String(profile?.plan ?? "free").toLowerCase();
+  const currentPlanRow =
+    plans.find((p) => p.name === currentPlanName) ??
+    plans.find((p) => p.name === "starter") ??
+    null;
+
+  const nextUpgradePlan = useMemo((): BillingPlanName | null => {
+    if (currentPlanName === "free") return "starter";
+    if (currentPlanName === "starter") return "professional";
+    if (currentPlanName === "professional") return "enterprise";
+    return null;
+  }, [currentPlanName]);
+
+  const nextUpgradeLabel = nextUpgradePlan
+    ? `${nextUpgradePlan.charAt(0).toUpperCase()}${nextUpgradePlan.slice(1)}`
+    : null;
+
+  const totalKobo = currentPlanRow?.priceMonthly ?? 0;
+  const vatKobo = Math.round(totalKobo * 0.15);
+  const subscriptionKobo = totalKobo - vatKobo;
+
   const currentPlan = {
-    name: "Professional",
-    price: "R 4,999",
+    name: currentPlanRow?.label ?? "Starter",
+    price: currentPlanRow ? formatZarFromKobo(currentPlanRow.priceMonthly) : "R 999",
     period: "per month",
     icon: Zap,
     features: [
-      "50 active job postings",
-      "Unlimited candidate views",
+      `${currentPlanRow?.jobLimit ?? 5} active job postings`,
+      `${currentPlanRow?.candidateViewLimit ?? 50} candidate views/month`,
       "Advanced analytics",
       "Priority support",
-      "Team collaboration (5 users)"
+      `Team collaboration (${currentPlanRow?.userLimit ?? 2} users)`,
     ],
     usage: {
-      jobs: { used: 32, total: 50 },
-      users: { used: 3, total: 5 }
+      jobs: { used: 12, total: currentPlanRow?.jobLimit ?? 5 },
+      users: { used: 3, total: currentPlanRow?.userLimit ?? 2 }
     },
     renewalDate: "March 15, 2026",
     status: "Active"
   };
 
+  const jobUsagePercent = currentPlan.usage.jobs.total > 0
+    ? Math.round((currentPlan.usage.jobs.used / currentPlan.usage.jobs.total) * 100)
+    : 0;
+  const showUsageAlert = jobUsagePercent > 60;
+
   const invoices = [
     {
       id: "INV-2026-002",
       date: "Feb 1, 2026",
-      amount: "R 4,999",
+      amount: "R 2,999",
       status: "Paid",
       downloadUrl: "#"
     },
     {
       id: "INV-2026-001",
       date: "Jan 1, 2026",
-      amount: "R 4,999",
+      amount: "R 2,999",
       status: "Paid",
       downloadUrl: "#"
     },
     {
       id: "INV-2025-012",
       date: "Dec 1, 2025",
-      amount: "R 4,999",
+      amount: "R 2,999",
       status: "Paid",
       downloadUrl: "#"
     },
@@ -75,30 +163,30 @@ export function EmployerBillingPage() {
     {
       name: "Starter",
       icon: Building2,
-      price: "R 2,499",
+      price: formatZarFromKobo(plans.find((p) => p.name === "starter")?.priceMonthly ?? 99900),
       period: "per month",
       description: "Perfect for small businesses",
       features: [
-        "10 active job postings",
-        "100 candidate views/month",
+        `${plans.find((p) => p.name === "starter")?.jobLimit ?? 5} active job postings`,
+        `${plans.find((p) => p.name === "starter")?.candidateViewLimit ?? 50} candidate views/month`,
         "Basic analytics",
         "Email support",
-        "1 user"
+        `${plans.find((p) => p.name === "starter")?.userLimit ?? 2} users`,
       ],
       color: "from-gray-500 to-gray-600"
     },
     {
       name: "Professional",
       icon: Zap,
-      price: "R 4,999",
+      price: formatZarFromKobo(plans.find((p) => p.name === "professional")?.priceMonthly ?? 299900),
       period: "per month",
       description: "Most popular for growing teams",
       features: [
-        "50 active job postings",
-        "Unlimited candidate views",
+        `${plans.find((p) => p.name === "professional")?.jobLimit ?? 20} active job postings`,
+        `${plans.find((p) => p.name === "professional")?.candidateViewLimit ?? 300} candidate views/month`,
         "Advanced analytics",
         "Priority support",
-        "Team collaboration (5 users)"
+        `Team collaboration (${plans.find((p) => p.name === "professional")?.userLimit ?? 5} users)`,
       ],
       color: "from-blue-500 to-blue-600",
       current: true,
@@ -107,15 +195,15 @@ export function EmployerBillingPage() {
     {
       name: "Enterprise",
       icon: Crown,
-      price: "Custom",
-      period: "contact sales",
+      price: formatZarFromKobo(plans.find((p) => p.name === "enterprise")?.priceMonthly ?? 999900),
+      period: "per month",
       description: "For large organizations",
       features: [
-        "Unlimited job postings",
-        "Unlimited candidate views",
+        `${plans.find((p) => p.name === "enterprise")?.jobLimit ?? 999} active job postings`,
+        `${plans.find((p) => p.name === "enterprise")?.candidateViewLimit ?? 9999} candidate views/month`,
         "Custom analytics & reporting",
         "Dedicated account manager",
-        "Unlimited users",
+        `${plans.find((p) => p.name === "enterprise")?.userLimit ?? 50} users`,
         "API access",
         "Custom integrations"
       ],
@@ -134,10 +222,12 @@ export function EmployerBillingPage() {
               <p className="text-sm text-gray-600">Manage your plan, billing, and invoices</p>
             </div>
             <Button 
+              onClick={() => nextUpgradePlan && handleUpgrade(nextUpgradePlan, "header")}
+              disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30"
             >
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade Plan
+              {loadingSource === "header" ? "Redirecting..." : (nextUpgradeLabel ? `Upgrade to ${nextUpgradeLabel}` : "Current Top Plan")}
             </Button>
           </div>
         </div>
@@ -234,9 +324,15 @@ export function EmployerBillingPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+                  <Button
+                    onClick={() => nextUpgradePlan && handleUpgrade(nextUpgradePlan, "card")}
+                    disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                  >
                     <Crown className="w-4 h-4 mr-2" />
-                    Upgrade to Enterprise
+                    {loadingSource === "card"
+                      ? "Redirecting..."
+                      : (nextUpgradeLabel ? `Upgrade to ${nextUpgradeLabel}` : "Current Top Plan")}
                   </Button>
                   <Button variant="outline" className="border-gray-300">
                     Change Plan
@@ -314,39 +410,43 @@ export function EmployerBillingPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                   <span className="text-sm text-gray-600">Subscription</span>
-                  <span className="text-sm font-bold text-gray-900">{currentPlan.price}</span>
+                  <span className="text-sm font-bold text-gray-900">{formatZarFromKobo(subscriptionKobo)}</span>
                 </div>
                 <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                   <span className="text-sm text-gray-600">Tax (VAT 15%)</span>
-                  <span className="text-sm font-bold text-gray-900">R 749.85</span>
+                  <span className="text-sm font-bold text-gray-900">{formatZarFromKobo(vatKobo)}</span>
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-base font-bold text-gray-900">Total</span>
-                  <span className="text-lg font-bold text-gray-900">R 5,748.85</span>
+                  <span className="text-lg font-bold text-gray-900">{formatZarFromKobo(totalKobo)}</span>
                 </div>
               </div>
             </Card>
 
             {/* Usage Alert */}
-            <Card className="p-5 bg-amber-50 border-amber-200 shadow-md">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <AlertCircle className="w-5 h-5 text-white" />
+            {showUsageAlert && (
+              <Card className="p-5 bg-amber-50 border-amber-200 shadow-md">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900 mb-1">Approaching Limit</h4>
+                    <p className="text-xs text-gray-700 mb-3">
+                      You&apos;re using {jobUsagePercent}% of your job posting slots. Consider upgrading to avoid disruption.
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={() => nextUpgradePlan && handleUpgrade(nextUpgradePlan, "sidebar")}
+                      disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
+                      className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                    >
+                      {loadingSource === "sidebar" ? "Redirecting..." : "Upgrade Now"}
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 mb-1">Approaching Limit</h4>
-                  <p className="text-xs text-gray-700 mb-3">
-                    You're using 64% of your job posting slots. Consider upgrading to avoid disruption.
-                  </p>
-                  <Button 
-                    size="sm" 
-                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                  >
-                    Upgrade Now
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            )}
 
             {/* Stats */}
             <Card className="p-6 border-gray-200 shadow-md">

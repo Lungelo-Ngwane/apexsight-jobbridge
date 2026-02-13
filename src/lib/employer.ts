@@ -1,6 +1,19 @@
 import { PLAN_LIMITS } from "./plan";
 import { supabase } from "./supabase";
 
+export type BillingPlanName = "starter" | "professional" | "enterprise";
+
+export interface BillingPlan {
+  id: string;
+  name: BillingPlanName;
+  label: string;
+  priceMonthly: number;
+  jobLimit: number | null;
+  userLimit: number | null;
+  candidateViewLimit: number | null;
+  paystackPlanCode: string | null;
+}
+
 /* =========================
    CREATE JOB
 ========================= */
@@ -221,7 +234,7 @@ export async function getJobApplicants(jobId: string) {
 ========================= */
 export async function updateApplicationStatus(
   applicationId: string,
-  status: "shortlisted" | "rejected" | "hired",
+  status: "shortlisted" | "interview" | "rejected" | "hired",
 ) {
   const {
     data: { session },
@@ -231,7 +244,6 @@ export async function updateApplicationStatus(
   let accessToken = session?.access_token;
   const expiresAt = session?.expires_at ?? 0;
 
-  console.log(" Your Token ----> ", accessToken)
 
   if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
     const { data: refreshed, error: refreshError } =
@@ -424,6 +436,160 @@ export async function getRankedCandidates(jobId: string) {
     )
     .eq("job_id", jobId)
     .order("score", { ascending: false });
+}
+
+export async function startSubscriptionCheckout(
+  planName: BillingPlanName,
+) {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("Not authenticated");
+  }
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (employerError || !employer?.id) {
+    throw new Error("Employer profile not found");
+  }
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("initialize-subscription", {
+    body: {
+      employerId: employer.id,
+      planName,
+      email: user.email,
+    },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) throw error;
+
+  const checkoutUrl =
+    data?.authorization_url ?? data?.authorizationUrl ?? null;
+
+  if (!checkoutUrl) {
+    throw new Error("Failed to start checkout.");
+  }
+
+  window.location.assign(checkoutUrl);
+}
+
+export async function getActivePlans(): Promise<BillingPlan[]> {
+  const { data, error } = await supabase
+    .from("plans")
+    .select(
+      "id, name, price_monthly, job_limit, user_limit, candidate_view_limit, paystack_plan_code, active",
+    )
+    .eq("active", true)
+    .order("price_monthly", { ascending: true });
+
+  if (error) throw error;
+
+  const supported = new Set(["starter", "professional", "enterprise"]);
+
+  return (data ?? [])
+    .map((row) => {
+      const normalized = String(row.name ?? "").trim().toLowerCase();
+      if (!supported.has(normalized)) return null;
+
+      return {
+        id: row.id,
+        name: normalized as BillingPlanName,
+        label: row.name,
+        priceMonthly: Number(row.price_monthly ?? 0),
+        jobLimit: row.job_limit ?? null,
+        userLimit: row.user_limit ?? null,
+        candidateViewLimit: row.candidate_view_limit ?? null,
+        paystackPlanCode: row.paystack_plan_code ?? null,
+      };
+    })
+    .filter((plan): plan is BillingPlan => plan !== null);
+}
+
+export async function confirmSubscriptionCheckout(reference: string) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("confirm-subscription", {
+    body: { reference },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed =
+      (error as unknown as { context?: { json?: () => Promise<{ error?: string }> } })
+        ?.context?.json
+        ? await (error as unknown as { context: { json: () => Promise<{ error?: string; detail?: string; code?: string }> } })
+            .context.json()
+            .catch(() => null)
+        : null;
+
+    const message =
+      parsed?.error ??
+      parsed?.detail ??
+      error.message ??
+      "Failed to confirm subscription.";
+
+    const withCode = parsed?.code ? `${message} (code: ${parsed.code})` : message;
+
+    throw new Error(withCode);
+  }
+
+  return data;
 }
 
 export async function updateEmployerProfile(payload: {

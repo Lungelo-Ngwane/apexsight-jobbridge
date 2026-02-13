@@ -14,6 +14,7 @@ interface Props {
 const PIPELINE_STAGES = [
     { key: "applied", label: "Applied" },
     { key: "shortlisted", label: "Shortlisted" },
+    { key: "interview", label: "Interview" },
     { key: "rejected", label: "Rejected" },
     { key: "hired", label: "Hired" },
 ];
@@ -33,7 +34,10 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
             .finally(() => setLoading(false));
     }, [jobId]);
 
-async function changeStatus(appId: string, status: string) {
+async function changeStatus(
+    appId: string,
+    status: "shortlisted" | "interview" | "rejected" | "hired",
+) {
     await updateApplicationStatus(appId, status);
 
     console.log(`Updated application ${appId} to status ${status}`);
@@ -144,6 +148,14 @@ async function changeStatus(appId: string, status: string) {
                                         onClick={() => changeStatus(app.id, "shortlisted")}
                                     >
                                         Shortlist
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={app.status === "interview"}
+                                        onClick={() => changeStatus(app.id, "interview")}
+                                    >
+                                        Interview
                                     </Button>
 
                                     <Button

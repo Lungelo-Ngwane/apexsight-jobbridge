@@ -8,6 +8,10 @@ export const PLAN_LIMITS = {
     maxActiveJobs: 5,
     analytics: true,
   },
+  professional: {
+    maxActiveJobs: 20,
+    analytics: true,
+  },
   enterprise: {
     maxActiveJobs: Infinity,
     analytics: true,
