@@ -109,6 +109,7 @@ export async function getOpenJobs() {
       description,
       location,
       employment_type,
+      experience_level,
       created_at,
       employer_id
     `)
@@ -123,26 +124,26 @@ const employerIds = [...new Set(jobs.map(job => String(job.employer_id)))]; // a
 
 const { data: employers, error: empError } = await supabase
   .from("employer_profiles")
-  .select("id, company_name")
+  .select("id, company_name, industry")
   .in("id", employerIds); // <-- must be an array
 if (empError) throw empError;
 
-console.log("Employers fetched:", employers);
 
-
-  // Map employer_id -> company_name
+  // Map employer_id -> employer details
   const employerMap = (employers || []).reduce((acc, emp) => {
-    acc[String(emp.id)] = emp.company_name;
+    acc[String(emp.id)] = {
+      company_name: emp.company_name,
+      industry: emp.industry ?? null,
+    };
     return acc;
-  }, {} as Record<string, string>);
-
-  console.log("Employer Map:", employerMap);
+  }, {} as Record<string, { company_name: string; industry: string | null }>);
 
   // Attach employer info to jobs
   const jobsWithEmployer = jobs.map(job => ({
     ...job,
     employer: {
-      company_name: employerMap[String(job.employer_id)] || "Unknown Company"
+      company_name: employerMap[String(job.employer_id)]?.company_name || "Unknown Company",
+      industry: employerMap[String(job.employer_id)]?.industry || null,
     }
   }));
 
