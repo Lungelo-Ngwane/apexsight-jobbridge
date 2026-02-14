@@ -3,6 +3,7 @@ import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import {
+  cancelSubscription,
   confirmSubscriptionCheckout,
   getActivePlans,
   startSubscriptionCheckout,
@@ -34,6 +35,7 @@ export function EmployerBillingPage() {
     "header" | "card" | "sidebar" | null
   >(null);
   const [verifyingCheckout, setVerifyingCheckout] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
 
   useEffect(() => {
@@ -80,12 +82,33 @@ export function EmployerBillingPage() {
     }
   }
 
+  async function handleCancelSubscription() {
+    const shouldCancel = window.confirm(
+      "Cancel your subscription and downgrade to Free?",
+    );
+
+    if (!shouldCancel) return;
+
+    try {
+      setCancellingSubscription(true);
+      await cancelSubscription();
+      alert("Subscription cancelled. Your account is now on the Free plan.");
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to cancel subscription", error);
+      alert("Unable to cancel subscription right now. Please try again.");
+    } finally {
+      setCancellingSubscription(false);
+    }
+  }
+
   const formatZarFromKobo = (amount: number) => `R ${Math.round(amount / 100).toLocaleString()}`;
 
   const currentPlanName = String(profile?.plan ?? "free").toLowerCase();
+  const isFreePlan = currentPlanName === "free";
   const currentPlanRow =
     plans.find((p) => p.name === currentPlanName) ??
-    plans.find((p) => p.name === "starter") ??
+    (isFreePlan ? null : plans.find((p) => p.name === "starter")) ??
     null;
 
   const nextUpgradePlan = useMemo((): BillingPlanName | null => {
@@ -103,25 +126,45 @@ export function EmployerBillingPage() {
   const vatKobo = Math.round(totalKobo * 0.15);
   const subscriptionKobo = totalKobo - vatKobo;
 
-  const currentPlan = {
-    name: currentPlanRow?.label ?? "Starter",
-    price: currentPlanRow ? formatZarFromKobo(currentPlanRow.priceMonthly) : "R 999",
-    period: "per month",
-    icon: Zap,
-    features: [
-      `${currentPlanRow?.jobLimit ?? 5} active job postings`,
-      `${currentPlanRow?.candidateViewLimit ?? 50} candidate views/month`,
-      "Advanced analytics",
-      "Priority support",
-      `Team collaboration (${currentPlanRow?.userLimit ?? 2} users)`,
-    ],
-    usage: {
-      jobs: { used: 12, total: currentPlanRow?.jobLimit ?? 5 },
-      users: { used: 3, total: currentPlanRow?.userLimit ?? 2 }
-    },
-    renewalDate: "March 15, 2026",
-    status: "Active"
-  };
+  const currentPlan = isFreePlan
+    ? {
+        name: "Free",
+        price: "R 0",
+        period: "per month",
+        icon: Zap,
+        features: [
+          "1 active job posting",
+          "10 candidate views/month",
+          "Basic dashboard",
+          "Community support",
+          "1 team member",
+        ],
+        usage: {
+          jobs: { used: 0, total: 1 },
+          users: { used: 1, total: 1 },
+        },
+        renewalDate: "No active subscription",
+        status: "Free",
+      }
+    : {
+        name: currentPlanRow?.label ?? "Starter",
+        price: currentPlanRow ? formatZarFromKobo(currentPlanRow.priceMonthly) : "R 999",
+        period: "per month",
+        icon: Zap,
+        features: [
+          `${currentPlanRow?.jobLimit ?? 5} active job postings`,
+          `${currentPlanRow?.candidateViewLimit ?? 50} candidate views/month`,
+          "Advanced analytics",
+          "Priority support",
+          `Team collaboration (${currentPlanRow?.userLimit ?? 2} users)`,
+        ],
+        usage: {
+          jobs: { used: 12, total: currentPlanRow?.jobLimit ?? 5 },
+          users: { used: 3, total: currentPlanRow?.userLimit ?? 2 }
+        },
+        renewalDate: "March 15, 2026",
+        status: "Active",
+      };
 
   const jobUsagePercent = currentPlan.usage.jobs.total > 0
     ? Math.round((currentPlan.usage.jobs.used / currentPlan.usage.jobs.total) * 100)
@@ -337,8 +380,13 @@ export function EmployerBillingPage() {
                   <Button variant="outline" className="border-gray-300">
                     Change Plan
                   </Button>
-                  <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                    Cancel Subscription
+                  <Button
+                    variant="ghost"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={handleCancelSubscription}
+                    disabled={loadingSource !== null || verifyingCheckout || cancellingSubscription}
+                  >
+                    {cancellingSubscription ? "Cancelling..." : "Cancel Subscription"}
                   </Button>
                 </div>
               </div>

@@ -592,6 +592,58 @@ export async function confirmSubscriptionCheckout(reference: string) {
   return data;
 }
 
+export async function cancelSubscription() {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("cancel-subscription", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed =
+      (error as unknown as { context?: { json?: () => Promise<{ error?: string }> } })
+        ?.context?.json
+        ? await (error as unknown as { context: { json: () => Promise<{ error?: string; detail?: string; code?: string }> } })
+            .context.json()
+            .catch(() => null)
+        : null;
+
+    const message =
+      parsed?.error ??
+      parsed?.detail ??
+      error.message ??
+      "Failed to cancel subscription.";
+
+    const withCode = parsed?.code ? `${message} (code: ${parsed.code})` : message;
+    throw new Error(withCode);
+  }
+
+  return data;
+}
+
 export async function updateEmployerProfile(payload: {
   company_name?: string;
   industry?: string | null;

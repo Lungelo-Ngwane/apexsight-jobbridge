@@ -148,26 +148,51 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (employer.plan !== targetPlan) {
-      const { error: updateError } = await supabase
-        .from("employer_profiles")
-        .update({ plan: targetPlan })
-        .eq("id", employer.id)
-        .eq("user_id", user.id);
+    const customerCode =
+      paystackData?.data?.customer?.customer_code ??
+      null;
 
-      if (updateError) {
-        return new Response(
-          JSON.stringify({
-            error: `Failed to update employer plan: ${updateError.message}`,
-            detail: updateError.message,
-            code: updateError.code,
-          }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
+    const subscriptionCode =
+      paystackData?.data?.subscription?.subscription_code ??
+      paystackData?.data?.subscription_code ??
+      null;
+
+    const subscriptionEmailToken =
+      paystackData?.data?.subscription?.email_token ??
+      null;
+
+    const updates: Record<string, unknown> = {
+      plan: targetPlan,
+      subscription_status: "active",
+      paystack_customer_code: customerCode,
+    };
+
+    if (subscriptionCode) {
+      updates.paystack_subscription_code = subscriptionCode;
+    }
+
+    if (subscriptionEmailToken) {
+      updates.paystack_subscription_email_token = subscriptionEmailToken;
+    }
+
+    const { error: updateError } = await supabase
+      .from("employer_profiles")
+      .update(updates)
+      .eq("id", employer.id)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      return new Response(
+        JSON.stringify({
+          error: `Failed to update employer plan: ${updateError.message}`,
+          detail: updateError.message,
+          code: updateError.code,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     return new Response(
