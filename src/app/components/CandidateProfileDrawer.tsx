@@ -48,6 +48,13 @@ export function CandidateProfileDrawer({
                 {data.score}%
               </span>
             </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+              <div
+                className="bg-blue-600 h-2 rounded-full"
+                style={{ width: `${data.score}%` }}
+              ></div>
+            </div>
+
 
             <div className="text-sm">
               Match Level:
@@ -133,8 +140,8 @@ export function CandidateProfileDrawer({
         <h4 className="font-semibold mb-2">Skills</h4>
         <div className="flex flex-wrap gap-2">
           {data.candidate_profiles.candidate_skills.map((s: any) => (
-            <Badge key={s.skill} variant="secondary">
-              {s.skill}
+            <Badge key={s.skill} variant={s.matched ? "success" : "secondary"}>
+              {s.skill} {s.matched ? `(${s.score}%)` : ""}
             </Badge>
           ))}
 

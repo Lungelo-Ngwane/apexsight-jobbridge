@@ -1,32 +1,74 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import { serve } from "https://deno.land/std/http/server.ts";
+import OpenAI from "https://esm.sh/openai@4.28.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+serve(async (req) => {
 
-console.log("Hello from Functions!")
+  const { profile_id } = await req.json();
 
-Deno.serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const openai = new OpenAI({
+    apiKey: Deno.env.get("OPENAI_API_KEY"),
+  });
+
+
+  const { data: profile, error } = await supabase
+    .from("candidate_profiles")
+    .select("*")
+    .eq("id", profile_id)
+    .single();
+
+
+  if (error || !profile) {
+
+    return new Response("Profile not found", { status: 404 });
+
   }
 
-  return new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
-  )
-})
 
-/* To invoke locally:
+  const text = `
 
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
+  Title: ${profile.title}
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/generate-embedding' \
-    --header 'Authorization: Bearer eyJhbGciOiJFUzI1NiIsImtpZCI6ImI4MTI2OWYxLTIxZDgtNGYyZS1iNzE5LWMyMjQwYTg0MGQ5MCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjIwODY2MjMzNTh9.IHussTHJjbTSjHvrKRjLCz4KL26bHHwgpnkzqCyIMcp39qORtMhndmuZhRAta80o4-3RVWqEb-2c0m_-bP9t_g' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
+  Skills: ${profile.skills?.join(", ")}
 
-*/
+  Experience: ${profile.years_experience}
+
+  Bio: ${profile.bio}
+
+  `;
+
+
+  const embeddingResponse = await openai.embeddings.create({
+
+    model: "text-embedding-3-small",
+
+    input: text,
+
+  });
+
+
+  const embedding = embeddingResponse.data[0].embedding;
+
+
+  await supabase
+
+    .from("candidate_profiles")
+
+    .update({
+
+      embedding: embedding,
+
+    })
+
+    .eq("id", profile_id);
+
+
+
+  return new Response("Embedding created");
+
+});

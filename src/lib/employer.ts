@@ -359,7 +359,7 @@ export async function getCandidateDeepView(applicationId: string) {
         candidate_skills (
           skill,
           level
-        )
+        ),
       )
     `,
     )

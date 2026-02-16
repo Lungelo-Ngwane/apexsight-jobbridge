@@ -448,3 +448,36 @@ entrypoint = "./functions/generate-embedding/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/generate-embedding/*.html" ]
+
+[functions.generate-job-embedding]
+enabled = true
+verify_jwt = true
+import_map = "./functions/generate-job-embedding/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/generate-job-embedding/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/generate-job-embedding/*.html" ]
+
+[functions.match-candidates]
+enabled = true
+verify_jwt = true
+import_map = "./functions/match-candidates/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/match-candidates/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/match-candidates/*.html" ]
+
+[functions.auto-match]
+enabled = true
+verify_jwt = true
+import_map = "./functions/auto-match/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/auto-match/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/auto-match/*.html" ]
