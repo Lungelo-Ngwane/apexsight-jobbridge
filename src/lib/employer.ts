@@ -244,7 +244,6 @@ export async function updateApplicationStatus(
   let accessToken = session?.access_token;
   const expiresAt = session?.expires_at ?? 0;
 
-
   if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
     const { data: refreshed, error: refreshError } =
       await supabase.auth.refreshSession();
@@ -267,17 +266,20 @@ export async function updateApplicationStatus(
 
   if (error) throw error;
   if (status === "shortlisted") {
-    const { error: invokeError } = await supabase.functions.invoke("send-notification-email", {
-      body: {
-        type: "CANDIDATE_SHORTLISTED",
-        data: {
-          applicationId,
+    const { error: invokeError } = await supabase.functions.invoke(
+      "send-notification-email",
+      {
+        body: {
+          type: "CANDIDATE_SHORTLISTED",
+          data: {
+            applicationId,
+          },
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
       },
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    );
 
     if (invokeError) throw invokeError;
   }
@@ -342,6 +344,9 @@ export async function getCandidateDeepView(applicationId: string) {
       status,
       score,
       score_breakdown,
+      match_label,
+      hiring_recommendation,
+      rank,
       created_at,
       candidate_profiles (
         id,
@@ -438,9 +443,7 @@ export async function getRankedCandidates(jobId: string) {
     .order("score", { ascending: false });
 }
 
-export async function startSubscriptionCheckout(
-  planName: BillingPlanName,
-) {
+export async function startSubscriptionCheckout(planName: BillingPlanName) {
   const {
     data: { user },
     error: userError,
@@ -483,21 +486,23 @@ export async function startSubscriptionCheckout(
     throw new Error("Not authenticated.");
   }
 
-  const { data, error } = await supabase.functions.invoke("initialize-subscription", {
-    body: {
-      employerId: employer.id,
-      planName,
-      email: user.email,
+  const { data, error } = await supabase.functions.invoke(
+    "initialize-subscription",
+    {
+      body: {
+        employerId: employer.id,
+        planName,
+        email: user.email,
+      },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  );
 
   if (error) throw error;
 
-  const checkoutUrl =
-    data?.authorization_url ?? data?.authorizationUrl ?? null;
+  const checkoutUrl = data?.authorization_url ?? data?.authorizationUrl ?? null;
 
   if (!checkoutUrl) {
     throw new Error("Failed to start checkout.");
@@ -521,7 +526,9 @@ export async function getActivePlans(): Promise<BillingPlan[]> {
 
   return (data ?? [])
     .map((row) => {
-      const normalized = String(row.name ?? "").trim().toLowerCase();
+      const normalized = String(row.name ?? "")
+        .trim()
+        .toLowerCase();
       if (!supported.has(normalized)) return null;
 
       return {
@@ -562,21 +569,36 @@ export async function confirmSubscriptionCheckout(reference: string) {
     throw new Error("Not authenticated.");
   }
 
-  const { data, error } = await supabase.functions.invoke("confirm-subscription", {
-    body: { reference },
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const { data, error } = await supabase.functions.invoke(
+    "confirm-subscription",
+    {
+      body: { reference },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  });
+  );
 
   if (error) {
-    const parsed =
-      (error as unknown as { context?: { json?: () => Promise<{ error?: string }> } })
-        ?.context?.json
-        ? await (error as unknown as { context: { json: () => Promise<{ error?: string; detail?: string; code?: string }> } })
-            .context.json()
-            .catch(() => null)
-        : null;
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: {
+              json: () => Promise<{
+                error?: string;
+                detail?: string;
+                code?: string;
+              }>;
+            };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
 
     const message =
       parsed?.error ??
@@ -584,7 +606,9 @@ export async function confirmSubscriptionCheckout(reference: string) {
       error.message ??
       "Failed to confirm subscription.";
 
-    const withCode = parsed?.code ? `${message} (code: ${parsed.code})` : message;
+    const withCode = parsed?.code
+      ? `${message} (code: ${parsed.code})`
+      : message;
 
     throw new Error(withCode);
   }
@@ -616,20 +640,35 @@ export async function cancelSubscription() {
     throw new Error("Not authenticated.");
   }
 
-  const { data, error } = await supabase.functions.invoke("cancel-subscription", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const { data, error } = await supabase.functions.invoke(
+    "cancel-subscription",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  });
+  );
 
   if (error) {
-    const parsed =
-      (error as unknown as { context?: { json?: () => Promise<{ error?: string }> } })
-        ?.context?.json
-        ? await (error as unknown as { context: { json: () => Promise<{ error?: string; detail?: string; code?: string }> } })
-            .context.json()
-            .catch(() => null)
-        : null;
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: {
+              json: () => Promise<{
+                error?: string;
+                detail?: string;
+                code?: string;
+              }>;
+            };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
 
     const message =
       parsed?.error ??
@@ -637,7 +676,9 @@ export async function cancelSubscription() {
       error.message ??
       "Failed to cancel subscription.";
 
-    const withCode = parsed?.code ? `${message} (code: ${parsed.code})` : message;
+    const withCode = parsed?.code
+      ? `${message} (code: ${parsed.code})`
+      : message;
     throw new Error(withCode);
   }
 

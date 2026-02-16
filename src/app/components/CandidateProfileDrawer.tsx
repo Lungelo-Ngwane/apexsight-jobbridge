@@ -25,16 +25,65 @@ export function CandidateProfileDrawer({
   return (
     <aside className="fixed right-0 top-0 h-full w-[420px] bg-white shadow-xl p-6 overflow-y-auto">
       {/* Header */}
+      {/* Header */}
       <div className="flex justify-between items-start">
+
         <div>
-          <h2 className="text-xl font-bold">{data.candidate_profiles.full_name}</h2>
-          <p className="text-sm text-gray-600">{data.candidate_profiles.location || "Location"}</p>
+
+          <h2 className="text-xl font-bold">
+            {data.candidate_profiles.full_name}
+          </h2>
+
+          <p className="text-sm text-gray-600">
+            {data.candidate_profiles.location}
+          </p>
+
+
+          {/* 🔥 Apexsight Intelligence Block */}
+          <div className="mt-3 space-y-1">
+
+            <div className="text-sm font-medium">
+              Match Score:
+              <span className="ml-2 font-bold text-blue-600">
+                {data.score}%
+              </span>
+            </div>
+
+            <div className="text-sm">
+              Match Level:
+              <span className="ml-2 font-semibold">
+                {data.match_label}
+              </span>
+            </div>
+
+            <div className="text-sm">
+              Recommendation:
+              <span className="ml-2 font-semibold text-green-600">
+                {data.hiring_recommendation}
+              </span>
+            </div>
+
+            <div className="text-sm">
+              Rank:
+              <span className="ml-2 font-semibold">
+                #{data.rank}
+              </span>
+            </div>
+
+          </div>
+
         </div>
+
+
+        {/* Score Badge */}
         <Badge className="text-base px-3 py-1">
+
           {data.score}%
+
         </Badge>
 
       </div>
+
       {data.score_breakdown && (
         <section className="mt-6">
           <h4 className="font-semibold mb-2">Match Breakdown</h4>
