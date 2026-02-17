@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { getJobApplicants, updateApplicationStatus } from "@/lib/employer";
+import { consumeEmployerCredit, getJobApplicants, updateApplicationStatus } from "@/lib/employer";
 import { CandidateProfileDrawer } from "./CandidateProfileDrawer";
 
 
@@ -25,6 +25,8 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     const [loading, setLoading] = useState(true);
     const [activeStage, setActiveStage] = useState("applied");
     const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+    const [unlockingProfileId, setUnlockingProfileId] = useState<string | null>(null);
+    const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
 
 
 
@@ -49,6 +51,30 @@ async function changeStatus(
         console.log("Candidates after status change:", updated);
         return updated;
     });
+}
+
+async function handleViewProfile(appId: string) {
+    try {
+        if (unlockedApplicationIds.includes(appId)) {
+            setSelectedApplicationId(appId);
+            return;
+        }
+
+        setUnlockingProfileId(appId);
+        await consumeEmployerCredit("candidate_unlock", 1);
+        setUnlockedApplicationIds((prev) => [...new Set([...prev, appId])]);
+        setSelectedApplicationId(appId);
+    } catch (error: any) {
+        const message = String(error?.message ?? "").toLowerCase();
+        if (message.includes("insufficient") || message.includes("no credits")) {
+            alert("You have no candidate unlock credits left. Please buy add-ons from Billing.");
+            return;
+        }
+        console.error("Failed to unlock candidate profile", error);
+        alert("Unable to unlock candidate profile right now. Please try again.");
+    } finally {
+        setUnlockingProfileId(null);
+    }
 }
 
 
@@ -136,9 +162,10 @@ async function changeStatus(
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        onClick={() => setSelectedApplicationId(app.id)}
+                                        onClick={() => handleViewProfile(app.id)}
+                                        disabled={unlockingProfileId === app.id}
                                     >
-                                        View Profile
+                                        {unlockingProfileId === app.id ? "Unlocking..." : "View Profile"}
                                     </Button>
 
                                     <Button

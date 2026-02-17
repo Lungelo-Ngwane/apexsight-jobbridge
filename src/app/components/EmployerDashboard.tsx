@@ -22,11 +22,13 @@ import { Input } from "@/app/components/ui/input";
 import { useAuth } from "../context/AuthContext";
 import {
   createJob,
+  getEmployerCredits,
   getEmployerJobs,
   getJobApplicants,
   updateJobStatus,
   updateApplicationStatus,
-  getEmployerAnalytics
+  getEmployerAnalytics,
+  type EmployerCreditBalance,
 } from '@/lib/employer';
 import { StatBox } from "./ui/statbox";
 import { PostJobModal } from "./PostJobModal";
@@ -54,12 +56,16 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const [visibleCount, setVisibleCount] = useState(JOBS_PER_PAGE);
   const { profile } = useEmployerProfile();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
 
 
 
 
   useEffect(() => {
     getEmployerAnalytics().then(setStats);
+    getEmployerCredits()
+      .then(setCreditBalances)
+      .catch((error) => console.error("Failed to load employer credits", error));
   }, []);
 
 
@@ -202,6 +208,21 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             );
           })}
         </div>
+
+        <Card className="p-6 border-gray-200 mb-8">
+          <h3 className="font-semibold text-gray-900 mb-4">Add-on Credit Balances</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {creditBalances.length === 0 && (
+              <p className="text-sm text-gray-500">No add-on credits available yet.</p>
+            )}
+            {creditBalances.map((credit) => (
+              <div key={credit.creditType} className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">{credit.creditType}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{credit.remaining}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
 
 
 

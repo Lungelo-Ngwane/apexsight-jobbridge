@@ -1,169 +1,205 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
 import OpenAI from "https://esm.sh/openai@4.28.0";
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 Deno.serve(async (req) => {
-
-  const { job_id } = await req.json();
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const openai = new OpenAI({
-    apiKey: Deno.env.get("OPENAI_API_KEY")
-  });
+  try {
+    const { job_id } = await req.json();
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
 
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Missing access token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-  // STEP 1: Get Job
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
 
-  const { data: job } = await supabase
-    .from("jobs")
-    .select(`
-      id,
-      title,
-      description,
-      location,
-      employment_type,
-      experience_level
-    `)
-    .eq("id", job_id)
-    .single();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid user session" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
+    const { data: employer, error: employerError } = await supabase
+      .from("employer_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
+    if (employerError || !employer?.id) {
+      return new Response(JSON.stringify({ error: "Employer profile not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-  // STEP 2: Get Job Skills (JOIN skills table)
+    const openai = new OpenAI({
+      apiKey: Deno.env.get("OPENAI_API_KEY"),
+    });
 
-  const { data: jobSkills } = await supabase
-    .from("job_skills")
-    .select(`
-      required,
-      min_score,
-      skills (
-        name
-      )
-    `)
-    .eq("job_id", job_id);
+    const { data: job, error: jobError } = await supabase
+      .from("jobs")
+      .select(`
+        id,
+        employer_id,
+        title,
+        description,
+        location,
+        employment_type,
+        experience_level
+      `)
+      .eq("id", job_id)
+      .maybeSingle();
 
+    if (jobError || !job || String(job.employer_id) !== String(employer.id)) {
+      return new Response(JSON.stringify({ error: "Job not found for this employer" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
+    const { data: aiCreditRow } = await supabase
+      .from("employer_credits")
+      .select("id, remaining")
+      .eq("employer_id", employer.id)
+      .eq("credit_type", "ai_credit")
+      .maybeSingle();
 
-  // STEP 3: Format skills
+    const currentCredits = Number(aiCreditRow?.remaining ?? 0);
+    if (!aiCreditRow?.id || currentCredits < 1) {
+      return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-  const requiredSkills = jobSkills
-    ?.filter(s => s.required)
-    .map(s => `${s.skills.name} (${s.min_score || 0}%)`)
-    .join(", ");
+    const { error: deductError } = await supabase
+      .from("employer_credits")
+      .update({ remaining: currentCredits - 1 })
+      .eq("id", aiCreditRow.id)
+      .eq("remaining", currentCredits);
 
+    if (deductError) {
+      return new Response(
+        JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
-  const optionalSkills = jobSkills
-    ?.filter(s => !s.required)
-    .map(s => `${s.skills.name}`)
-    .join(", ");
+    const { data: jobSkills } = await supabase
+      .from("job_skills")
+      .select(`
+        required,
+        min_score,
+        skills (
+          name
+        )
+      `)
+      .eq("job_id", job_id);
 
+    const requiredSkills = jobSkills
+      ?.filter((s) => s.required)
+      .map((s) => `${s.skills.name} (${s.min_score || 0}%)`)
+      .join(", ");
 
+    const optionalSkills = jobSkills
+      ?.filter((s) => !s.required)
+      .map((s) => `${s.skills.name}`)
+      .join(", ");
 
-  // STEP 4: Create embedding text
+    const embeddingText = `
+    Job Title:
+    ${job.title}
 
-  const embeddingText = `
+    Description:
+    ${job.description}
 
-  Job Title:
-  ${job.title}
+    Location:
+    ${job.location}
 
-  Description:
-  ${job.description}
+    Employment Type:
+    ${job.employment_type}
 
-  Location:
-  ${job.location}
+    Experience Level:
+    ${job.experience_level}
 
-  Employment Type:
-  ${job.employment_type}
+    Required Skills:
+    ${requiredSkills}
 
-  Experience Level:
-  ${job.experience_level}
+    Optional Skills:
+    ${optionalSkills}
+    `;
 
-  Required Skills:
-  ${requiredSkills}
+    const embeddingResponse = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: embeddingText,
+    });
 
-  Optional Skills:
-  ${optionalSkills}
+    const embedding = embeddingResponse.data[0].embedding;
 
-  `;
+    await supabase
+      .from("jobs")
+      .update({ embedding })
+      .eq("id", job_id);
 
-
-
-  // STEP 5: Generate embedding
-
-  const embeddingResponse = await openai.embeddings.create({
-
-    model: "text-embedding-3-small",
-
-    input: embeddingText
-
-  });
-
-
-  const embedding = embeddingResponse.data[0].embedding;
-
-
-
-  // STEP 6: Save embedding
-
-  await supabase
-    .from("jobs")
-    .update({ embedding })
-    .eq("id", job_id);
-
-
-
-  // STEP 7: Match candidates
-
-  const { data: matches } = await supabase.rpc(
-    "match_candidates",
-    {
+    const { data: matches } = await supabase.rpc("match_candidates", {
       job_embedding: embedding,
-      match_threshold: 0.40,
-      match_count: 50
-    }
-  );
+      match_threshold: 0.4,
+      match_count: 50,
+    });
 
-
-
-  // STEP 8: Save matches
-
-  if (matches) {
-
-    for (const match of matches) {
-
-      await supabase
-        .from("job_matches")
-        .upsert({
-          job_id: job_id,
-          candidate_id: match.id,
-          similarity: match.similarity
-        });
-
+    if (matches) {
+      for (const match of matches) {
+        await supabase
+          .from("job_matches")
+          .upsert({
+            job_id,
+            candidate_id: match.id,
+            similarity: match.similarity,
+          });
+      }
     }
 
+    return new Response(
+      JSON.stringify({
+        success: true,
+        ai_credits_consumed: 1,
+        ai_credits_remaining: currentCredits - 1,
+        matches_found: matches?.length || 0,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  } catch (error) {
+    return new Response(JSON.stringify({ error: String(error) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
-
-
-
-  return new Response(
-
-    JSON.stringify({
-
-      success: true,
-
-      matches_found: matches?.length || 0
-
-    }),
-
-    { headers: { "Content-Type": "application/json" } }
-
-  );
-
 });

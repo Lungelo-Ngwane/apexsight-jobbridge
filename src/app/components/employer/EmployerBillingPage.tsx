@@ -4,11 +4,17 @@ import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import {
   cancelSubscription,
+  confirmAddonCheckout,
   confirmSubscriptionCheckout,
+  getAddons,
   getActivePlans,
+  getEmployerCredits,
+  startAddonCheckout,
   startSubscriptionCheckout,
   type BillingPlan,
   type BillingPlanName,
+  type EmployerAddon,
+  type EmployerCreditBalance,
 } from "@/lib/employer";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { 
@@ -37,31 +43,61 @@ export function EmployerBillingPage() {
   const [verifyingCheckout, setVerifyingCheckout] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
+  const [addons, setAddons] = useState<EmployerAddon[]>([]);
+  const [credits, setCredits] = useState<EmployerCreditBalance[]>([]);
+  const [buyingAddonId, setBuyingAddonId] = useState<string | null>(null);
 
   useEffect(() => {
     getActivePlans()
       .then(setPlans)
       .catch((error) => console.error("Failed to load plans", error));
+
+    getAddons()
+      .then(setAddons)
+      .catch((error) => console.error("Failed to load add-ons", error));
+
+    getEmployerCredits()
+      .then(setCredits)
+      .catch((error) => console.error("Failed to load credits", error));
   }, []);
 
   useEffect(() => {
     async function confirmFromCallback() {
       const params = new URLSearchParams(window.location.search);
       const success = params.get("success");
+      const addonSuccess = params.get("addon_success");
       const reference = params.get("reference");
 
-      if (success !== "true" || !reference) return;
+      if (!reference) return;
 
-      try {
-        setVerifyingCheckout(true);
-        await confirmSubscriptionCheckout(reference);
-        alert("Plan upgraded successfully.");
-      } catch (error) {
-        console.error("Failed to confirm subscription", error);
-        alert("Payment received, but plan update failed. Please contact support.");
-      } finally {
-        setVerifyingCheckout(false);
-        window.history.replaceState({}, "", "/employer/billing");
+      if (success === "true") {
+        try {
+          setVerifyingCheckout(true);
+          await confirmSubscriptionCheckout(reference);
+          alert("Plan upgraded successfully.");
+        } catch (error) {
+          console.error("Failed to confirm subscription", error);
+          alert("Payment received, but plan update failed. Please contact support.");
+        } finally {
+          setVerifyingCheckout(false);
+          window.history.replaceState({}, "", "/employer/billing");
+        }
+      }
+
+      if (addonSuccess === "true") {
+        try {
+          setVerifyingCheckout(true);
+          await confirmAddonCheckout(reference);
+          const refreshedCredits = await getEmployerCredits();
+          setCredits(refreshedCredits);
+          alert("Add-on purchase successful. Credits were added to your account.");
+        } catch (error) {
+          console.error("Failed to confirm add-on checkout", error);
+          alert("Payment received, but add-on crediting failed. Please contact support.");
+        } finally {
+          setVerifyingCheckout(false);
+          window.history.replaceState({}, "", "/employer/billing");
+        }
       }
     }
 
@@ -100,6 +136,17 @@ export function EmployerBillingPage() {
       alert("Unable to cancel subscription right now. Please try again.");
     } finally {
       setCancellingSubscription(false);
+    }
+  }
+
+  async function handleBuyAddon(addonId: string) {
+    try {
+      setBuyingAddonId(addonId);
+      await startAddonCheckout(addonId);
+    } catch (error) {
+      console.error("Failed to start add-on checkout", error);
+      alert("Unable to start add-on checkout right now. Please try again.");
+      setBuyingAddonId(null);
     }
   }
 
@@ -419,6 +466,45 @@ export function EmployerBillingPage() {
               </div>
             </Card>
 
+            <Card className="p-6 border-gray-200 shadow-md">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Add-ons Store</h3>
+                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                  Pay as you go
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {addons.length === 0 && (
+                  <p className="text-sm text-gray-500">No add-ons available right now.</p>
+                )}
+                {addons.map((addon) => (
+                  <div
+                    key={addon.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{addon.name}</p>
+                      <p className="text-xs text-gray-600">
+                        {addon.credits} credit{addon.credits === 1 ? "" : "s"} • {addon.type}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-gray-900">
+                        {formatZarFromKobo(addon.price)}
+                      </span>
+                      <Button
+                        size="sm"
+                        disabled={Boolean(buyingAddonId) || verifyingCheckout}
+                        onClick={() => handleBuyAddon(addon.id)}
+                      >
+                        {buyingAddonId === addon.id ? "Redirecting..." : "Buy"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
             {/* Recent Invoices */}
             <Card className="p-6 border-gray-200 shadow-md">
               <div className="flex items-center justify-between mb-4">
@@ -478,6 +564,21 @@ export function EmployerBillingPage() {
                   <span className="text-base font-bold text-gray-900">Total</span>
                   <span className="text-lg font-bold text-gray-900">{formatZarFromKobo(totalKobo)}</span>
                 </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-gray-200 shadow-md">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Credit Balances</h3>
+              <div className="space-y-3">
+                {credits.length === 0 && (
+                  <p className="text-sm text-gray-500">No credits purchased yet.</p>
+                )}
+                {credits.map((credit) => (
+                  <div key={credit.creditType} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{credit.creditType}</span>
+                    <span className="text-sm font-bold text-gray-900">{credit.remaining}</span>
+                  </div>
+                ))}
               </div>
             </Card>
 

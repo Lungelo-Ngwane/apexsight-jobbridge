@@ -14,6 +14,19 @@ export interface BillingPlan {
   paystackPlanCode: string | null;
 }
 
+export interface EmployerAddon {
+  id: string;
+  name: string;
+  price: number;
+  type: string;
+  credits: number;
+}
+
+export interface EmployerCreditBalance {
+  creditType: string;
+  remaining: number;
+}
+
 function toPlanLabel(planName: BillingPlanName): string {
   return `${planName.charAt(0).toUpperCase()}${planName.slice(1)}`;
 }
@@ -764,6 +777,213 @@ export async function cancelSubscription() {
       ? `${message} (code: ${parsed.code})`
       : message;
     throw new Error(withCode);
+  }
+
+  return data;
+}
+
+export async function getAddons(): Promise<EmployerAddon[]> {
+  const { data, error } = await supabase
+    .from("addons")
+    .select("id, name, price, type, credits")
+    .order("price", { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: String(row.name ?? ""),
+    price: Number(row.price ?? 0),
+    type: String(row.type ?? ""),
+    credits: Number(row.credits ?? 0),
+  }));
+}
+
+export async function getEmployerCredits(): Promise<EmployerCreditBalance[]> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) throw new Error("Not authenticated");
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (employerError || !employer?.id) {
+    throw new Error("Employer profile not found");
+  }
+
+  const { data, error } = await supabase
+    .from("employer_credits")
+    .select("credit_type, remaining")
+    .eq("employer_id", employer.id);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    creditType: String(row.credit_type ?? ""),
+    remaining: Number(row.remaining ?? 0),
+  }));
+}
+
+export async function startAddonCheckout(addonId: string) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("buy-addon", {
+    body: { addonId },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to start add-on checkout.");
+  }
+
+  const checkoutUrl = data?.authorization_url ?? data?.authorizationUrl ?? null;
+  if (!checkoutUrl) throw new Error("Failed to start add-on checkout.");
+
+  window.location.assign(checkoutUrl);
+}
+
+export async function confirmAddonCheckout(reference: string) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("confirm-addon", {
+    body: { reference },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to confirm add-on checkout.");
+  }
+
+  return data;
+}
+
+export async function consumeEmployerCredit(creditType: string, amount = 1) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("consume-credit", {
+    body: { creditType, amount },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to consume credits.");
   }
 
   return data;

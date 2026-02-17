@@ -481,3 +481,36 @@ entrypoint = "./functions/auto-match/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/auto-match/*.html" ]
+
+[functions.buy-addon]
+enabled = true
+verify_jwt = false
+import_map = "./functions/buy-addon/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/buy-addon/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/buy-addon/*.html" ]
+
+[functions.confirm-addon]
+enabled = true
+verify_jwt = false
+import_map = "./functions/confirm-addon/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/confirm-addon/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/confirm-addon/*.html" ]
+
+[functions.consume-credit]
+enabled = true
+verify_jwt = false
+import_map = "./functions/consume-credit/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/consume-credit/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/consume-credit/*.html" ]
