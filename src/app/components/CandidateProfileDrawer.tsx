@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getCandidateDeepView } from "../../lib/employer";
 import { Badge } from "./ui/badge";
 import { Button } from "@/app/components/ui/button";
+import { X } from "lucide-react";
 
 export function CandidateProfileDrawer({
   applicationId,
@@ -24,6 +25,15 @@ export function CandidateProfileDrawer({
 
   return (
     <aside className="fixed right-0 top-0 h-full w-[420px] bg-white shadow-xl p-6 overflow-y-auto">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute right-3 top-3"
+        onClick={onClose}
+        aria-label="Close candidate drawer"
+      >
+        <X className="w-4 h-4" />
+      </Button>
       {/* Header */}
       {/* Header */}
       <div className="flex justify-between items-start">

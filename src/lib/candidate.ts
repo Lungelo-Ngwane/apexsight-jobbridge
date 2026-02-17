@@ -240,6 +240,31 @@ export async function applyForJob(jobId: string) {
   }
 }
 
+export async function getAppliedJobIds() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("candidate_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+  if (!profile?.id) return [] as string[];
+
+  const { data, error } = await supabase
+    .from("job_applications")
+    .select("job_id")
+    .eq("candidate_profile_id", profile.id);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => row.job_id as string);
+}
+
 export async function updateCandidateProfile(input: {
   headline?: string;
   bio?: string;

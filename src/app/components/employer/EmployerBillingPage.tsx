@@ -70,11 +70,12 @@ export function EmployerBillingPage() {
 
   async function handleUpgrade(
     plan: BillingPlanName,
+    planId: string | undefined,
     source: "header" | "card" | "sidebar",
   ) {
     try {
       setLoadingSource(source);
-      await startSubscriptionCheckout(plan);
+      await startSubscriptionCheckout(plan, planId);
     } catch (error) {
       console.error("Failed to start checkout", error);
       alert("Unable to start checkout right now. Please try again.");
@@ -120,6 +121,9 @@ export function EmployerBillingPage() {
 
   const nextUpgradeLabel = nextUpgradePlan
     ? `${nextUpgradePlan.charAt(0).toUpperCase()}${nextUpgradePlan.slice(1)}`
+    : null;
+  const nextUpgradePlanRow = nextUpgradePlan
+    ? plans.find((p) => p.name === nextUpgradePlan)
     : null;
 
   const totalKobo = currentPlanRow?.priceMonthly ?? 0;
@@ -265,7 +269,10 @@ export function EmployerBillingPage() {
               <p className="text-sm text-gray-600">Manage your plan, billing, and invoices</p>
             </div>
             <Button 
-              onClick={() => nextUpgradePlan && handleUpgrade(nextUpgradePlan, "header")}
+              onClick={() =>
+                nextUpgradePlan &&
+                handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "header")
+              }
               disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30"
             >
@@ -368,7 +375,10 @@ export function EmployerBillingPage() {
 
                 <div className="flex items-center gap-3">
                   <Button
-                    onClick={() => nextUpgradePlan && handleUpgrade(nextUpgradePlan, "card")}
+                    onClick={() =>
+                      nextUpgradePlan &&
+                      handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "card")
+                    }
                     disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
                     className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                   >
@@ -485,7 +495,10 @@ export function EmployerBillingPage() {
                     </p>
                     <Button
                       size="sm"
-                      onClick={() => nextUpgradePlan && handleUpgrade(nextUpgradePlan, "sidebar")}
+                      onClick={() =>
+                        nextUpgradePlan &&
+                        handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "sidebar")
+                      }
                       disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
                       className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
                     >

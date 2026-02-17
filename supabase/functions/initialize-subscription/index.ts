@@ -11,6 +11,13 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+function normalizePlanValue(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -27,6 +34,7 @@ Deno.serve(async (req) => {
     }
 
     let plan = null;
+    let resolvedPlanSlug = "";
 
     if (planId) {
       const { data } = await supabase
@@ -38,7 +46,8 @@ Deno.serve(async (req) => {
       plan = data;
     }
 
-    const planLookup = (planName ?? planId ?? "").trim();
+    const planLookup = String(planName ?? planId ?? "").trim();
+    const normalizedLookup = normalizePlanValue(planLookup);
 
     if (!plan && planLookup) {
       const { data } = await supabase
@@ -50,12 +59,25 @@ Deno.serve(async (req) => {
       plan = data;
     }
 
+    if (!plan && normalizedLookup) {
+      const { data } = await supabase
+        .from("plans")
+        .select("*")
+        .eq("active", true);
+
+      plan =
+        (data ?? []).find((row) => normalizePlanValue(row.name) === normalizedLookup) ??
+        null;
+    }
+
     if (!plan) {
       return new Response(JSON.stringify({ error: "Plan not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    resolvedPlanSlug = normalizePlanValue(plan.name);
 
     const amount = Number(plan.price_monthly);
     const amountInKobo = Number.isFinite(amount)
@@ -75,7 +97,7 @@ Deno.serve(async (req) => {
       metadata: {
         employerId,
         planId: plan.id,
-        targetPlan: planLookup.toLowerCase(),
+        targetPlan: resolvedPlanSlug,
       },
     };
 
@@ -99,9 +121,19 @@ Deno.serve(async (req) => {
     const paystackData = await response.json();
 
     if (!response.ok || !paystackData?.status) {
+      const paystackMessage = String(
+        paystackData?.message ?? "Failed to initialize checkout",
+      );
+
       return new Response(
         JSON.stringify({
-          error: paystackData?.message ?? "Failed to initialize checkout",
+          error:
+            paystackMessage.toLowerCase() === "plan not found."
+              ? `Paystack plan not found for code "${String(plan.paystack_plan_code ?? "")}". Check that PAYSTACK_SECRET_KEY mode matches this plan code (test vs live).`
+              : `Paystack initialize failed: ${paystackMessage}`,
+          planId: String(plan.id ?? ""),
+          planName: String(plan.name ?? ""),
+          planCode: String(plan.paystack_plan_code ?? ""),
         }),
         {
           status: 400,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getOpenJobs } from "@/lib/candidate";
+import { applyForJob, getAppliedJobIds, getOpenJobs } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
@@ -28,6 +28,14 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { Label } from "@/app/components/ui/label";
 import { Separator } from "@/app/components/ui/separator";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 
 const JOBS_PER_PAGE = 9;
 
@@ -58,10 +66,17 @@ export default function CandidateJobsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+  const [showApplySuccessModal, setShowApplySuccessModal] = useState(false);
+  const [appliedJobTitle, setAppliedJobTitle] = useState("");
 
   useEffect(() => {
-    getOpenJobs()
-      .then((data) => setJobs((data as Job[]) ?? []))
+    Promise.all([getOpenJobs(), getAppliedJobIds()])
+      .then(([jobsData, appliedIds]) => {
+        setJobs((jobsData as Job[]) ?? []);
+        setAppliedJobIds(appliedIds ?? []);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -135,15 +150,41 @@ export default function CandidateJobsPage() {
     );
   };
 
+  async function handleApply(job: Job) {
+    if (appliedJobIds.includes(job.id)) return;
+
+    try {
+      setApplyingJobId(job.id);
+      await applyForJob(job.id);
+      setAppliedJobIds((prev) => [...new Set([...prev, job.id])]);
+      setAppliedJobTitle(job.title);
+      setShowApplySuccessModal(true);
+    } catch (error: any) {
+      const message = String(error?.message ?? "");
+      if (message.toLowerCase().includes("already applied")) {
+        setAppliedJobIds((prev) => [...new Set([...prev, job.id])]);
+        alert("You have already applied for this job.");
+      } else {
+        console.error("Failed to apply for job", error);
+        alert("Unable to apply right now. Please try again.");
+      }
+    } finally {
+      setApplyingJobId(null);
+    }
+  }
+
   if (selectedJob) {
     return (
-      <JobDetailsView
-        job={selectedJob}
-        onBack={() => setSelectedJob(null)}
-        onSave={() => toggleSaveJob(selectedJob.id)}
-        isSaved={savedJobs.includes(selectedJob.id)}
-      />
-    );
+        <JobDetailsView
+          job={selectedJob}
+          onBack={() => setSelectedJob(null)}
+          onSave={() => toggleSaveJob(selectedJob.id)}
+          isSaved={savedJobs.includes(selectedJob.id)}
+          onApply={() => handleApply(selectedJob)}
+          isApplying={applyingJobId === selectedJob.id}
+          hasApplied={appliedJobIds.includes(selectedJob.id)}
+        />
+      );
   }
 
   return (
@@ -293,6 +334,9 @@ export default function CandidateJobsPage() {
                     onClick={() => setSelectedJob(job)}
                     onSave={() => toggleSaveJob(job.id)}
                     isSaved={savedJobs.includes(job.id)}
+                    onApply={() => handleApply(job)}
+                    isApplying={applyingJobId === job.id}
+                    hasApplied={appliedJobIds.includes(job.id)}
                   />
                 ))}
               </div>
@@ -359,6 +403,20 @@ export default function CandidateJobsPage() {
           </main>
         </div>
       </div>
+      <Dialog open={showApplySuccessModal} onOpenChange={setShowApplySuccessModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Application sent</DialogTitle>
+            <DialogDescription>
+              Congratulations! You have successfully applied for
+              {appliedJobTitle ? ` "${appliedJobTitle}"` : " this job"}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowApplySuccessModal(false)}>Awesome</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -368,11 +426,17 @@ function CandidateJobCard({
   onClick,
   onSave,
   isSaved,
+  onApply,
+  isApplying,
+  hasApplied,
 }: {
   job: Job;
   onClick: () => void;
   onSave: () => void;
   isSaved: boolean;
+  onApply: () => void;
+  isApplying: boolean;
+  hasApplied: boolean;
 }) {
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
@@ -490,16 +554,30 @@ function CandidateJobCard({
             <Clock className="w-3.5 h-3.5" />
             {getTimeAgo(job.created_at)}
           </div>
-          <Button
-            size="sm"
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick();
-            }}
-          >
-            View Details
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+              }}
+            >
+              View Details
+            </Button>
+            <Button
+              size="sm"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs"
+              disabled={hasApplied || isApplying}
+              onClick={(e) => {
+                e.stopPropagation();
+                onApply();
+              }}
+            >
+              {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply"}
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
@@ -612,11 +690,17 @@ function JobDetailsView({
   onBack,
   onSave,
   isSaved,
+  onApply,
+  isApplying,
+  hasApplied,
 }: {
   job: Job;
   onBack: () => void;
   onSave: () => void;
   isSaved: boolean;
+  onApply: () => void;
+  isApplying: boolean;
+  hasApplied: boolean;
 }) {
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return "Salary not disclosed";
@@ -647,10 +731,19 @@ function JobDetailsView({
               <ArrowLeft className="w-5 h-5" />
               <span className="hidden sm:inline">Back to jobs</span>
             </Button>
-            <Button variant="outline" onClick={onSave} className="gap-2">
-              <Bookmark className={`w-4 h-4 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
-              <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                onClick={onApply}
+                disabled={hasApplied || isApplying}
+              >
+                {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply"}
+              </Button>
+              <Button variant="outline" onClick={onSave} className="gap-2">
+                <Bookmark className={`w-4 h-4 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
+                <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

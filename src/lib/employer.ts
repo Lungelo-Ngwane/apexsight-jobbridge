@@ -14,6 +14,23 @@ export interface BillingPlan {
   paystackPlanCode: string | null;
 }
 
+function toPlanLabel(planName: BillingPlanName): string {
+  return `${planName.charAt(0).toUpperCase()}${planName.slice(1)}`;
+}
+
+function toPlanSlug(value: unknown): BillingPlanName | null {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  if (normalized.includes("starter")) return "starter";
+  if (normalized.includes("professional")) return "professional";
+  if (normalized.includes("enterprise")) return "enterprise";
+
+  return null;
+}
+
 /* =========================
    CREATE JOB
 ========================= */
@@ -124,6 +141,7 @@ export async function getEmployerJobs() {
       location,
       description,
       employment_type,
+      experience_level,
       created_at,
       job_applications ( id, status )
     `,
@@ -133,6 +151,50 @@ export async function getEmployerJobs() {
 
   if (error) throw error;
   return data;
+}
+
+export async function updateJob(
+  jobId: string,
+  data: {
+    title: string;
+    description: string;
+    location?: string;
+    employment_type?: string;
+    status: "open" | "closed" | "archived";
+    experience_level: string;
+  },
+) {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) throw new Error("User not authenticated");
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (employerError || !employer) {
+    throw new Error("Employer profile not found");
+  }
+
+  const { error } = await supabase
+    .from("jobs")
+    .update({
+      title: data.title,
+      description: data.description,
+      location: data.location || null,
+      employment_type: data.employment_type || null,
+      status: data.status,
+      experience_level: data.experience_level,
+    })
+    .eq("id", jobId)
+    .eq("employer_id", employer.id);
+
+  if (error) throw error;
 }
 
 /* =========================
@@ -359,7 +421,7 @@ export async function getCandidateDeepView(applicationId: string) {
         candidate_skills (
           skill,
           level
-        ),
+        )
       )
     `,
     )
@@ -443,7 +505,10 @@ export async function getRankedCandidates(jobId: string) {
     .order("score", { ascending: false });
 }
 
-export async function startSubscriptionCheckout(planName: BillingPlanName) {
+export async function startSubscriptionCheckout(
+  planName: BillingPlanName,
+  planId?: string,
+) {
   const {
     data: { user },
     error: userError,
@@ -491,7 +556,8 @@ export async function startSubscriptionCheckout(planName: BillingPlanName) {
     {
       body: {
         employerId: employer.id,
-        planName,
+        planId,
+        planName: toPlanLabel(planName),
         email: user.email,
       },
       headers: {
@@ -500,7 +566,29 @@ export async function startSubscriptionCheckout(planName: BillingPlanName) {
     },
   );
 
-  if (error) throw error;
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    const message =
+      parsed?.error ??
+      parsed?.detail ??
+      error.message ??
+      "Failed to start checkout.";
+
+    throw new Error(message);
+  }
 
   const checkoutUrl = data?.authorization_url ?? data?.authorizationUrl ?? null;
 
@@ -522,18 +610,14 @@ export async function getActivePlans(): Promise<BillingPlan[]> {
 
   if (error) throw error;
 
-  const supported = new Set(["starter", "professional", "enterprise"]);
-
   return (data ?? [])
     .map((row) => {
-      const normalized = String(row.name ?? "")
-        .trim()
-        .toLowerCase();
-      if (!supported.has(normalized)) return null;
+      const normalized = toPlanSlug(row.name);
+      if (!normalized) return null;
 
       return {
         id: row.id,
-        name: normalized as BillingPlanName,
+        name: normalized,
         label: row.name,
         priceMonthly: Number(row.price_monthly ?? 0),
         jobLimit: row.job_limit ?? null,

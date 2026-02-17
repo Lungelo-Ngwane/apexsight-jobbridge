@@ -43,7 +43,7 @@ export function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
     async function handleUpgrade() {
         try {
             setLoading(true);
-            await startSubscriptionCheckout(targetPlan);
+            await startSubscriptionCheckout(targetPlan, targetPlanDetails?.id);
         } catch (error) {
             console.error("Failed to start checkout", error);
             alert("Unable to start checkout right now. Please try again.");
