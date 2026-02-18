@@ -1,5 +1,5 @@
 import { EmployerLayout } from "./EmployerLayout";
-import { EmployerOnboarding } from "./EmployerOnboarding";
+import { EmployerOnboarding } from "./EmployerOnBoarding";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { Outlet } from "react-router-dom";
 
