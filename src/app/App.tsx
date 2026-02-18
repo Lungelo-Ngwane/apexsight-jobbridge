@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/app/components/Header';
 import Login from '@/app/components/Login';
 import { HomePage } from '@/app/components/HomePage';
+import { SkillLinkLanding } from '@/app/components/SkillLinkLanding';
+import { JobBridgeLanding } from '@/app/components/JobBridgeLanding';
 import { CandidateDashboard } from '@/app/components/CandidateDashboard';
 import { EmployerDashboard } from '@/app/components/EmployerDashboard';
 import { CandidateProfile } from "@/app/components/CandidateProfile";
@@ -24,6 +26,8 @@ export default function App() {
   const { user, role, loading } = useAuth();
   const [currentView, setCurrentView] = useState<View>('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState<"login" | "register">("login");
+  const [authInitialRole, setAuthInitialRole] = useState<"candidate" | "employer">("candidate");
 
   // useEffect(() => {
   //   if (loading) return;
@@ -41,13 +45,17 @@ export default function App() {
 
   useEffect(() => {
     if (loading) return;
+    const publicPaths = ["/", "/skilllink", "/jobbridge"];
+    const currentPath = window.location.pathname;
 
     // Only redirect on initial load, not every role change
     if (!user) {
-      navigate('/');
-    } else if (role === 'candidate' && window.location.pathname === '/') {
+      if (!publicPaths.includes(currentPath)) {
+        navigate('/');
+      }
+    } else if (role === 'candidate' && currentPath === '/') {
       navigate('/candidate/dashboard');
-    } else if (role === 'employer' && window.location.pathname === '/') {
+    } else if (role === 'employer' && currentPath === '/') {
       navigate('/employer/dashboard');
     }
   }, [user, role, loading, navigate]);
@@ -69,13 +77,48 @@ export default function App() {
     }
   };
 
+  const openRegisterModal = (selectedRole: "candidate" | "employer") => {
+    setAuthInitialMode("register");
+    setAuthInitialRole(selectedRole);
+    setShowLoginModal(true);
+  };
+
+  const openLoginModal = () => {
+    setAuthInitialMode("login");
+    setShowLoginModal(true);
+  };
+
+  const handleLoginSuccess = (resolvedRole?: "candidate" | "employer" | null) => {
+    setShowLoginModal(false);
+
+    if (resolvedRole === "candidate") {
+      navigate("/candidate/dashboard");
+      return;
+    }
+
+    if (resolvedRole === "employer") {
+      navigate("/employer/dashboard");
+      return;
+    }
+
+    if (role === "candidate") {
+      navigate("/candidate/dashboard");
+      return;
+    }
+
+    if (role === "employer") {
+      navigate("/employer/dashboard");
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-white">
       <Header
         currentProduct={getCurrentProduct()}
         userType={role}                      // ← now from context
-        onSignInClick={() => setShowLoginModal(true)}
+        onSignInClick={openLoginModal}
+        onGetStartedClick={openLoginModal}
         onProfileClick={handleProfileClick}
       />
 
@@ -83,7 +126,23 @@ export default function App() {
       {currentView === 'candidate-dashboard' && <CandidateDashboard />}
       {currentView === 'employer-dashboard' && <EmployerDashboard />} */}
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/"
+          element={
+            <HomePage
+              onSelectSkillLink={() => navigate("/skilllink")}
+              onSelectJobBridge={() => navigate("/jobbridge")}
+            />
+          }
+        />
+        <Route
+          path="/skilllink"
+          element={<SkillLinkLanding onGetStarted={openLoginModal} />}
+        />
+        <Route
+          path="/jobbridge"
+          element={<JobBridgeLanding onGetStarted={openLoginModal} />}
+        />
 
         <Route
           path="/candidate/dashboard"
@@ -122,7 +181,11 @@ export default function App() {
             >
               ✕
             </button>
-            <Login onLoginSuccess={() => setShowLoginModal(false)} />
+            <Login
+              initialMode={authInitialMode}
+              initialRole={authInitialRole}
+              onLoginSuccess={handleLoginSuccess}
+            />
           </div>
         </div>
       )}

@@ -46,6 +46,7 @@ export function SkillLinkLanding({ onGetStarted }: SkillLinkLandingProps) {
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button 
+              onClick={onGetStarted}
               size="lg" 
               variant="outline"
               className="border-gray-300 text-gray-700 px-8 py-6 text-lg"

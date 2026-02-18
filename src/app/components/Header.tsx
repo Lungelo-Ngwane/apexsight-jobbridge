@@ -20,13 +20,15 @@ interface HeaderProps {
   onProductSwitch?: (product: "skilllink" | "jobbridge") => void;
   onProfileClick?: () => void;
   onSignInClick?: () => void;
+  onGetStartedClick?: () => void;
 }
 
 export function Header({
   currentProduct,
   onProductSwitch,
   onProfileClick,
-  onSignInClick
+  onSignInClick,
+  onGetStartedClick
 }: HeaderProps) {
   const { user, role, loading, signOut } = useAuth();
   const navigate = useNavigate(); // <-- for redirect after logout
@@ -131,7 +133,7 @@ export function Header({
             {!isAuthenticated ? (
               <>
                 <Button variant="ghost"  onClick={onSignInClick}>Sign In</Button>
-                <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={onGetStartedClick ?? onSignInClick}>
                   Get Started
                 </Button>
               </>

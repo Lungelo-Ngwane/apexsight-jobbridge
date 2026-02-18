@@ -64,7 +64,26 @@ export async function loginUser(email: string, password: string) {
       await supabase.auth.getSession();
     if (sessionError) console.warn("Could not get session:", sessionError);
 
-    return authData.user || null;
+    const user = authData.user ?? null;
+    if (!user) return { user: null, role: null as "candidate" | "employer" | null };
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      console.warn("Failed to fetch profile role after login:", profileError);
+      return { user, role: null as "candidate" | "employer" | null };
+    }
+
+    const resolvedRole =
+      profile?.role === "candidate" || profile?.role === "employer"
+        ? profile.role
+        : null;
+
+    return { user, role: resolvedRole };
   } catch (err: any) {
     console.error("loginUser error:", err);
     throw err;

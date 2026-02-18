@@ -1,17 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { registerUser, loginUser } from '../../lib/auth';
 
 interface LoginProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (role?: "candidate" | "employer" | null) => void;
+  initialMode?: "login" | "register";
+  initialRole?: "candidate" | "employer";
 }
 
-export default function Login({ onLoginSuccess }: LoginProps) {
+export default function Login({
+  onLoginSuccess,
+  initialMode = "login",
+  initialRole = "candidate",
+}: LoginProps) {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'candidate' | 'employer'>('candidate');
   const [company, setCompany] = useState('');
+
+  useEffect(() => {
+    setIsRegister(initialMode === "register");
+    setRole(initialRole);
+  }, [initialMode, initialRole]);
 
 const handleSubmit = async () => {
 
@@ -21,8 +32,8 @@ const handleSubmit = async () => {
       alert('Registered successfully. You can now login.');
       // ...
     } else {
-      const profile = await loginUser(email, password);
-      onLoginSuccess();   // or onLoginSuccess(profile.role) depending on your version
+      const result = await loginUser(email, password);
+      onLoginSuccess(result?.role ?? null);
     }
   } catch (err: any) {
     console.error("LOGIN / REGISTER FAILED:", err);     // ← this is critical
