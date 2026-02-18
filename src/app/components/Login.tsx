@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { registerUser, loginUser } from '../../lib/auth';
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Badge } from "@/app/components/ui/badge";
+import { User, Building2, Mail, Lock, UserCircle2 } from "lucide-react";
 
 interface LoginProps {
   onLoginSuccess: (role?: "candidate" | "employer" | null) => void;
@@ -44,66 +49,112 @@ const handleSubmit = async () => {
 };
 
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">{isRegister ? 'Register' : 'Login'}</h2>
+    <div className="w-full max-w-md mx-auto">
+      <div className="mb-5 text-center">
+        <Badge className="bg-blue-100 text-blue-700 border-blue-200 mb-3">
+          ApexSight Access
+        </Badge>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {isRegister ? "Create your account" : "Welcome back"}
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">
+          {isRegister ? "Join as a candidate or employer" : "Sign in to continue"}
+        </p>
+      </div>
 
-      {isRegister && (
-        <>
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={e => setFullName(e.target.value)}
-            className="border p-2 rounded"
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+        {isRegister && (
+          <>
+            <div>
+              <Label className="text-xs text-gray-600 mb-2 block">Account Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole("candidate")}
+                  className={`h-10 rounded-md border text-sm font-medium transition flex items-center justify-center gap-2 ${
+                    role === "candidate"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  Candidate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("employer")}
+                  className={`h-10 rounded-md border text-sm font-medium transition flex items-center justify-center gap-2 ${
+                    role === "employer"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Employer
+                </button>
+              </div>
+            </div>
+
+            <div className="relative">
+              <UserCircle2 className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                type="text"
+                placeholder="Full Name"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {role === 'employer' && (
+              <div className="relative">
+                <Building2 className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  type="text"
+                  placeholder="Company Name"
+                  value={company}
+                  onChange={e => setCompany(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="relative">
+          <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="pl-9"
           />
-          <select
-            value={role}
-            onChange={e => setRole(e.target.value as 'candidate' | 'employer')}
-            className="border p-2 rounded"
-          >
-            <option value="candidate">Candidate</option>
-            <option value="employer">Employer</option>
-          </select>
-          {role === 'employer' && (
-            <input
-              type="text"
-              placeholder="Company Name"
-              value={company}
-              onChange={e => setCompany(e.target.value)}
-              className="border p-2 rounded"
-            />
-          )}
-        </>
-      )}
+        </div>
 
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        className="border p-2 rounded"
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        className="border p-2 rounded"
-      />
+        <div className="relative">
+          <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="pl-9"
+          />
+        </div>
 
-      <button
-        onClick={handleSubmit}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        {isRegister ? 'Register' : 'Login'}
-      </button>
+        <Button onClick={handleSubmit} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+          {isRegister ? 'Create Account' : 'Sign In'}
+        </Button>
 
-      <button
-        className="text-sm text-gray-500 hover:underline"
-        onClick={() => setIsRegister(!isRegister)}
-      >
-        {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
-      </button>
+        <button
+          type="button"
+          className="w-full text-sm text-gray-600 hover:text-gray-900 hover:underline"
+          onClick={() => setIsRegister(!isRegister)}
+        >
+          {isRegister ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
+        </button>
+      </div>
     </div>
   );
 }
