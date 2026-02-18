@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       req.headers.get("origin") ??
       Deno.env.get("APP_URL") ??
       "http://localhost:5173";
-    const callbackUrl = `${origin}/employer/billing?addon_success=true`;
+    const callbackUrl = `${origin}/employer/addons?addon_success=true`;
 
     const paystackInitResponse = await fetch(
       "https://api.paystack.co/transaction/initialize",

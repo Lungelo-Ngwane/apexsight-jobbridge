@@ -4,6 +4,7 @@ import {
   Briefcase,
   Users,
   CreditCard,
+  ShoppingBag,
   Settings,
   LogOut,
   Building2
@@ -45,6 +46,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
           <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/employer/dashboard" />
           <SidebarItem icon={Briefcase} label="Jobs" to="/employer/jobs" />
           <SidebarItem icon={Users} label="Candidates" />
+          <SidebarItem icon={ShoppingBag} label="Add-ons" to="/employer/addons" />
           <SidebarItem icon={CreditCard} label="Billing" to="/employer/billing" />
           <SidebarItem icon={Settings} label="Settings" to="/employer/settings" />
         </nav>

@@ -12,6 +12,7 @@ import CandidateJobsPage from "./components/CandidateJobsPage";
 import { EmployerApp } from "./components/EmployerApp";
 import { EmployerJobsPage } from "./components/employer/EmployerJobsPage";
 import { EmployerBillingPage } from "./components/employer/EmployerBillingPage";
+import { EmployerAddonsPage } from "./components/employer/EmployerAddonsPage";
 import { EmployerSettingsPage } from "./components/employer/EmployerSettingsPage";
 // import { useAuth } from '../context/AuthContext'; // adjust path
 
@@ -92,6 +93,7 @@ export default function App() {
         <Route path="/employer" element={<EmployerApp />}>
           <Route path="dashboard" element={<EmployerDashboard />} />
           <Route path="jobs" element={<EmployerJobsPage />} />
+          <Route path="addons" element={<EmployerAddonsPage />} />
           <Route path="billing" element={<EmployerBillingPage />} />
           <Route path="settings" element={<EmployerSettingsPage />} />
         </Route>

@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { consumeEmployerCredit, getJobApplicants, updateApplicationStatus } from "@/lib/employer";
+import { consumeCandidateViewAccess, getJobApplicants, updateApplicationStatus } from "@/lib/employer";
 import { CandidateProfileDrawer } from "./CandidateProfileDrawer";
+import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 
 
 interface Props {
@@ -27,6 +28,7 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
     const [unlockingProfileId, setUnlockingProfileId] = useState<string | null>(null);
     const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
+    const [showUpsellModal, setShowUpsellModal] = useState(false);
 
 
 
@@ -61,13 +63,13 @@ async function handleViewProfile(appId: string) {
         }
 
         setUnlockingProfileId(appId);
-        await consumeEmployerCredit("candidate_unlock", 1);
+        await consumeCandidateViewAccess(appId);
         setUnlockedApplicationIds((prev) => [...new Set([...prev, appId])]);
         setSelectedApplicationId(appId);
     } catch (error: any) {
         const message = String(error?.message ?? "").toLowerCase();
         if (message.includes("insufficient") || message.includes("no credits")) {
-            alert("You have no candidate unlock credits left. Please buy add-ons from Billing.");
+            setShowUpsellModal(true);
             return;
         }
         console.error("Failed to unlock candidate profile", error);
@@ -206,6 +208,12 @@ async function handleViewProfile(appId: string) {
                     onClose={() => setSelectedApplicationId(null)}
                 />
             )}
+            <AddonUpsellModal
+                open={showUpsellModal}
+                onOpenChange={setShowUpsellModal}
+                addonType="candidate_unlock"
+                actionLabel="unlock this candidate profile"
+            />
         </div>
     );
 }

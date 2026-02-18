@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { featureJob, generateAiReport, getEmployerJobs, runAutoMatch, updateJobStatus } from "@/lib/employer";
 import { PostJobModal } from "../PostJobModal";
 import { JobCandidatesModal } from "../JobCandidatesModal";
+import { AddonUpsellModal } from "./AddonUpsellModal";
 import {
   Dialog,
   DialogContent,
@@ -86,6 +87,15 @@ export function EmployerJobsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [latestReport, setLatestReport] = useState<Record<string, unknown> | null>(null);
+  const [upsell, setUpsell] = useState<{
+    open: boolean;
+    addonType: string | null;
+    actionLabel: string;
+  }>({
+    open: false,
+    addonType: null,
+    actionLabel: "perform this action",
+  });
 
   async function loadJobs() {
     try {
@@ -237,7 +247,11 @@ export function EmployerJobsPage() {
     } catch (error: any) {
       const message = String(error?.message ?? "").toLowerCase();
       if (message.includes("insufficient")) {
-        alert("You need featured_job credits to feature this job. Buy add-ons from Billing.");
+        setUpsell({
+          open: true,
+          addonType: "featured_job",
+          actionLabel: "feature this job",
+        });
       } else {
         console.error("Failed to feature job", error);
         alert("Unable to feature this job right now. Please try again.");
@@ -256,7 +270,11 @@ export function EmployerJobsPage() {
     } catch (error: any) {
       const message = String(error?.message ?? "").toLowerCase();
       if (message.includes("insufficient")) {
-        alert("You need ai_report credits to generate this report. Buy add-ons from Billing.");
+        setUpsell({
+          open: true,
+          addonType: "ai_report",
+          actionLabel: "generate this AI report",
+        });
       } else {
         console.error("Failed to generate AI report", error);
         alert("Unable to generate AI report right now. Please try again.");
@@ -275,7 +293,11 @@ export function EmployerJobsPage() {
     } catch (error: any) {
       const message = String(error?.message ?? "").toLowerCase();
       if (message.includes("insufficient")) {
-        alert("You need ai_credit to run auto-match. Buy add-ons from Billing.");
+        setUpsell({
+          open: true,
+          addonType: "ai_credit",
+          actionLabel: "run AI matching for this job",
+        });
       } else {
         console.error("Failed to run AI match", error);
         alert("Unable to run AI match right now. Please try again.");
@@ -617,6 +639,18 @@ export function EmployerJobsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AddonUpsellModal
+        open={upsell.open}
+        onOpenChange={(open) =>
+          setUpsell((prev) => ({
+            ...prev,
+            open,
+          }))
+        }
+        addonType={upsell.addonType}
+        actionLabel={upsell.actionLabel}
+      />
     </div>
   );
 }

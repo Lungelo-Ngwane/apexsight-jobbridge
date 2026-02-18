@@ -24,11 +24,13 @@ import {
   createJob,
   getEmployerCredits,
   getEmployerJobs,
+  getEmployerUsageSnapshot,
   getJobApplicants,
   updateJobStatus,
   updateApplicationStatus,
   getEmployerAnalytics,
   type EmployerCreditBalance,
+  type EmployerUsageSnapshot,
 } from '@/lib/employer';
 import { StatBox } from "./ui/statbox";
 import { PostJobModal } from "./PostJobModal";
@@ -57,6 +59,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const { profile } = useEmployerProfile();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
+  const [usageSnapshot, setUsageSnapshot] = useState<EmployerUsageSnapshot | null>(null);
 
 
 
@@ -66,6 +69,9 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     getEmployerCredits()
       .then(setCreditBalances)
       .catch((error) => console.error("Failed to load employer credits", error));
+    getEmployerUsageSnapshot()
+      .then(setUsageSnapshot)
+      .catch((error) => console.error("Failed to load usage snapshot", error));
   }, []);
 
 
@@ -222,6 +228,34 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
               </div>
             ))}
           </div>
+        </Card>
+
+        <Card className="p-6 border-gray-200 mb-8">
+          <h3 className="font-semibold text-gray-900 mb-4">Plan Usage Counters</h3>
+          {!usageSnapshot ? (
+            <p className="text-sm text-gray-500">Loading usage...</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Active Jobs</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {usageSnapshot.activeJobs}
+                  <span className="text-base font-medium text-gray-500 ml-1">
+                    / {usageSnapshot.jobLimit ?? "Unlimited"}
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Candidate Views This Month</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {usageSnapshot.candidateViewsUsedThisMonth}
+                  <span className="text-base font-medium text-gray-500 ml-1">
+                    / {usageSnapshot.candidateViewLimit ?? "Unlimited"}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
         </Card>
 
 

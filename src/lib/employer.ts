@@ -27,6 +27,14 @@ export interface EmployerCreditBalance {
   remaining: number;
 }
 
+export interface EmployerUsageSnapshot {
+  planName: string;
+  activeJobs: number;
+  jobLimit: number | null;
+  candidateViewsUsedThisMonth: number;
+  candidateViewLimit: number | null;
+}
+
 function toPlanLabel(planName: BillingPlanName): string {
   return `${planName.charAt(0).toUpperCase()}${planName.slice(1)}`;
 }
@@ -75,8 +83,22 @@ export async function createJob(data: {
     throw new Error("Employer profile not found");
   }
 
-  const plan = employer.plan ?? "free";
-  const planLimits = PLAN_LIMITS[plan];
+  const plan = String(employer.plan ?? "free").toLowerCase();
+  const planLimits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS];
+
+  const { data: planRow } = await supabase
+    .from("plans")
+    .select("job_limit")
+    .ilike("name", plan)
+    .maybeSingle();
+
+  const configuredJobLimit = Number(planRow?.job_limit ?? 0);
+  const effectiveJobLimit =
+    planRow && planRow.job_limit === null
+      ? Infinity
+      : Number.isFinite(configuredJobLimit) && configuredJobLimit > 0
+        ? configuredJobLimit
+        : planLimits?.maxActiveJobs ?? 1;
 
   // 3️⃣ Count active jobs
   const { count, error: countError } = await supabase
@@ -87,7 +109,7 @@ export async function createJob(data: {
 
   if (countError) throw countError;
 
-  if (count >= planLimits.maxActiveJobs) {
+  if ((count ?? 0) >= effectiveJobLimit) {
     try {
       await consumeEmployerCredit("job_slot", 1);
     } catch (creditError) {
@@ -997,6 +1019,131 @@ export async function consumeEmployerCredit(creditType: string, amount = 1) {
   }
 
   return data;
+}
+
+export async function consumeCandidateViewAccess(applicationId: string) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("authorize-candidate-view", {
+    body: { applicationId },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to authorize candidate view.");
+  }
+
+  return data;
+}
+
+export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) throw new Error("Not authenticated");
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select("id, plan")
+    .eq("user_id", user.id)
+    .single();
+
+  if (employerError || !employer?.id) {
+    throw new Error("Employer profile not found");
+  }
+
+  const normalizedPlan = String(employer.plan ?? "free").toLowerCase();
+  const fallbackCandidateViewLimits: Record<string, number | null> = {
+    free: 10,
+    starter: 50,
+    professional: 300,
+    enterprise: 9999,
+  };
+
+  const { data: planRow } = await supabase
+    .from("plans")
+    .select("name, job_limit, candidate_view_limit")
+    .ilike("name", normalizedPlan)
+    .maybeSingle();
+
+  const { count: activeJobs, error: activeJobsError } = await supabase
+    .from("jobs")
+    .select("*", { count: "exact", head: true })
+    .eq("employer_id", employer.id)
+    .eq("status", "open");
+
+  if (activeJobsError) throw activeJobsError;
+
+  const startOfMonth = new Date();
+  startOfMonth.setUTCDate(1);
+  startOfMonth.setUTCHours(0, 0, 0, 0);
+
+  const { data: viewsRows, error: viewsError } = await supabase
+    .from("employer_credit_usage")
+    .select("amount")
+    .eq("employer_id", employer.id)
+    .eq("context_type", "candidate_profile_view")
+    .gte("created_at", startOfMonth.toISOString());
+
+  if (viewsError) throw viewsError;
+
+  const usedViewsThisMonth = (viewsRows ?? []).reduce(
+    (sum, row) => sum + Number(row.amount ?? 0),
+    0,
+  );
+
+  return {
+    planName: String(planRow?.name ?? normalizedPlan),
+    activeJobs: Number(activeJobs ?? 0),
+    jobLimit:
+      planRow && planRow.job_limit === null
+        ? null
+        : (planRow?.job_limit ?? PLAN_LIMITS[normalizedPlan as keyof typeof PLAN_LIMITS]?.maxActiveJobs ?? null),
+    candidateViewsUsedThisMonth: usedViewsThisMonth,
+    candidateViewLimit:
+      planRow && planRow.candidate_view_limit === null
+        ? null
+        : (planRow?.candidate_view_limit ?? fallbackCandidateViewLimits[normalizedPlan] ?? 0),
+  };
 }
 
 export async function featureJob(jobId: string, days = 7) {
