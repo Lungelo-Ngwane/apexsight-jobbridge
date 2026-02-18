@@ -16,9 +16,17 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { getEmployerJobs, updateJobStatus } from "@/lib/employer";
+import { featureJob, generateAiReport, getEmployerJobs, runAutoMatch, updateJobStatus } from "@/lib/employer";
 import { PostJobModal } from "../PostJobModal";
 import { JobCandidatesModal } from "../JobCandidatesModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +48,8 @@ type JobRow = {
   description: string;
   employment_type: string | null;
   experience_level: string | null;
+  is_featured?: boolean;
+  featured_until?: string | null;
   created_at: string;
   job_applications?: { id: string; status: string }[];
 };
@@ -73,6 +83,9 @@ export function EmployerJobsPage() {
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [editingJob, setEditingJob] = useState<JobRow | null>(null);
   const [jobToClose, setJobToClose] = useState<JobRow | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [latestReport, setLatestReport] = useState<Record<string, unknown> | null>(null);
 
   async function loadJobs() {
     try {
@@ -213,6 +226,63 @@ export function EmployerJobsPage() {
   function handleNewJob() {
     setEditingJob(null);
     setShowPostJobModal(true);
+  }
+
+  async function handleFeatureJob(job: JobRow) {
+    try {
+      setActionLoading(`feature-${job.id}`);
+      await featureJob(job.id, 7);
+      alert("Job featured successfully for 7 days.");
+      await loadJobs();
+    } catch (error: any) {
+      const message = String(error?.message ?? "").toLowerCase();
+      if (message.includes("insufficient")) {
+        alert("You need featured_job credits to feature this job. Buy add-ons from Billing.");
+      } else {
+        console.error("Failed to feature job", error);
+        alert("Unable to feature this job right now. Please try again.");
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleGenerateAiReport(job: JobRow) {
+    try {
+      setActionLoading(`report-${job.id}`);
+      const data = await generateAiReport(job.id);
+      setLatestReport((data?.report ?? null) as Record<string, unknown> | null);
+      setReportModalOpen(true);
+    } catch (error: any) {
+      const message = String(error?.message ?? "").toLowerCase();
+      if (message.includes("insufficient")) {
+        alert("You need ai_report credits to generate this report. Buy add-ons from Billing.");
+      } else {
+        console.error("Failed to generate AI report", error);
+        alert("Unable to generate AI report right now. Please try again.");
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleRunAutoMatch(job: JobRow) {
+    try {
+      setActionLoading(`match-${job.id}`);
+      const data = await runAutoMatch(job.id);
+      const matchesFound = Number(data?.matches_found ?? 0);
+      alert(`AI match completed. ${matchesFound} candidates matched.`);
+    } catch (error: any) {
+      const message = String(error?.message ?? "").toLowerCase();
+      if (message.includes("insufficient")) {
+        alert("You need ai_credit to run auto-match. Buy add-ons from Billing.");
+      } else {
+        console.error("Failed to run AI match", error);
+        alert("Unable to run AI match right now. Please try again.");
+      }
+    } finally {
+      setActionLoading(null);
+    }
   }
 
   return (
@@ -374,6 +444,15 @@ export function EmployerJobsPage() {
                         </Badge>
                       </div>
 
+                      {job.is_featured && (
+                        <div className="mb-3">
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                            Featured
+                            {job.featured_until ? ` until ${new Date(job.featured_until).toLocaleDateString()}` : ""}
+                          </Badge>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-3 gap-3 mb-5">
                         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                           <div className="flex items-center gap-2 text-blue-600 mb-1">
@@ -408,6 +487,33 @@ export function EmployerJobsPage() {
 
                         <Button variant="outline" className="flex-1 min-w-[140px] border-gray-300" onClick={() => handleEdit(job)}>
                           Edit Job
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          className="border-gray-300"
+                          onClick={() => handleFeatureJob(job)}
+                          disabled={actionLoading === `feature-${job.id}`}
+                        >
+                          {actionLoading === `feature-${job.id}` ? "Featuring..." : "Feature Job"}
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          className="border-gray-300"
+                          onClick={() => handleRunAutoMatch(job)}
+                          disabled={actionLoading === `match-${job.id}`}
+                        >
+                          {actionLoading === `match-${job.id}` ? "Running..." : "AI Match"}
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          className="border-gray-300"
+                          onClick={() => handleGenerateAiReport(job)}
+                          disabled={actionLoading === `report-${job.id}`}
+                        >
+                          {actionLoading === `report-${job.id}` ? "Generating..." : "AI Report"}
                         </Button>
 
                         {job.status === "open" && (
@@ -494,6 +600,23 @@ export function EmployerJobsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>AI Hiring Report</DialogTitle>
+            <DialogDescription>
+              Generated from your current pipeline data and job context.
+            </DialogDescription>
+          </DialogHeader>
+          <pre className="max-h-[420px] overflow-auto rounded-md bg-gray-100 p-3 text-xs">
+            {JSON.stringify(latestReport ?? {}, null, 2)}
+          </pre>
+          <DialogFooter>
+            <Button onClick={() => setReportModalOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

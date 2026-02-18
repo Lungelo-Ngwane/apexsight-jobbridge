@@ -88,7 +88,15 @@ export async function createJob(data: {
   if (countError) throw countError;
 
   if (count >= planLimits.maxActiveJobs) {
-    throw new Error("PLAN_LIMIT_REACHED");
+    try {
+      await consumeEmployerCredit("job_slot", 1);
+    } catch (creditError) {
+      const message = String((creditError as Error)?.message ?? "").toLowerCase();
+      if (message.includes("insufficient") || message.includes("no credits")) {
+        throw new Error("PLAN_LIMIT_REACHED");
+      }
+      throw creditError;
+    }
   }
 
   // 4️⃣ Insert the job
@@ -155,6 +163,8 @@ export async function getEmployerJobs() {
       description,
       employment_type,
       experience_level,
+      is_featured,
+      featured_until,
       created_at,
       job_applications ( id, status )
     `,
@@ -984,6 +994,162 @@ export async function consumeEmployerCredit(creditType: string, amount = 1) {
       : null;
 
     throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to consume credits.");
+  }
+
+  return data;
+}
+
+export async function featureJob(jobId: string, days = 7) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("feature-job", {
+    body: { jobId, days },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to feature job.");
+  }
+
+  return data;
+}
+
+export async function generateAiReport(jobId: string) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("generate-ai-report", {
+    body: { jobId },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to generate AI report.");
+  }
+
+  return data;
+}
+
+export async function runAutoMatch(jobId: string) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("auto-match", {
+    body: { job_id: jobId },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to run AI match.");
   }
 
   return data;

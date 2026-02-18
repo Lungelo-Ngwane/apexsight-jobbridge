@@ -1,10 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import OpenAI from "https://esm.sh/openai@4.28.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const openai = new OpenAI({
-  apiKey: Deno.env.get("OPENAI_API_KEY"),
-});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +19,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    const { job_id } = await req.json();
+    const { jobId, days = 7 } = await req.json();
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing access token" }), {
@@ -59,25 +53,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: creditRow } = await supabase
-      .from("employer_credits")
-      .select("id, remaining")
-      .eq("employer_id", employer.id)
-      .eq("credit_type", "ai_credit")
-      .maybeSingle();
-
-    const current = Number(creditRow?.remaining ?? 0);
-    if (!creditRow?.id || current < 1) {
-      return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, employer_id, title, description, location")
-      .eq("id", job_id)
+      .select("id, employer_id")
+      .eq("id", jobId)
       .maybeSingle();
 
     if (jobError || !job || String(job.employer_id) !== String(employer.id)) {
@@ -87,6 +66,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { data: creditRow, error: creditError } = await supabase
+      .from("employer_credits")
+      .select("id, remaining")
+      .eq("employer_id", employer.id)
+      .eq("credit_type", "featured_job")
+      .maybeSingle();
+
+    if (creditError || !creditRow?.id || Number(creditRow.remaining ?? 0) < 1) {
+      return new Response(JSON.stringify({ error: "Insufficient featured_job credits" }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const current = Number(creditRow.remaining ?? 0);
     const { error: deductError } = await supabase
       .from("employer_credits")
       .update({ remaining: current - 1 })
@@ -95,7 +89,7 @@ Deno.serve(async (req) => {
 
     if (deductError) {
       return new Response(
-        JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
+        JSON.stringify({ error: `Failed to deduct credit: ${deductError.message}` }),
         {
           status: 409,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -103,41 +97,47 @@ Deno.serve(async (req) => {
       );
     }
 
-    const text = `
-    Title: ${job.title}
-    Description: ${job.description}
-    Location: ${job.location}
-    `;
+    const safeDays = Math.max(1, Math.min(30, Number(days) || 7));
+    const now = new Date();
+    const featuredUntil = new Date(now.getTime() + safeDays * 24 * 60 * 60 * 1000).toISOString();
 
-    const embedding = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: text,
-    });
-
-    await supabase
+    const { error: featureError } = await supabase
       .from("jobs")
       .update({
-        embedding: embedding.data[0].embedding,
+        is_featured: true,
+        featured_until: featuredUntil,
       })
-      .eq("id", job_id)
+      .eq("id", jobId)
       .eq("employer_id", employer.id);
+
+    if (featureError) {
+      return new Response(
+        JSON.stringify({ error: `Failed to feature job: ${featureError.message}` }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     await supabase.from("employer_credit_usage").insert({
       employer_id: employer.id,
-      credit_type: "ai_credit",
+      credit_type: "featured_job",
       amount: 1,
       context_type: "job",
-      context_id: job_id,
-      metadata: { source: "generate-job-embedding" },
+      context_id: jobId,
+      metadata: { featuredUntil, days: safeDays },
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        ai_credits_consumed: 1,
-        ai_credits_remaining: current - 1,
+        featuredUntil,
+        creditsRemaining: current - 1,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   } catch (error) {
     return new Response(JSON.stringify({ error: String(error) }), {
