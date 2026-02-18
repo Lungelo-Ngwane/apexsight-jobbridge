@@ -20,6 +20,7 @@ import { applyForJob, uploadCandidateCV } from "../../lib/candidate";
 import { calculateProfileCompletion } from "@/lib/profileCompletion";
 import { AddSkillModal } from "./AddSkillModal";
 import { EditProfileModal } from "./EditProfileModal";
+import { useNavigate } from "react-router-dom";
 
 
 interface CandidateDashboardProps {
@@ -28,6 +29,7 @@ interface CandidateDashboardProps {
 }
 
 export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateDashboardProps) {
+  const navigate = useNavigate();
   const { user, role, loading } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loadingData, setLoadingData] = useState(true);
@@ -424,7 +426,13 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                   ? `Complete Profile (${completion}%)`
                   : "Profile Complete 🎉"}
               </Button>
-
+              <Button
+                variant="outline"
+                className="w-full mt-3"
+                onClick={() => navigate("/candidate/messages")}
+              >
+                Open Messages
+              </Button>
             </Card>
           </div>
         </div>

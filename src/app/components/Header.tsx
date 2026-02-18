@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { ChevronDown, Settings, LogOut, HelpCircle } from "lucide-react";
+import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import logo from "../assets/ApexSight_logo.png";
 import { useAuth } from "../context/AuthContext";
+import { getCandidateUnreadMessageCount, subscribeToMyMessageChanges } from "@/lib/messages";
 
 interface HeaderProps {
   currentProduct: "skilllink" | "jobbridge" | "landing";
@@ -28,8 +30,7 @@ export function Header({
 }: HeaderProps) {
   const { user, role, loading, signOut } = useAuth();
   const navigate = useNavigate(); // <-- for redirect after logout
-
-  if (loading) return null;
+  const [candidateUnreadCount, setCandidateUnreadCount] = useState(0);
 
   const isAuthenticated = !!user && !!role;
 
@@ -53,7 +54,33 @@ export function Header({
     }
   };
 
-  
+  useEffect(() => {
+    if (!user || role !== "candidate") {
+      setCandidateUnreadCount(0);
+      return;
+    }
+
+    let unsub: (() => void) | null = null;
+
+    const refresh = () => {
+      getCandidateUnreadMessageCount()
+        .then(setCandidateUnreadCount)
+        .catch((error) => console.error("Failed to load candidate unread messages", error));
+    };
+
+    refresh();
+    unsub = subscribeToMyMessageChanges(refresh);
+
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      if (unsub) unsub();
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [user, role]);
+
+  if (loading) return null;
 
   return (
     <header className="border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
@@ -109,51 +136,67 @@ export function Header({
                 </Button>
               </>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src="" />
-                      <AvatarFallback className="bg-blue-600 text-white text-sm">
-                        {avatarInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden md:block text-left">
-                      <div className="text-sm font-medium text-gray-900">{fullName}</div>
-                      <div className="text-xs text-gray-500">{displayRole}</div>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
+              <>
+                {role === "candidate" && (
+                  <button
+                    onClick={() => navigate("/candidate/messages")}
+                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition"
+                    aria-label="Open messages"
+                  >
+                    <MessageCircle className="w-5 h-5 text-gray-700" />
+                    {candidateUnreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                        {candidateUnreadCount > 99 ? "99+" : candidateUnreadCount}
+                      </span>
+                    )}
                   </button>
-                </DropdownMenuTrigger>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src="" />
+                        <AvatarFallback className="bg-blue-600 text-white text-sm">
+                          {avatarInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="hidden md:block text-left">
+                        <div className="text-sm font-medium text-gray-900">{fullName}</div>
+                        <div className="text-xs text-gray-500">{displayRole}</div>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{fullName}</span>
-                      <span className="text-xs text-gray-500">{email}</span>
-                    </div>
-                  </DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{fullName}</span>
+                        <span className="text-xs text-gray-500">{email}</span>
+                      </div>
+                    </DropdownMenuLabel>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  <DropdownMenuItem onClick={onProfileClick}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    Profile Settings
-                  </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onProfileClick}>
+                      <Settings className="w-4 h-4 mr-2" />
+                      Profile Settings
+                    </DropdownMenuItem>
 
-                  <DropdownMenuItem>
-                    <HelpCircle className="w-4 h-4 mr-2" />
-                    Help & Support
-                  </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <HelpCircle className="w-4 h-4 mr-2" />
+                      Help & Support
+                    </DropdownMenuItem>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             )}
           </div>
         </div>

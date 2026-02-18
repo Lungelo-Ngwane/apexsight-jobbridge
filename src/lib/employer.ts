@@ -35,6 +35,17 @@ export interface EmployerUsageSnapshot {
   candidateViewLimit: number | null;
 }
 
+export interface TalentPoolCandidate {
+  id: string;
+  fullName: string;
+  headline: string | null;
+  location: string | null;
+  bio: string | null;
+  yearsExperience: number | null;
+  cvUrl: string | null;
+  skills: { skill: string; level: string | null }[];
+}
+
 function toPlanLabel(planName: BillingPlanName): string {
   return `${planName.charAt(0).toUpperCase()}${planName.slice(1)}`;
 }
@@ -526,6 +537,54 @@ export async function getAllSkills() {
 
   if (error) throw error;
   return data;
+}
+
+export async function getTalentPoolCandidates(): Promise<TalentPoolCandidate[]> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("candidate_profiles")
+    .select(
+      `
+      id,
+      full_name,
+      headline,
+      location,
+      bio,
+      years_experience,
+      cv_url,
+      candidate_skills (
+        skill,
+        level
+      )
+    `,
+    );
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    fullName: String(row.full_name ?? "Unknown Candidate"),
+    headline: row.headline ?? null,
+    location: row.location ?? null,
+    bio: row.bio ?? null,
+    yearsExperience:
+      row.years_experience === null || row.years_experience === undefined
+        ? null
+        : Number(row.years_experience),
+    cvUrl: row.cv_url ?? null,
+    skills: Array.isArray(row.candidate_skills)
+      ? row.candidate_skills.map((skillRow) => ({
+          skill: String(skillRow.skill ?? ""),
+          level: skillRow.level ?? null,
+        }))
+      : [],
+  }));
 }
 
 export async function getRankedCandidates(jobId: string) {

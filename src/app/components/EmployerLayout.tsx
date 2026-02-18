@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Briefcase,
   Users,
+  MessageSquare,
   CreditCard,
   ShoppingBag,
   Settings,
@@ -45,7 +46,8 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/employer/dashboard" />
           <SidebarItem icon={Briefcase} label="Jobs" to="/employer/jobs" />
-          <SidebarItem icon={Users} label="Candidates" />
+          <SidebarItem icon={Users} label="Candidates" to="/employer/candidates" />
+          <SidebarItem icon={MessageSquare} label="Messages" to="/employer/messages" />
           <SidebarItem icon={ShoppingBag} label="Add-ons" to="/employer/addons" />
           <SidebarItem icon={CreditCard} label="Billing" to="/employer/billing" />
           <SidebarItem icon={Settings} label="Settings" to="/employer/settings" />

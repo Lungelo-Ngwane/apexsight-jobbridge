@@ -18,6 +18,7 @@ import {
   Crown
 } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
+import { useNavigate } from "react-router-dom";
 // import { PostJobModal } from "./components/PostJobModal";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -47,6 +48,7 @@ interface EmployerDashboardProps {
 }
 
 export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashboardProps) {
+  const navigate = useNavigate();
   const { user, role, loading } = useAuth();
   const [jobs, setJobs] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
@@ -426,7 +428,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                 </Button>
 
                 {hasAnalytics ? (
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => navigate("/employer/candidates")}
+                  >
                     <Users className="w-4 h-4 mr-2" />
                     Browse Talent Pool
                   </Button>
@@ -440,7 +446,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                     Upgrade to Browse Talent Pool
                   </Button>
                 )}
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => navigate("/employer/messages")}
+                >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Message Candidates
                 </Button>
