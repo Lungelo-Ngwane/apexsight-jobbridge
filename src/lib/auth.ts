@@ -1,5 +1,10 @@
 import { supabase } from "./supabase";
 
+const APP_BASE_URL = (
+  import.meta.env.VITE_APP_URL ??
+  "https://apexsight-jobbridge-3c9eb.ondigitalocean.app"
+).replace(/\/+$/, "");
+
 /**
  * Register a new user (candidate or employer)
  * Uses Supabase Auth + trigger to auto-create profiles/employer_profiles
@@ -28,10 +33,14 @@ export async function registerUser(
     }
 
     // Sign up user
+    const redirectPath = role === "employer" ? "/employer/dashboard" : "/candidate/dashboard";
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: userData },
+      options: {
+        data: userData,
+        emailRedirectTo: `${APP_BASE_URL}${redirectPath}`,
+      },
     });
 
     if (authError) throw new Error(authError.message);

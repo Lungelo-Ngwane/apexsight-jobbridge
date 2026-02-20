@@ -4,6 +4,14 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Badge } from "@/app/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 import { User, Building2, Mail, Lock, UserCircle2 } from "lucide-react";
 
 interface LoginProps {
@@ -23,6 +31,7 @@ export default function Login({
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'candidate' | 'employer'>('candidate');
   const [company, setCompany] = useState('');
+  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
 
   useEffect(() => {
     setIsRegister(initialMode === "register");
@@ -30,12 +39,17 @@ export default function Login({
   }, [initialMode, initialRole]);
 
 const handleSubmit = async () => {
-
   try {
     if (isRegister) {
       await registerUser(email, password, fullName, role, company);
-      alert('Registered successfully. You can now login.');
-      // ...
+      if (role === "employer") {
+        setShowVerifyEmailModal(true);
+      } else {
+        alert("Registered successfully. Please verify your email, then sign in.");
+      }
+
+      setIsRegister(false);
+      setPassword("");
     } else {
       const result = await loginUser(email, password);
       onLoginSuccess(result?.role ?? null);
@@ -155,6 +169,21 @@ const handleSubmit = async () => {
           {isRegister ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
         </button>
       </div>
+
+      <Dialog open={showVerifyEmailModal} onOpenChange={setShowVerifyEmailModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify your email to continue</DialogTitle>
+            <DialogDescription>
+              Your employer account has been created. Please check your inbox and click the
+              verification link to continue to onboarding.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowVerifyEmailModal(false)}>Okay</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
