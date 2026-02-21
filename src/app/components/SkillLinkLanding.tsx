@@ -19,7 +19,7 @@ export function SkillLinkLanding({ onGetStarted }: SkillLinkLandingProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-20 pb-24">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-24">
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Award className="w-4 h-4" />
@@ -74,7 +74,7 @@ export function SkillLinkLanding({ onGetStarted }: SkillLinkLandingProps) {
       </section>
 
       {/* How It Works */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Your Path to Employment
@@ -119,7 +119,7 @@ export function SkillLinkLanding({ onGetStarted }: SkillLinkLandingProps) {
       </section>
 
       {/* Features Grid */}
-      <section className="max-w-7xl mx-auto px-6 py-20 bg-gradient-to-b from-transparent to-blue-50">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20 bg-gradient-to-b from-transparent to-blue-50">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-6">
@@ -183,7 +183,7 @@ export function SkillLinkLanding({ onGetStarted }: SkillLinkLandingProps) {
       </section>
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-12 border-0">
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-4">

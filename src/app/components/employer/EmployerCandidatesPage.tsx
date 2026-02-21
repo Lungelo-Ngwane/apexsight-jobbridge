@@ -90,13 +90,13 @@ export function EmployerCandidatesPage() {
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Browse Talent Pool</h1>
           <p className="text-sm text-gray-600">Search and filter candidates by skills, location, and experience</p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <Card className="p-4 mb-6 border-gray-200 shadow-sm">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
             <div className="flex-1 relative">

@@ -168,11 +168,11 @@ export default function App() {
 
       {showLoginModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4"
           onClick={() => setShowLoginModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl p-8 w-96 max-w-full transform transition-transform duration-300 scale-95 hover:scale-100"
+            className="relative bg-white rounded-2xl shadow-2xl p-4 sm:p-8 w-full max-w-md transform transition-transform duration-300 scale-95 hover:scale-100"
             onClick={e => e.stopPropagation()}
           >
             <button

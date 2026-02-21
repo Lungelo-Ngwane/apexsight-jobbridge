@@ -20,7 +20,7 @@ interface JobReadinessSummaryProps {
 export function JobReadinessSummary({ onViewJobs }: JobReadinessSummaryProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Success Banner */}
         <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-8 mb-8 text-white">
           <div className="flex items-center gap-3 mb-4">

@@ -86,20 +86,20 @@ export function Header({
 
   return (
     <header className="border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 py-3">
-        <div className="flex items-center justify-between gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between gap-3 sm:gap-8">
           {/* Logo + Products */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <img src={logo} alt="ApexSight Logo" className="h-10 w-auto" />
+          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+              <img src={logo} alt="ApexSight Logo" className="h-8 sm:h-10 w-auto shrink-0" />
               <div className="flex flex-col">
-                <h1 className="text-lg font-bold text-gray-900">ApexSight</h1>
-                <p className="text-[10px] text-gray-500 leading-none">Talent Infrastructure</p>
+                <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">ApexSight</h1>
+                <p className="hidden sm:block text-[10px] text-gray-500 leading-none">Talent Infrastructure</p>
               </div>
             </div>
 
             {isAuthenticated && role && (
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <div className="hidden md:flex items-center bg-gray-100 rounded-lg p-1">
                 {role === "candidate" && (
                   <button
                     onClick={() => onProductSwitch?.("skilllink")}
@@ -129,11 +129,11 @@ export function Header({
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {!isAuthenticated ? (
               <>
-                <Button variant="ghost"  onClick={onSignInClick}>Sign In</Button>
-                <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={onGetStartedClick ?? onSignInClick}>
+                <Button variant="ghost" size="sm" className="px-2 sm:px-4" onClick={onSignInClick}>Sign In</Button>
+                <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700 px-3 sm:px-4" onClick={onGetStartedClick ?? onSignInClick}>
                   Get Started
                 </Button>
               </>

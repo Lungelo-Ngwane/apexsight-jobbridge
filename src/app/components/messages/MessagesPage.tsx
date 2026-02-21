@@ -208,7 +208,7 @@ export function MessagesPage() {
 
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
           <p className="text-sm text-gray-600 mt-1">

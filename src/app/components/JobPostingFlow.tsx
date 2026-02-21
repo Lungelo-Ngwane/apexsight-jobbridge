@@ -418,7 +418,7 @@ export function JobPostingFlow({ onComplete, onCancel }: JobPostingFlowProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Progress Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-6 py-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Create Job Posting</h1>
             <Button variant="ghost" onClick={onCancel}>
@@ -464,7 +464,7 @@ export function JobPostingFlow({ onComplete, onCancel }: JobPostingFlowProps) {
       </div>
 
       {/* Step Content */}
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <Card className="p-8 border-gray-200">
           {renderStepContent()}
         </Card>

@@ -24,9 +24,9 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
   const { profile } = useEmployerProfile();
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Fixed Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] shadow-sm">
+    <div className="min-h-screen md:flex bg-gray-50">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] shadow-sm">
         {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3 mb-2">
@@ -66,8 +66,36 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
         </div>
       </aside>
 
-      {/* Main content area with left margin for sidebar */}
-      <main className="flex-1 ml-64 overflow-y-auto">
+      {/* Mobile top nav */}
+      <div className="md:hidden bg-white border-b border-gray-200 sticky top-16 z-40">
+        <div className="px-4 py-3">
+          <p className="text-sm font-semibold text-gray-900 truncate">
+            {profile?.company_name ?? "Employer Portal"}
+          </p>
+        </div>
+        <nav className="px-2 pb-2 overflow-x-auto">
+          <div className="flex gap-2 min-w-max">
+            <MobileNavItem label="Dashboard" to="/employer/dashboard" />
+            <MobileNavItem label="Jobs" to="/employer/jobs" />
+            <MobileNavItem label="Candidates" to="/employer/candidates" />
+            <MobileNavItem label="Messages" to="/employer/messages" />
+            <MobileNavItem label="Add-ons" to="/employer/addons" />
+            <MobileNavItem label="Billing" to="/employer/billing" />
+            <MobileNavItem label="Settings" to="/employer/settings" />
+            <Button
+              variant="ghost"
+              className="h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+              onClick={signOut}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign out
+            </Button>
+          </div>
+        </nav>
+      </div>
+
+      {/* Main content area */}
+      <main className="flex-1 md:ml-64 overflow-y-auto">
         {children}
       </main>
     </div>
@@ -107,6 +135,23 @@ function SidebarItem({ icon: Icon, label, to }: SidebarItemProps) {
           <span className="text-sm">{label}</span>
         </>
       )}
+    </NavLink>
+  );
+}
+
+function MobileNavItem({ label, to }: { label: string; to: string }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `h-9 px-3 rounded-lg text-sm whitespace-nowrap inline-flex items-center ${
+          isActive
+            ? "bg-blue-50 text-blue-700 font-medium"
+            : "text-gray-700 hover:bg-gray-50"
+        }`
+      }
+    >
+      {label}
     </NavLink>
   );
 }

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
@@ -101,7 +101,7 @@ export function EmployerAddonsPage() {
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Add-ons</h1>
           <p className="text-sm text-gray-600">
             Buy credits and unlock premium actions on demand
@@ -109,7 +109,7 @@ export function EmployerAddonsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <Card className="p-6 border-gray-200 shadow-md">
             <div className="flex items-center justify-between mb-4">

@@ -269,7 +269,7 @@ export function EmployerBillingPage() {
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-emerald-50/20 to-gray-50">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Billing & Subscription</h1>
@@ -290,7 +290,7 @@ export function EmployerBillingPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">

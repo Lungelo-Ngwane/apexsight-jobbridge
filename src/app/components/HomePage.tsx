@@ -34,7 +34,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-28">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-28">
           <div className="text-center max-w-5xl mx-auto">
             {/* Logo Badge */}
             {/* <div className="flex items-center justify-center gap-3 mb-8">
@@ -112,7 +112,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
       </section>
 
       {/* Stats Bar */}
-      <section className="relative -mt-12 max-w-7xl mx-auto px-6 pb-20">
+      <section className="relative -mt-12 max-w-7xl mx-auto px-4 sm:px-6 pb-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { value: "250K+", label: "Skills Verified", icon: Award },
@@ -132,7 +132,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
       </section>
 
       {/* Choose Your Path Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Choose Your Path
@@ -240,7 +240,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
       </section>
 
       {/* How It Works */}
-      <section className="max-w-7xl mx-auto px-6 py-20 bg-white">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20 bg-white">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             How ApexSight Works
@@ -287,7 +287,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
       </section>
 
       {/* Trusted By */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Trusted by Leading Organizations
@@ -319,7 +319,7 @@ export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps
       </section>
 
       {/* Final CTA */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <Card className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white p-12 border-0">
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-4">

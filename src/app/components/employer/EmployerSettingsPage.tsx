@@ -94,7 +94,7 @@ export function EmployerSettingsPage() {
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
             <p className="text-sm text-gray-600">Manage your account and company preferences</p>
@@ -102,7 +102,7 @@ export function EmployerSettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-8 bg-gray-100/80 backdrop-blur p-1">
             <TabsTrigger value="company" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
