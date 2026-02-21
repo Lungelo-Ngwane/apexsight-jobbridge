@@ -522,7 +522,7 @@ export function EmployerBillingPage() {
             )}
 
             {/* Stats */}
-            <Card className="p-6 border-gray-200 shadow-md">
+            {/* <Card className="p-6 border-gray-200 shadow-md">
               <h3 className="text-sm font-bold text-gray-700 mb-4">This Month</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -553,7 +553,7 @@ export function EmployerBillingPage() {
                   <span className="text-lg font-bold text-gray-900">87</span>
                 </div>
               </div>
-            </Card>
+            </Card> */}
 
             {/* Need Help */}
             <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 shadow-md">

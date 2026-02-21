@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
@@ -22,6 +22,28 @@ function prettifyAddonType(type: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function addonDescription(type: string) {
+  const normalized = String(type ?? "").trim().toLowerCase();
+
+  if (normalized === "featured_job") {
+    return "Boost a listing to the top of candidate feeds for stronger visibility and faster applications.";
+  }
+  if (normalized === "ai_report") {
+    return "Generate an AI hiring report with role-fit insights and shortlist recommendations.";
+  }
+  if (normalized === "ai_credit") {
+    return "Use AI matching credits to rank and identify top-fit candidates for your roles.";
+  }
+  if (normalized === "candidate_profile_view") {
+    return "Unlock extra full profile views after your monthly plan allocation is used.";
+  }
+  if (normalized === "job_slot") {
+    return "Add temporary extra active job slots without changing your subscription plan.";
+  }
+
+  return "Top up premium hiring actions on demand when your plan limits are reached.";
 }
 
 export function AddonUpsellModal({
@@ -82,6 +104,7 @@ export function AddonUpsellModal({
             <p className="text-xs text-gray-600 mt-1">
               {addon.credits} credit{addon.credits === 1 ? "" : "s"} • {prettifyAddonType(addon.type)}
             </p>
+            <p className="text-xs text-gray-700 mt-2">{addonDescription(addon.type)}</p>
             <p className="text-sm font-bold text-gray-900 mt-2">{formatZarFromKobo(addon.price)}</p>
           </div>
         )}

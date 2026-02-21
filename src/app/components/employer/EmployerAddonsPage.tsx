@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
@@ -19,6 +19,35 @@ export function EmployerAddonsPage() {
 
   const formatZarFromKobo = (amount: number) =>
     `R ${Math.round(amount / 100).toLocaleString()}`;
+
+  const addonTypeToLabel = (type: string) =>
+    String(type ?? "")
+      .split("_")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+
+  const getAddonDescription = (type: string) => {
+    const normalized = String(type ?? "").trim().toLowerCase();
+
+    if (normalized === "featured_job") {
+      return "Boost a listing to the top of candidate feeds for stronger visibility and faster applications.";
+    }
+    if (normalized === "ai_report") {
+      return "Generate an AI hiring report with role-fit insights and shortlist recommendations.";
+    }
+    if (normalized === "ai_credit") {
+      return "Use AI matching credits to rank and identify top-fit candidates for your roles.";
+    }
+    if (normalized === "candidate_profile_view") {
+      return "Unlock extra full profile views after your monthly plan allocation is used.";
+    }
+    if (normalized === "job_slot") {
+      return "Add temporary extra active job slots without changing your subscription plan.";
+    }
+
+    return "Top up premium hiring actions on demand when your plan limits are reached.";
+  };
 
   async function loadData() {
     const [addonData, creditData] = await Promise.all([
@@ -93,31 +122,39 @@ export function EmployerAddonsPage() {
               {addons.length === 0 && (
                 <p className="text-sm text-gray-500">No add-ons available right now.</p>
               )}
-              {addons.map((addon) => (
-                <div
-                  key={addon.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{addon.name}</p>
-                    <p className="text-xs text-gray-600">
-                      {addon.credits} credit{addon.credits === 1 ? "" : "s"} • {addon.type}
-                    </p>
+              {addons.map((addon) => {
+                const addonLabel = addonTypeToLabel(addon.type);
+                return (
+                  <div
+                    key={addon.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {addon.name || addonLabel}
+                      </p>
+                      <p className="text-xs text-gray-700 mt-1 max-w-xl">
+                        {getAddonDescription(addon.type)}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {addon.credits} credit{addon.credits === 1 ? "" : "s"} • {addonLabel}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-gray-900">
+                        {formatZarFromKobo(addon.price)}
+                      </span>
+                      <Button
+                        size="sm"
+                        disabled={Boolean(buyingAddonId) || verifyingCheckout}
+                        onClick={() => handleBuyAddon(addon.id)}
+                      >
+                        {buyingAddonId === addon.id ? "Redirecting..." : "Buy"}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-gray-900">
-                      {formatZarFromKobo(addon.price)}
-                    </span>
-                    <Button
-                      size="sm"
-                      disabled={Boolean(buyingAddonId) || verifyingCheckout}
-                      onClick={() => handleBuyAddon(addon.id)}
-                    >
-                      {buyingAddonId === addon.id ? "Redirecting..." : "Buy"}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>
@@ -131,7 +168,7 @@ export function EmployerAddonsPage() {
               )}
               {credits.map((credit) => (
                 <div key={credit.creditType} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{credit.creditType}</span>
+                  <span className="text-sm text-gray-600">{addonTypeToLabel(credit.creditType)}</span>
                   <span className="text-sm font-bold text-gray-900">{credit.remaining}</span>
                 </div>
               ))}
