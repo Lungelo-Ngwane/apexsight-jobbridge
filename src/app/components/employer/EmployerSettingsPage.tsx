@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
@@ -25,9 +25,70 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Switch } from "@/app/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { useEmployerProfile } from "@/hooks/useEmployerProfile";
+import { updateEmployerProfile } from "@/lib/employer";
+import { useAuth } from "@/app/context/AuthContext";
 
 export function EmployerSettingsPage() {
   const [activeTab, setActiveTab] = useState("company");
+  const { user } = useAuth();
+  const { profile, loading } = useEmployerProfile();
+
+  const [companyName, setCompanyName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [showOnPlatform, setShowOnPlatform] = useState(true);
+  const [publicCompanyPage, setPublicCompanyPage] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    setCompanyName(profile.company_name ?? "");
+    setIndustry(profile.industry ?? "");
+    setCompanySize(profile.company_size ?? "");
+    setDescription(profile.description ?? "");
+    setWebsite(profile.website ?? "");
+    setContactEmail(profile.contact_email ?? user?.email ?? "");
+    setPhone(profile.phone ?? "");
+    setAddress(profile.address ?? "");
+    setShowOnPlatform(profile.show_on_platform ?? true);
+    setPublicCompanyPage(profile.public_company_page ?? true);
+  }, [profile, user?.email]);
+
+  async function handleSaveCompanySettings() {
+    try {
+      setSaving(true);
+      await updateEmployerProfile({
+        company_name: companyName.trim() || undefined,
+        industry: industry.trim() || null,
+        company_size: companySize.trim() || null,
+        description: description.trim() || null,
+        website: website.trim() || null,
+        contact_email: contactEmail.trim() || null,
+        phone: phone.trim() || null,
+        address: address.trim() || null,
+        show_on_platform: showOnPlatform,
+        public_company_page: publicCompanyPage,
+      });
+
+      alert("Company settings saved.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save settings.";
+      alert(message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="p-8">Loading settings...</div>;
+  }
 
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
@@ -48,17 +109,29 @@ export function EmployerSettingsPage() {
               <Building2 className="w-4 h-4 mr-2" />
               Company Profile
             </TabsTrigger>
-            <TabsTrigger value="team" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger
+              value="team"
+              disabled
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm opacity-50 cursor-not-allowed"
+            >
               <Users className="w-4 h-4 mr-2" />
-              Team Members
+              Team Members (Soon)
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger
+              value="notifications"
+              disabled
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm opacity-50 cursor-not-allowed"
+            >
               <Bell className="w-4 h-4 mr-2" />
-              Notifications
+              Notifications (Soon)
             </TabsTrigger>
-            <TabsTrigger value="security" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger
+              value="security"
+              disabled
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm opacity-50 cursor-not-allowed"
+            >
               <Shield className="w-4 h-4 mr-2" />
-              Security
+              Security (Soon)
             </TabsTrigger>
           </TabsList>
 
@@ -75,7 +148,7 @@ export function EmployerSettingsPage() {
                     <div className="flex items-center gap-4">
                       <Avatar className="w-20 h-20 border-2 border-gray-200">
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
-                          N
+                          {companyName?.trim()?.charAt(0)?.toUpperCase() || "C"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -97,7 +170,8 @@ export function EmployerSettingsPage() {
                       </Label>
                       <Input 
                         id="company-name"
-                        defaultValue="Nedbank"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
                         className="mt-2 border-gray-300"
                       />
                     </div>
@@ -108,7 +182,8 @@ export function EmployerSettingsPage() {
                       </Label>
                       <Input 
                         id="industry"
-                        defaultValue="Financial Services"
+                        value={industry}
+                        onChange={(e) => setIndustry(e.target.value)}
                         className="mt-2 border-gray-300"
                       />
                     </div>
@@ -119,7 +194,8 @@ export function EmployerSettingsPage() {
                       </Label>
                       <Input 
                         id="company-size"
-                        defaultValue="5,001-10,000 employees"
+                        value={companySize}
+                        onChange={(e) => setCompanySize(e.target.value)}
                         className="mt-2 border-gray-300"
                       />
                     </div>
@@ -131,7 +207,8 @@ export function EmployerSettingsPage() {
                       <Textarea 
                         id="description"
                         rows={4}
-                        defaultValue="Nedbank is one of the largest banks in South Africa, offering a full range of wholesale and retail banking services through multiple channels."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
                         className="mt-2 border-gray-300"
                       />
                     </div>
@@ -144,7 +221,8 @@ export function EmployerSettingsPage() {
                         <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input 
                           id="website"
-                          defaultValue="https://www.nedbank.co.za"
+                          value={website}
+                          onChange={(e) => setWebsite(e.target.value)}
                           className="pl-10 border-gray-300"
                         />
                       </div>
@@ -164,7 +242,8 @@ export function EmployerSettingsPage() {
                         <Input 
                           id="email"
                           type="email"
-                          defaultValue="talent@nedbank.co.za"
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
                           className="pl-10 border-gray-300"
                         />
                       </div>
@@ -178,7 +257,8 @@ export function EmployerSettingsPage() {
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input 
                           id="phone"
-                          defaultValue="+27 11 294 4444"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
                           className="pl-10 border-gray-300"
                         />
                       </div>
@@ -193,7 +273,8 @@ export function EmployerSettingsPage() {
                         <Textarea 
                           id="address"
                           rows={3}
-                          defaultValue="135 Rivonia Road, Sandown, Sandton, Johannesburg, 2196"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
                           className="pl-10 border-gray-300"
                         />
                       </div>
@@ -202,9 +283,13 @@ export function EmployerSettingsPage() {
                 </Card>
 
                 <div className="flex items-center gap-3">
-                  <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+                  <Button
+                    onClick={handleSaveCompanySettings}
+                    disabled={saving}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                  >
                     <Save className="w-4 h-4 mr-2" />
-                    Save Changes
+                    {saving ? "Saving..." : "Save Changes"}
                   </Button>
                   <Button variant="outline" className="border-gray-300">
                     Cancel
@@ -236,14 +321,14 @@ export function EmployerSettingsPage() {
                         <p className="text-sm font-medium text-gray-900">Show on platform</p>
                         <p className="text-xs text-gray-500">Visible to candidates</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch checked={showOnPlatform} onCheckedChange={setShowOnPlatform} />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-900">Company page</p>
                         <p className="text-xs text-gray-500">Public company page</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch checked={publicCompanyPage} onCheckedChange={setPublicCompanyPage} />
                     </div>
                   </div>
                 </Card>

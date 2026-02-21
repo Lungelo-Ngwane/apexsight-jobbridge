@@ -1,0 +1,75 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+function jsonResponse(payload: unknown, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+
+  try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    const { invoiceId } = await req.json();
+
+    if (!token) return jsonResponse({ error: "Missing access token" }, 401);
+    if (!invoiceId) return jsonResponse({ error: "Missing invoiceId" }, 400);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) return jsonResponse({ error: "Invalid user session" }, 401);
+
+    const { data: employer, error: employerError } = await supabase
+      .from("employer_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (employerError || !employer?.id) {
+      return jsonResponse({ error: "Employer profile not found" }, 404);
+    }
+
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("billing_invoices")
+      .select("id, invoice_number, storage_path")
+      .eq("id", invoiceId)
+      .eq("employer_id", employer.id)
+      .maybeSingle();
+
+    if (invoiceError || !invoice) return jsonResponse({ error: "Invoice not found" }, 404);
+    if (!invoice.storage_path) return jsonResponse({ error: "Invoice file not available" }, 404);
+
+    const { data: signed, error: signedError } = await supabase.storage
+      .from("billing-invoices")
+      .createSignedUrl(String(invoice.storage_path), 60);
+
+    if (signedError || !signed?.signedUrl) {
+      return jsonResponse({ error: signedError?.message ?? "Failed to create download URL" }, 500);
+    }
+
+    return jsonResponse({
+      url: signed.signedUrl,
+      filename: `${String(invoice.invoice_number)}.txt`,
+    });
+  } catch (error) {
+    return jsonResponse({ error: String(error) }, 500);
+  }
+});

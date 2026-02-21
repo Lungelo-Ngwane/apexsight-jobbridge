@@ -14,6 +14,75 @@ const supabase = createClient(
 
 const allowedPlans = new Set(["free", "starter", "professional", "enterprise"]);
 
+function formatInvoiceNumber(reference: string) {
+  const stamp = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  const safeRef = reference.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  return `INV-${stamp}-${safeRef}`;
+}
+
+async function upsertBillingInvoice(params: {
+  employerId: string;
+  reference: string;
+  kind: "subscription" | "addon";
+  status: "paid" | "failed";
+  amountKobo: number;
+  paidAt?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  const amountKobo = Number.isFinite(params.amountKobo) ? Math.max(0, Math.round(params.amountKobo)) : 0;
+  const vatKobo = Math.round((amountKobo * 15) / 115);
+  const invoiceNumber = formatInvoiceNumber(params.reference);
+  const paidAt = params.paidAt ?? new Date().toISOString();
+
+  let storagePath: string | null = null;
+  if (params.status === "paid") {
+    storagePath = `${params.employerId}/${params.kind}s/${params.reference}.txt`;
+    const invoiceText = [
+      `Invoice Number: ${invoiceNumber}`,
+      `Type: ${params.kind === "addon" ? "Add-on" : "Subscription"}`,
+      `Status: ${params.status === "paid" ? "Paid" : "Failed"}`,
+      `Reference: ${params.reference}`,
+      `Amount (kobo): ${amountKobo}`,
+      `VAT (kobo): ${vatKobo}`,
+      `Total (kobo): ${amountKobo}`,
+      `Currency: ZAR`,
+      `Paid At: ${paidAt}`,
+      `Generated At: ${new Date().toISOString()}`,
+    ].join("\n");
+
+    const upload = await supabase.storage
+      .from("billing-invoices")
+      .upload(storagePath, new TextEncoder().encode(invoiceText), {
+        contentType: "text/plain; charset=utf-8",
+        upsert: true,
+      });
+
+    if (upload.error) {
+      storagePath = null;
+    }
+  }
+
+  await supabase.from("billing_invoices").upsert(
+    {
+      employer_id: params.employerId,
+      provider: "paystack",
+      provider_reference: params.reference,
+      invoice_number: invoiceNumber,
+      kind: params.kind,
+      status: params.status,
+      currency: "ZAR",
+      amount_kobo: amountKobo,
+      vat_kobo: vatKobo,
+      total_kobo: amountKobo,
+      issued_at: paidAt,
+      paid_at: params.status === "paid" ? paidAt : null,
+      storage_path: storagePath,
+      metadata: params.metadata ?? {},
+    },
+    { onConflict: "provider,provider_reference,kind" },
+  );
+}
+
 function buildJsonResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -212,6 +281,18 @@ Deno.serve(async (req) => {
         subscription_status: "past_due",
       });
 
+      const reference = String(data.reference ?? "").trim();
+      if (reference) {
+        await upsertBillingInvoice({
+          employerId,
+          reference,
+          kind: "subscription",
+          status: "failed",
+          amountKobo: Number(data.amount ?? 0),
+          metadata: { event },
+        });
+      }
+
       return buildJsonResponse({ received: true, applied: true, event });
     }
 
@@ -248,6 +329,25 @@ Deno.serve(async (req) => {
       }
 
       await applyEmployerUpdate(employerId, update);
+
+      const reference = String(data.reference ?? "").trim();
+      if (reference) {
+        const isAddon = Boolean(String(metadata.addonId ?? "").trim());
+        await upsertBillingInvoice({
+          employerId,
+          reference,
+          kind: isAddon ? "addon" : "subscription",
+          status: "paid",
+          amountKobo: Number(data.amount ?? 0),
+          paidAt: String(data.paid_at ?? "") || new Date().toISOString(),
+          metadata: {
+            event,
+            targetPlan: resolvedPlan,
+            addonId: String(metadata.addonId ?? "") || null,
+          },
+        });
+      }
+
       return buildJsonResponse({ received: true, applied: true, event });
     }
 

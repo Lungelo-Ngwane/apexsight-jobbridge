@@ -5,8 +5,11 @@ import { Badge } from "@/app/components/ui/badge";
 import {
   cancelSubscription,
   confirmSubscriptionCheckout,
+  getBillingInvoiceDownloadUrl,
+  getBillingInvoices,
   getActivePlans,
   startSubscriptionCheckout,
+  type BillingInvoice,
   type BillingPlan,
   type BillingPlanName,
 } from "@/lib/employer";
@@ -21,8 +24,6 @@ import {
   Calendar,
   Download,
   FileText,
-  DollarSign,
-  ArrowUpRight,
   Building2,
   Users,
   Briefcase
@@ -37,11 +38,30 @@ export function EmployerBillingPage() {
   const [verifyingCheckout, setVerifyingCheckout] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
+  const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
     getActivePlans()
       .then(setPlans)
       .catch((error) => console.error("Failed to load plans", error));
+  }, []);
+
+  useEffect(() => {
+    async function loadInvoices() {
+      try {
+        setLoadingInvoices(true);
+        const rows = await getBillingInvoices(20);
+        setInvoices(rows);
+      } catch (error) {
+        console.error("Failed to load invoices", error);
+      } finally {
+        setLoadingInvoices(false);
+      }
+    }
+
+    loadInvoices();
   }, []);
 
   useEffect(() => {
@@ -107,6 +127,21 @@ export function EmployerBillingPage() {
   }
 
   const formatZarFromKobo = (amount: number) => `R ${Math.round(amount / 100).toLocaleString()}`;
+  const formatInvoiceDate = (value: string) =>
+    new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+
+  async function handleDownloadInvoice(invoiceId: string) {
+    try {
+      setDownloadingInvoiceId(invoiceId);
+      const url = await getBillingInvoiceDownloadUrl(invoiceId);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to download invoice.";
+      alert(message);
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
+  }
 
   const currentPlanName = String(profile?.plan ?? "free").toLowerCase();
   const isFreePlan = currentPlanName === "free";
@@ -178,37 +213,6 @@ export function EmployerBillingPage() {
     : 0;
   const showUsageAlert = jobUsagePercent > 60;
 
-  const invoices = [
-    {
-      id: "INV-2026-002",
-      date: "Feb 1, 2026",
-      amount: "R 2,999",
-      status: "Paid",
-      downloadUrl: "#"
-    },
-    {
-      id: "INV-2026-001",
-      date: "Jan 1, 2026",
-      amount: "R 2,999",
-      status: "Paid",
-      downloadUrl: "#"
-    },
-    {
-      id: "INV-2025-012",
-      date: "Dec 1, 2025",
-      amount: "R 2,999",
-      status: "Paid",
-      downloadUrl: "#"
-    },
-    {
-      id: "INV-2025-011",
-      date: "Nov 1, 2025",
-      amount: "R 2,499",
-      status: "Paid",
-      downloadUrl: "#"
-    }
-  ];
-
   const availablePlans = [
     {
       name: "Starter",
@@ -269,7 +273,7 @@ export function EmployerBillingPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Billing & Subscription</h1>
-              <p className="text-sm text-gray-600">Manage your plan, billing, and invoices</p>
+              <p className="text-sm text-gray-600">Manage your plan and billing</p>
             </div>
             <Button 
               onClick={() =>
@@ -420,44 +424,52 @@ export function EmployerBillingPage() {
                   Update
                 </Button>
               </div>
-            </Card>`n            {/* Recent Invoices */}
+            </Card>
+
             <Card className="p-6 border-gray-200 shadow-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Recent Invoices</h3>
-                <Button variant="outline" size="sm" className="gap-2 border-gray-300">
-                  <Download className="w-4 h-4" />
-                  Download All
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {invoices.map((invoice) => (
-                  <div 
-                    key={invoice.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Invoices</h3>
+              {loadingInvoices ? (
+                <p className="text-sm text-gray-600">Loading invoices...</p>
+              ) : invoices.length === 0 ? (
+                <p className="text-sm text-gray-600">No invoices yet. Paid invoices will appear here.</p>
+              ) : (
+                <div className="space-y-3">
+                  {invoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{invoice.invoiceNumber}</p>
+                          <p className="text-xs text-gray-600">
+                            {formatInvoiceDate(invoice.issuedAt)} • {invoice.kind}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{invoice.id}</p>
-                        <p className="text-xs text-gray-600">{invoice.date}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-900">{formatZarFromKobo(invoice.totalKobo)}</p>
+                          <Badge className="bg-emerald-100 text-emerald-700 text-xs border-emerald-200">
+                            {invoice.status}
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={!invoice.hasDownload || downloadingInvoiceId === invoice.id}
+                          onClick={() => handleDownloadInvoice(invoice.id)}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900">{invoice.amount}</p>
-                        <Badge className="bg-emerald-100 text-emerald-700 text-xs border-emerald-200">
-                          {invoice.status}
-                        </Badge>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
 
@@ -480,7 +492,8 @@ export function EmployerBillingPage() {
                   <span className="text-lg font-bold text-gray-900">{formatZarFromKobo(totalKobo)}</span>
                 </div>
               </div>
-            </Card>`n            {/* Usage Alert */}
+            </Card>
+            {/* Usage Alert */}
             {showUsageAlert && (
               <Card className="p-5 bg-amber-50 border-amber-200 shadow-md">
                 <div className="flex items-start gap-3 mb-3">

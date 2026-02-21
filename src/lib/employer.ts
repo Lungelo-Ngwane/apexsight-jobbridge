@@ -35,6 +35,20 @@ export interface EmployerUsageSnapshot {
   candidateViewLimit: number | null;
 }
 
+export interface BillingInvoice {
+  id: string;
+  invoiceNumber: string;
+  kind: "subscription" | "addon";
+  status: "paid" | "pending" | "failed" | "refunded" | "void";
+  currency: string;
+  amountKobo: number;
+  vatKobo: number;
+  totalKobo: number;
+  issuedAt: string;
+  paidAt: string | null;
+  hasDownload: boolean;
+}
+
 export interface TalentPoolCandidate {
   id: string;
   fullName: string;
@@ -733,6 +747,86 @@ export async function getActivePlans(): Promise<BillingPlan[]> {
     .filter((plan): plan is BillingPlan => plan !== null);
 }
 
+export async function getBillingInvoices(limit = 20): Promise<BillingInvoice[]> {
+  const { data, error } = await supabase
+    .from("billing_invoices")
+    .select(
+      "id, invoice_number, kind, status, currency, amount_kobo, vat_kobo, total_kobo, issued_at, paid_at, storage_path",
+    )
+    .order("issued_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    invoiceNumber: String(row.invoice_number ?? ""),
+    kind: (String(row.kind ?? "subscription") as BillingInvoice["kind"]),
+    status: (String(row.status ?? "pending") as BillingInvoice["status"]),
+    currency: String(row.currency ?? "ZAR"),
+    amountKobo: Number(row.amount_kobo ?? 0),
+    vatKobo: Number(row.vat_kobo ?? 0),
+    totalKobo: Number(row.total_kobo ?? 0),
+    issuedAt: String(row.issued_at ?? ""),
+    paidAt: row.paid_at ? String(row.paid_at) : null,
+    hasDownload: Boolean(row.storage_path),
+  }));
+}
+
+export async function getBillingInvoiceDownloadUrl(invoiceId: string): Promise<string> {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("get-invoice-download-url", {
+    body: { invoiceId },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    throw new Error(parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to get invoice download URL.");
+  }
+
+  const url = String(data?.url ?? "").trim();
+  if (!url) throw new Error("Invoice download URL is unavailable.");
+  return url;
+}
+
 export async function confirmSubscriptionCheckout(reference: string) {
   const {
     data: { session },
@@ -1365,6 +1459,14 @@ export async function updateEmployerProfile(payload: {
   company_name?: string;
   industry?: string | null;
   company_size?: string | null;
+  description?: string | null;
+  website?: string | null;
+  contact_email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  logo_url?: string | null;
+  show_on_platform?: boolean;
+  public_company_page?: boolean;
   onboarding_step?: number;
   plan?: string;
 }) {

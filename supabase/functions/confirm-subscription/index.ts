@@ -13,6 +13,75 @@ const supabase = createClient(
 
 const allowedPlans = new Set(["free", "starter", "professional", "enterprise"]);
 
+function formatInvoiceNumber(reference: string) {
+  const stamp = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  const safeRef = reference.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  return `INV-${stamp}-${safeRef}`;
+}
+
+async function upsertInvoice(params: {
+  employerId: string;
+  reference: string;
+  plan: string;
+  amountKobo: number;
+  paidAt?: string | null;
+  customerCode?: string | null;
+  subscriptionCode?: string | null;
+}) {
+  const amountKobo = Number.isFinite(params.amountKobo) ? Math.max(0, Math.round(params.amountKobo)) : 0;
+  const vatKobo = Math.round((amountKobo * 15) / 115);
+  const invoiceNumber = formatInvoiceNumber(params.reference);
+  const paidAt = params.paidAt ?? new Date().toISOString();
+  const storagePath = `${params.employerId}/subscriptions/${params.reference}.txt`;
+
+  const invoiceText = [
+    `Invoice Number: ${invoiceNumber}`,
+    `Type: Subscription`,
+    `Status: Paid`,
+    `Plan: ${params.plan}`,
+    `Reference: ${params.reference}`,
+    `Amount (kobo): ${amountKobo}`,
+    `VAT (kobo): ${vatKobo}`,
+    `Total (kobo): ${amountKobo}`,
+    `Currency: ZAR`,
+    `Paid At: ${paidAt}`,
+    `Generated At: ${new Date().toISOString()}`,
+  ].join("\n");
+
+  const upload = await supabase.storage
+    .from("billing-invoices")
+    .upload(storagePath, new TextEncoder().encode(invoiceText), {
+      contentType: "text/plain; charset=utf-8",
+      upsert: true,
+    });
+
+  const finalStoragePath = upload.error ? null : storagePath;
+
+  await supabase.from("billing_invoices").upsert(
+    {
+      employer_id: params.employerId,
+      provider: "paystack",
+      provider_reference: params.reference,
+      invoice_number: invoiceNumber,
+      kind: "subscription",
+      status: "paid",
+      currency: "ZAR",
+      amount_kobo: amountKobo,
+      vat_kobo: vatKobo,
+      total_kobo: amountKobo,
+      issued_at: paidAt,
+      paid_at: paidAt,
+      storage_path: finalStoragePath,
+      metadata: {
+        plan: params.plan,
+        customerCode: params.customerCode ?? null,
+        subscriptionCode: params.subscriptionCode ?? null,
+      },
+    },
+    { onConflict: "provider,provider_reference,kind" },
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -194,6 +263,16 @@ Deno.serve(async (req) => {
         },
       );
     }
+
+    await upsertInvoice({
+      employerId: employer.id,
+      reference: String(reference),
+      plan: targetPlan,
+      amountKobo: Number(paystackData?.data?.amount ?? 0),
+      paidAt: String(paystackData?.data?.paid_at ?? "") || new Date().toISOString(),
+      customerCode,
+      subscriptionCode,
+    });
 
     return new Response(
       JSON.stringify({
