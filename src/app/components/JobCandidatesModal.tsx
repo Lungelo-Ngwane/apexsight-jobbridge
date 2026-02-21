@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { consumeCandidateViewAccess, getJobApplicants, updateApplicationStatus } from "@/lib/employer";
+import {
+    consumeCandidateViewAccess,
+    getEmployerUsageSnapshot,
+    getJobApplicants,
+    updateApplicationStatus,
+} from "@/lib/employer";
 import { CandidateProfileDrawer } from "./CandidateProfileDrawer";
 import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 
@@ -64,6 +69,12 @@ async function handleViewProfile(appId: string) {
 
         setUnlockingProfileId(appId);
         await consumeCandidateViewAccess(appId);
+        const usage = await getEmployerUsageSnapshot();
+        window.dispatchEvent(
+            new CustomEvent("candidate-view-consumed", {
+                detail: usage,
+            }),
+        );
         setUnlockedApplicationIds((prev) => [...new Set([...prev, appId])]);
         setSelectedApplicationId(appId);
     } catch (error: any) {

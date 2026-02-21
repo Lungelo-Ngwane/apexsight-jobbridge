@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import OpenAI from "https://esm.sh/openai@4.28.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -11,6 +12,79 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
+
+const openai = new OpenAI({
+  apiKey: Deno.env.get("OPENAI_API_KEY"),
+});
+
+async function ensureCandidateEmbeddings(jobId: string) {
+  const { data: rows } = await supabase
+    .from("job_applications")
+    .select(
+      `
+      candidate_profile_id,
+      candidate_profiles (
+        id,
+        full_name,
+        headline,
+        bio,
+        location,
+        years_experience,
+        experience_level,
+        availability,
+        preferred_job_type,
+        work_mode,
+        embedding,
+        candidate_skills (
+          skill,
+          level
+        )
+      )
+    `,
+    )
+    .eq("job_id", jobId);
+
+  const candidates = (rows ?? [])
+    .map((row) => (row as { candidate_profiles?: Record<string, unknown> | null }).candidate_profiles)
+    .filter((candidate): candidate is Record<string, unknown> => Boolean(candidate?.id));
+
+  for (const candidate of candidates) {
+    if (candidate.embedding) continue;
+
+    const skills = Array.isArray(candidate.candidate_skills)
+      ? candidate.candidate_skills
+          .map((s) => {
+            const skill = String((s as { skill?: string }).skill ?? "").trim();
+            const level = String((s as { level?: string }).level ?? "").trim();
+            return skill ? `${skill}${level ? ` (${level})` : ""}` : "";
+          })
+          .filter((s) => s.length > 0)
+      : [];
+
+    const text = `
+Candidate Name: ${String(candidate.full_name ?? "")}
+Headline: ${String(candidate.headline ?? "")}
+Bio: ${String(candidate.bio ?? "")}
+Location: ${String(candidate.location ?? "")}
+Years Experience: ${String(candidate.years_experience ?? "")}
+Experience Level: ${String(candidate.experience_level ?? "")}
+Availability: ${String(candidate.availability ?? "")}
+Preferred Job Type: ${String(candidate.preferred_job_type ?? "")}
+Work Mode: ${String(candidate.work_mode ?? "")}
+Skills: ${skills.join(", ")}
+`;
+
+    const embeddingResponse = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+    });
+
+    await supabase
+      .from("candidate_profiles")
+      .update({ embedding: embeddingResponse.data[0].embedding })
+      .eq("id", String(candidate.id));
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -74,6 +148,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    await ensureCandidateEmbeddings(job_id);
+
     const { data: creditRow } = await supabase
       .from("employer_credits")
       .select("id, remaining")
@@ -105,17 +181,34 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data: matches, error: matchError } = await supabase.rpc("match_candidates", {
-      job_embedding: job.embedding,
-      match_threshold: 0.4,
-      match_count: 20,
-    });
+    const { data: matches, error: matchError } = await supabase.rpc(
+      "match_candidates_with_scores",
+      {
+        p_job_id: job_id,
+        p_match_threshold: 0.4,
+        p_match_count: 20,
+      },
+    );
 
     if (matchError) {
       return new Response(JSON.stringify({ error: matchError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (matches) {
+      for (const match of matches) {
+        await supabase
+          .from("job_matches")
+          .upsert({
+            job_id,
+            candidate_id: match.id,
+            similarity: match.similarity,
+          }, {
+            onConflict: "job_id,candidate_id",
+          });
+      }
     }
 
     await supabase.from("employer_credit_usage").insert({

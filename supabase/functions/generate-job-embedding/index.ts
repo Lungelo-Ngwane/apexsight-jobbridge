@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    const { job_id } = await req.json();
+    const { job_id, skip_credit = false } = await req.json();
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing access token" }), {
@@ -59,21 +59,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: creditRow } = await supabase
-      .from("employer_credits")
-      .select("id, remaining")
-      .eq("employer_id", employer.id)
-      .eq("credit_type", "ai_credit")
-      .maybeSingle();
-
-    const current = Number(creditRow?.remaining ?? 0);
-    if (!creditRow?.id || current < 1) {
-      return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { data: job, error: jobError } = await supabase
       .from("jobs")
       .select("id, employer_id, title, description, location")
@@ -87,20 +72,38 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { error: deductError } = await supabase
-      .from("employer_credits")
-      .update({ remaining: current - 1 })
-      .eq("id", creditRow.id)
-      .eq("remaining", current);
+    let current: number | null = null;
+    if (!skip_credit) {
+      const { data: creditRow } = await supabase
+        .from("employer_credits")
+        .select("id, remaining")
+        .eq("employer_id", employer.id)
+        .eq("credit_type", "ai_credit")
+        .maybeSingle();
 
-    if (deductError) {
-      return new Response(
-        JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
-        {
-          status: 409,
+      current = Number(creditRow?.remaining ?? 0);
+      if (!creditRow?.id || current < 1) {
+        return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
+          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+        });
+      }
+
+      const { error: deductError } = await supabase
+        .from("employer_credits")
+        .update({ remaining: current - 1 })
+        .eq("id", creditRow.id)
+        .eq("remaining", current);
+
+      if (deductError) {
+        return new Response(
+          JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
+          {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     const text = `
@@ -122,20 +125,23 @@ Deno.serve(async (req) => {
       .eq("id", job_id)
       .eq("employer_id", employer.id);
 
-    await supabase.from("employer_credit_usage").insert({
-      employer_id: employer.id,
-      credit_type: "ai_credit",
-      amount: 1,
-      context_type: "job",
-      context_id: job_id,
-      metadata: { source: "generate-job-embedding" },
-    });
+    if (!skip_credit) {
+      await supabase.from("employer_credit_usage").insert({
+        employer_id: employer.id,
+        credit_type: "ai_credit",
+        amount: 1,
+        context_type: "job",
+        context_id: job_id,
+        metadata: { source: "generate-job-embedding" },
+      });
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        ai_credits_consumed: 1,
-        ai_credits_remaining: current - 1,
+        ai_credits_consumed: skip_credit ? 0 : 1,
+        ai_credits_remaining: skip_credit ? null : (current as number) - 1,
+        skip_credit: Boolean(skip_credit),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

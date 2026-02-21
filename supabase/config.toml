@@ -477,7 +477,7 @@ entrypoint = "./functions/match-candidates/index.ts"
 
 [functions.auto-match]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/auto-match/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx

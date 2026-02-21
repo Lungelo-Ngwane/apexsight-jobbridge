@@ -8,6 +8,79 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function ensureCandidateEmbeddings(
+  supabase: ReturnType<typeof createClient>,
+  openai: OpenAI,
+  jobId: string,
+) {
+  const { data: rows } = await supabase
+    .from("job_applications")
+    .select(
+      `
+      candidate_profile_id,
+      candidate_profiles (
+        id,
+        full_name,
+        headline,
+        bio,
+        location,
+        years_experience,
+        experience_level,
+        availability,
+        preferred_job_type,
+        work_mode,
+        embedding,
+        candidate_skills (
+          skill,
+          level
+        )
+      )
+    `,
+    )
+    .eq("job_id", jobId);
+
+  const candidates = (rows ?? [])
+    .map((row) => (row as { candidate_profiles?: Record<string, unknown> | null }).candidate_profiles)
+    .filter((candidate): candidate is Record<string, unknown> => Boolean(candidate?.id));
+
+  for (const candidate of candidates) {
+    if (candidate.embedding) continue;
+
+    const skills = Array.isArray(candidate.candidate_skills)
+      ? candidate.candidate_skills
+          .map((s) => {
+            const skill = String((s as { skill?: string }).skill ?? "").trim();
+            const level = String((s as { level?: string }).level ?? "").trim();
+            return skill ? `${skill}${level ? ` (${level})` : ""}` : "";
+          })
+          .filter((s) => s.length > 0)
+      : [];
+
+    const text = `
+Candidate Name: ${String(candidate.full_name ?? "")}
+Headline: ${String(candidate.headline ?? "")}
+Bio: ${String(candidate.bio ?? "")}
+Location: ${String(candidate.location ?? "")}
+Years Experience: ${String(candidate.years_experience ?? "")}
+Experience Level: ${String(candidate.experience_level ?? "")}
+Availability: ${String(candidate.availability ?? "")}
+Preferred Job Type: ${String(candidate.preferred_job_type ?? "")}
+Work Mode: ${String(candidate.work_mode ?? "")}
+Skills: ${skills.join(", ")}
+`;
+
+    const embeddingResponse = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+    });
+
+    await supabase
+      .from("candidate_profiles")
+      .update({ embedding: embeddingResponse.data[0].embedding })
+      .eq("id", String(candidate.id));
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -167,11 +240,23 @@ Deno.serve(async (req) => {
       .update({ embedding })
       .eq("id", job_id);
 
-    const { data: matches } = await supabase.rpc("match_candidates", {
-      job_embedding: embedding,
-      match_threshold: 0.4,
-      match_count: 50,
-    });
+    await ensureCandidateEmbeddings(supabase, openai, job_id);
+
+    const { data: matches, error: matchesError } = await supabase.rpc(
+      "match_candidates_with_scores",
+      {
+        p_job_id: job_id,
+        p_match_threshold: 0.4,
+        p_match_count: 50,
+      },
+    );
+
+    if (matchesError) {
+      return new Response(JSON.stringify({ error: matchesError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (matches) {
       for (const match of matches) {
@@ -181,6 +266,8 @@ Deno.serve(async (req) => {
             job_id,
             candidate_id: match.id,
             similarity: match.similarity,
+          }, {
+            onConflict: "job_id,candidate_id",
           });
       }
     }
@@ -191,6 +278,7 @@ Deno.serve(async (req) => {
         ai_credits_consumed: 1,
         ai_credits_remaining: currentCredits - 1,
         matches_found: matches?.length || 0,
+        matches: matches ?? [],
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

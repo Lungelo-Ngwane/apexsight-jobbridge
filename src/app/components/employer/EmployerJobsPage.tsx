@@ -222,7 +222,16 @@ export function EmployerJobsPage() {
     try {
       await updateJobStatus(jobId, nextStatus);
       await loadJobs();
-    } catch (error) {
+    } catch (error: any) {
+      const message = String(error?.message ?? "").toLowerCase();
+      if (message.includes("plan_limit_reached")) {
+        setUpsell({
+          open: true,
+          addonType: "job_slot",
+          actionLabel: "publish more open jobs",
+        });
+        return;
+      }
       console.error("Failed to update job status", error);
       alert("Unable to update job status right now. Please try again.");
     }

@@ -76,6 +76,41 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       .catch((error) => console.error("Failed to load usage snapshot", error));
   }, []);
 
+  useEffect(() => {
+    function handleCandidateViewConsumed(
+      event: Event,
+    ) {
+      const custom = event as CustomEvent<{
+        candidateViewsUsedThisMonth?: number;
+        candidateViewLimit?: number | null;
+      }>;
+      const used = Number(custom.detail?.candidateViewsUsedThisMonth ?? NaN);
+      const limit = custom.detail?.candidateViewLimit;
+
+      if (Number.isFinite(used)) {
+        setUsageSnapshot((prev) =>
+          prev
+            ? {
+                ...prev,
+                candidateViewsUsedThisMonth: used,
+                candidateViewLimit:
+                  limit === undefined ? prev.candidateViewLimit : limit,
+              }
+            : prev,
+        );
+      } else {
+        getEmployerUsageSnapshot()
+          .then(setUsageSnapshot)
+          .catch((error) => console.error("Failed to refresh usage snapshot", error));
+      }
+    }
+
+    window.addEventListener("candidate-view-consumed", handleCandidateViewConsumed);
+    return () => {
+      window.removeEventListener("candidate-view-consumed", handleCandidateViewConsumed);
+    };
+  }, []);
+
 
   useEffect(() => {
     async function loadJobs() {

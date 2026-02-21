@@ -138,7 +138,7 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
       onSuccess();
       onClose();
     } catch (e: any) {
-      if (!isEditMode && e.message === "PLAN_LIMIT_REACHED") {
+      if (e.message === "PLAN_LIMIT_REACHED") {
         setShowUpgradeModal(true);
       } else {
         console.error(e);

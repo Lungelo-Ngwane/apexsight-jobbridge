@@ -8,17 +8,18 @@ import {
   getBillingInvoiceDownloadUrl,
   getBillingInvoices,
   getActivePlans,
+  getEmployerUsageSnapshot,
   startSubscriptionCheckout,
   type BillingInvoice,
   type BillingPlan,
   type BillingPlanName,
+  type EmployerUsageSnapshot,
 } from "@/lib/employer";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { 
   CreditCard,
   Crown,
   Zap,
-  TrendingUp,
   CheckCircle,
   AlertCircle,
   Calendar,
@@ -38,6 +39,7 @@ export function EmployerBillingPage() {
   const [verifyingCheckout, setVerifyingCheckout] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [plans, setPlans] = useState<BillingPlan[]>([]);
+  const [usageSnapshot, setUsageSnapshot] = useState<EmployerUsageSnapshot | null>(null);
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
@@ -46,6 +48,45 @@ export function EmployerBillingPage() {
     getActivePlans()
       .then(setPlans)
       .catch((error) => console.error("Failed to load plans", error));
+  }, []);
+
+  useEffect(() => {
+    getEmployerUsageSnapshot()
+      .then(setUsageSnapshot)
+      .catch((error) => console.error("Failed to load usage snapshot", error));
+  }, []);
+
+  useEffect(() => {
+    function handleCandidateViewConsumed(event: Event) {
+      const custom = event as CustomEvent<{
+        candidateViewsUsedThisMonth?: number;
+        candidateViewLimit?: number | null;
+      }>;
+      const used = Number(custom.detail?.candidateViewsUsedThisMonth ?? NaN);
+      const limit = custom.detail?.candidateViewLimit;
+
+      if (Number.isFinite(used)) {
+        setUsageSnapshot((prev) =>
+          prev
+            ? {
+                ...prev,
+                candidateViewsUsedThisMonth: used,
+                candidateViewLimit:
+                  limit === undefined ? prev.candidateViewLimit : limit,
+              }
+            : prev,
+        );
+      } else {
+        getEmployerUsageSnapshot()
+          .then(setUsageSnapshot)
+          .catch((error) => console.error("Failed to refresh usage snapshot", error));
+      }
+    }
+
+    window.addEventListener("candidate-view-consumed", handleCandidateViewConsumed);
+    return () => {
+      window.removeEventListener("candidate-view-consumed", handleCandidateViewConsumed);
+    };
   }, []);
 
   useEffect(() => {
@@ -167,6 +208,19 @@ export function EmployerBillingPage() {
   const totalKobo = currentPlanRow?.priceMonthly ?? 0;
   const vatKobo = Math.round(totalKobo * 0.15);
   const subscriptionKobo = totalKobo - vatKobo;
+  const formatLimit = (value: number | null) => (value === null ? "Unlimited" : String(value));
+  const activeJobsUsed = Number(usageSnapshot?.activeJobs ?? 0);
+  const jobLimit = usageSnapshot?.jobLimit ?? currentPlanRow?.jobLimit ?? (isFreePlan ? 1 : null);
+  const teamMembersUsed = profile ? 1 : 0;
+  const teamMemberLimit = currentPlanRow?.userLimit ?? (isFreePlan ? 1 : null);
+  const nextBillingDate = profile?.current_period_end
+    ? new Date(profile.current_period_end).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "No active subscription";
+  const subscriptionStatus = String(profile?.subscription_status ?? (isFreePlan ? "free" : "inactive"));
 
   const currentPlan = isFreePlan
     ? {
@@ -175,18 +229,18 @@ export function EmployerBillingPage() {
         period: "per month",
         icon: Zap,
         features: [
-          "1 active job posting",
-          "10 candidate views/month",
+          `${formatLimit(jobLimit)} active job posting${jobLimit === 1 ? "" : "s"}`,
+          `${usageSnapshot?.candidateViewLimit ?? 10} candidate views/month`,
           "Basic dashboard",
           "Community support",
-          "1 team member",
+          `${formatLimit(teamMemberLimit)} team member${teamMemberLimit === 1 ? "" : "s"}`,
         ],
         usage: {
-          jobs: { used: 0, total: 1 },
-          users: { used: 1, total: 1 },
+          jobs: { used: activeJobsUsed, total: jobLimit },
+          users: { used: teamMembersUsed, total: teamMemberLimit },
         },
-        renewalDate: "No active subscription",
-        status: "Free",
+        renewalDate: nextBillingDate,
+        status: subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1),
       }
     : {
         name: currentPlanRow?.label ?? "Starter",
@@ -194,24 +248,26 @@ export function EmployerBillingPage() {
         period: "per month",
         icon: Zap,
         features: [
-          `${currentPlanRow?.jobLimit ?? 5} active job postings`,
-          `${currentPlanRow?.candidateViewLimit ?? 50} candidate views/month`,
+          `${formatLimit(jobLimit)} active job posting${jobLimit === 1 ? "" : "s"}`,
+          `${usageSnapshot?.candidateViewLimit ?? currentPlanRow?.candidateViewLimit ?? 50} candidate views/month`,
           "Advanced analytics",
           "Priority support",
-          `Team collaboration (${currentPlanRow?.userLimit ?? 2} users)`,
+          `Team collaboration (${formatLimit(teamMemberLimit)} user${teamMemberLimit === 1 ? "" : "s"})`,
         ],
         usage: {
-          jobs: { used: 12, total: currentPlanRow?.jobLimit ?? 5 },
-          users: { used: 3, total: currentPlanRow?.userLimit ?? 2 }
+          jobs: { used: activeJobsUsed, total: jobLimit },
+          users: { used: teamMembersUsed, total: teamMemberLimit },
         },
-        renewalDate: "March 15, 2026",
-        status: "Active",
+        renewalDate: nextBillingDate,
+        status: subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1),
       };
 
-  const jobUsagePercent = currentPlan.usage.jobs.total > 0
-    ? Math.round((currentPlan.usage.jobs.used / currentPlan.usage.jobs.total) * 100)
+  const finiteJobLimit = typeof currentPlan.usage.jobs.total === "number" ? currentPlan.usage.jobs.total : null;
+  const finiteTeamLimit = typeof currentPlan.usage.users.total === "number" ? currentPlan.usage.users.total : null;
+  const jobUsagePercent = finiteJobLimit && finiteJobLimit > 0
+    ? Math.round((currentPlan.usage.jobs.used / finiteJobLimit) * 100)
     : 0;
-  const showUsageAlert = jobUsagePercent > 60;
+  const showUsageAlert = Boolean(finiteJobLimit && finiteJobLimit > 0 && jobUsagePercent >= 80);
 
   const availablePlans = [
     {
@@ -327,15 +383,17 @@ export function EmployerBillingPage() {
                         <span className="text-sm font-medium text-gray-700">Job Postings</span>
                       </div>
                       <span className="text-sm font-bold text-gray-900">
-                        {currentPlan.usage.jobs.used} / {currentPlan.usage.jobs.total}
+                        {currentPlan.usage.jobs.used} / {formatLimit(currentPlan.usage.jobs.total)}
                       </span>
                     </div>
                     <Progress 
-                      value={(currentPlan.usage.jobs.used / currentPlan.usage.jobs.total) * 100} 
+                      value={Math.min(100, jobUsagePercent)}
                       className="h-2"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      {currentPlan.usage.jobs.total - currentPlan.usage.jobs.used} slots remaining
+                      {finiteJobLimit === null
+                        ? "Unlimited slots"
+                        : `${Math.max(finiteJobLimit - currentPlan.usage.jobs.used, 0)} slots remaining`}
                     </p>
                   </div>
 
@@ -347,15 +405,21 @@ export function EmployerBillingPage() {
                         <span className="text-sm font-medium text-gray-700">Team Members</span>
                       </div>
                       <span className="text-sm font-bold text-gray-900">
-                        {currentPlan.usage.users.used} / {currentPlan.usage.users.total}
+                        {currentPlan.usage.users.used} / {formatLimit(currentPlan.usage.users.total)}
                       </span>
                     </div>
                     <Progress 
-                      value={(currentPlan.usage.users.used / currentPlan.usage.users.total) * 100} 
+                      value={
+                        finiteTeamLimit && finiteTeamLimit > 0
+                          ? Math.min(100, Math.round((currentPlan.usage.users.used / finiteTeamLimit) * 100))
+                          : 0
+                      }
                       className="h-2"
                     />
                     <p className="text-xs text-gray-500 mt-2">
-                      {currentPlan.usage.users.total - currentPlan.usage.users.used} seats available
+                      {finiteTeamLimit === null
+                        ? "Unlimited seats"
+                        : `${Math.max(finiteTeamLimit - currentPlan.usage.users.used, 0)} seats available`}
                     </p>
                   </div>
                 </div>
@@ -574,4 +638,3 @@ export function EmployerBillingPage() {
     </div>
   );
 }
-

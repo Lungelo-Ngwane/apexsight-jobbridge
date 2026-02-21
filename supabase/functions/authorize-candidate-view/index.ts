@@ -22,6 +22,37 @@ const fallbackCandidateViewLimits: Record<string, number | null> = {
   enterprise: 9999,
 };
 
+async function getUsedViewsThisMonth(
+  supabase: ReturnType<typeof createClient>,
+  employerId: string,
+  startIso: string,
+) {
+  const { data: usageRows, error: usageError } = await supabase
+    .from("employer_credit_usage")
+    .select("context_id, amount")
+    .eq("employer_id", employerId)
+    .eq("context_type", "candidate_profile_view")
+    .gte("created_at", startIso);
+
+  if (usageError) {
+    throw usageError;
+  }
+
+  const withContext = new Set<string>();
+  let withoutContextAmount = 0;
+
+  for (const row of usageRows ?? []) {
+    const contextId = String(row.context_id ?? "").trim();
+    if (contextId) {
+      withContext.add(contextId);
+      continue;
+    }
+    withoutContextAmount += Number(row.amount ?? 0);
+  }
+
+  return withContext.size + withoutContextAmount;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -106,24 +137,48 @@ Deno.serve(async (req) => {
     startOfMonth.setUTCDate(1);
     startOfMonth.setUTCHours(0, 0, 0, 0);
 
-    const { data: usageRows, error: usageError } = await supabase
-      .from("employer_credit_usage")
-      .select("amount")
-      .eq("employer_id", employer.id)
-      .eq("context_type", "candidate_profile_view")
-      .gte("created_at", startOfMonth.toISOString());
-
-    if (usageError) {
-      return new Response(JSON.stringify({ error: usageError.message }), {
+    let usedThisMonth = 0;
+    try {
+      usedThisMonth = await getUsedViewsThisMonth(
+        supabase,
+        String(employer.id),
+        startOfMonth.toISOString(),
+      );
+    } catch (error) {
+      return new Response(JSON.stringify({ error: (error as { message?: string }).message ?? "Failed to load usage" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const usedThisMonth = (usageRows ?? []).reduce(
-      (sum, row) => sum + Number(row.amount ?? 0),
-      0,
-    );
+    const { data: existingUnlockThisMonth } = await supabase
+      .from("employer_credit_usage")
+      .select("id")
+      .eq("employer_id", employer.id)
+      .eq("context_type", "candidate_profile_view")
+      .eq("context_id", applicationId)
+      .gte("created_at", startOfMonth.toISOString())
+      .limit(1)
+      .maybeSingle();
+
+    if (existingUnlockThisMonth?.id) {
+      const refreshedUsed = await getUsedViewsThisMonth(
+        supabase,
+        String(employer.id),
+        startOfMonth.toISOString(),
+      );
+      return new Response(
+        JSON.stringify({
+          success: true,
+          source: "existing",
+          candidateViewsUsedThisMonth: refreshedUsed,
+          candidateViewLimit: Number.isFinite(viewLimit) ? viewLimit : null,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     let source: "plan" | "addon" = "plan";
 
@@ -134,15 +189,35 @@ Deno.serve(async (req) => {
     if (!hasPlanAllowance) {
       source = "addon";
 
-      const { data: creditRow, error: creditError } = await supabase
-        .from("employer_credits")
-        .select("id, remaining")
-        .eq("employer_id", employer.id)
-        .eq("credit_type", "candidate_unlock")
-        .maybeSingle();
+      const creditTypes = ["candidate_unlock", "candidate_profile_view"];
+      let deductedFrom: string | null = null;
 
-      const current = Number(creditRow?.remaining ?? 0);
-      if (creditError || !creditRow?.id || current < 1) {
+      for (const creditType of creditTypes) {
+        const { data: creditRow, error: creditError } = await supabase
+          .from("employer_credits")
+          .select("id, remaining")
+          .eq("employer_id", employer.id)
+          .eq("credit_type", creditType)
+          .maybeSingle();
+
+        const current = Number(creditRow?.remaining ?? 0);
+        if (creditError || !creditRow?.id || current < 1) {
+          continue;
+        }
+
+        const { error: deductError } = await supabase
+          .from("employer_credits")
+          .update({ remaining: current - 1 })
+          .eq("id", creditRow.id)
+          .eq("remaining", current);
+
+        if (!deductError) {
+          deductedFrom = creditType;
+          break;
+        }
+      }
+
+      if (!deductedFrom) {
         return new Response(
           JSON.stringify({
             error: "Insufficient candidate_unlock credits",
@@ -155,25 +230,9 @@ Deno.serve(async (req) => {
           },
         );
       }
-
-      const { error: deductError } = await supabase
-        .from("employer_credits")
-        .update({ remaining: current - 1 })
-        .eq("id", creditRow.id)
-        .eq("remaining", current);
-
-      if (deductError) {
-        return new Response(
-          JSON.stringify({ error: `Failed to deduct candidate_unlock credit: ${deductError.message}` }),
-          {
-            status: 409,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
     }
 
-    await supabase.from("employer_credit_usage").insert({
+    const { error: usageInsertError } = await supabase.from("employer_credit_usage").insert({
       employer_id: employer.id,
       credit_type: source === "plan" ? "candidate_view_plan" : "candidate_unlock",
       amount: 1,
@@ -186,11 +245,47 @@ Deno.serve(async (req) => {
       },
     });
 
+    if (usageInsertError) {
+      // Unique collisions can happen under concurrent requests.
+      if (String(usageInsertError.code ?? "") === "23505") {
+        const refreshedUsed = await getUsedViewsThisMonth(
+          supabase,
+          String(employer.id),
+          startOfMonth.toISOString(),
+        );
+        return new Response(
+          JSON.stringify({
+            success: true,
+            source: "existing",
+            candidateViewsUsedThisMonth: refreshedUsed,
+            candidateViewLimit: Number.isFinite(viewLimit) ? viewLimit : null,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ error: `Failed to record candidate view usage: ${usageInsertError.message}` }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const refreshedUsed = await getUsedViewsThisMonth(
+      supabase,
+      String(employer.id),
+      startOfMonth.toISOString(),
+    );
+
     return new Response(
       JSON.stringify({
         success: true,
         source,
-        candidateViewsUsedThisMonth: usedThisMonth + 1,
+        candidateViewsUsedThisMonth: refreshedUsed,
         candidateViewLimit: Number.isFinite(viewLimit) ? viewLimit : null,
       }),
       {

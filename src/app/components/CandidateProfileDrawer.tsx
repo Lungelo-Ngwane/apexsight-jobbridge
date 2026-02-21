@@ -20,6 +20,9 @@ export function CandidateProfileDrawer({
   console.log("Candidate Data:", data);
 
   if (!data) return null;
+  const applicationScore = Number(data.score ?? 0);
+  const aiSimilarity = data.ai_similarity === null || data.ai_similarity === undefined ? null : Number(data.ai_similarity);
+  const hybridScore = data.hybrid_score === null || data.hybrid_score === undefined ? null : Number(data.hybrid_score);
 
   console.log("Rendering Candidate Profile Drawer with data:", data);
 
@@ -53,16 +56,30 @@ export function CandidateProfileDrawer({
           <div className="mt-3 space-y-1">
 
             <div className="text-sm font-medium">
-              Match Score:
+              Application Score:
               <span className="ml-2 font-bold text-blue-600">
-                {data.score}%
+                {applicationScore}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
               <div
                 className="bg-blue-600 h-2 rounded-full"
-                style={{ width: `${data.score}%` }}
+                style={{ width: `${applicationScore}%` }}
               ></div>
+            </div>
+
+            <div className="text-sm">
+              AI Similarity:
+              <span className="ml-2 font-semibold">
+                {aiSimilarity === null ? "Not available" : `${aiSimilarity}%`}
+              </span>
+            </div>
+
+            <div className="text-sm">
+              Hybrid Score:
+              <span className="ml-2 font-semibold text-indigo-600">
+                {hybridScore === null ? "Not available" : `${hybridScore}%`}
+              </span>
             </div>
 
 
@@ -95,7 +112,7 @@ export function CandidateProfileDrawer({
         {/* Score Badge */}
         <Badge className="text-base px-3 py-1">
 
-          {data.score}%
+          {hybridScore ?? applicationScore}%
 
         </Badge>
 
