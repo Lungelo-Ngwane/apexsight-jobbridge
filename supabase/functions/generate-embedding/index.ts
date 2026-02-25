@@ -69,12 +69,16 @@ serve(async (req) => {
       full_name,
       headline,
       bio,
+      professional_bio_ai,
       location,
       years_experience,
       experience_level,
       availability,
       preferred_job_type,
       work_mode,
+      resume_text,
+      resume_summary,
+      cv_url,
       candidate_skills (
         skill,
         level
@@ -134,12 +138,16 @@ serve(async (req) => {
 Candidate Name: ${profile.full_name ?? ""}
 Headline: ${profile.headline ?? ""}
 Bio: ${profile.bio ?? ""}
+AI Professional Bio: ${profile.professional_bio_ai ?? ""}
 Location: ${profile.location ?? ""}
 Years Experience: ${profile.years_experience ?? ""}
 Experience Level: ${profile.experience_level ?? ""}
 Availability: ${profile.availability ?? ""}
 Preferred Job Type: ${profile.preferred_job_type ?? ""}
 Work Mode: ${profile.work_mode ?? ""}
+Resume Summary: ${profile.resume_summary ?? ""}
+Resume Text: ${String(profile.resume_text ?? "").slice(0, 12000)}
+CV Path: ${profile.cv_url ?? ""}
 Skills: ${skills.join(", ")}
   `;
 

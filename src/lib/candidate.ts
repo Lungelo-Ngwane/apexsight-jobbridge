@@ -1,5 +1,80 @@
 import { supabase } from "./supabase";
 
+async function getValidAccessToken(): Promise<string> {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    accessToken = refreshed.session?.access_token;
+
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  const {
+    data: { user: validatedUser },
+    error: validateError,
+  } = await supabase.auth.getUser(accessToken);
+
+  if (validateError || !validatedUser) {
+    const { data: refreshed, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    const refreshedToken = refreshed.session?.access_token;
+    if (refreshError || !refreshedToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+
+    const {
+      data: { user: refreshedUser },
+      error: refreshedValidateError,
+    } = await supabase.auth.getUser(refreshedToken);
+
+    if (refreshedValidateError || !refreshedUser) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+
+    return refreshedToken;
+  }
+
+  return accessToken;
+}
+
+export async function refreshCandidateMatchingProfile(profileId?: string) {
+  if (!profileId) {
+    throw new Error("Missing profile id for matching refresh.");
+  }
+
+  async function runWithCurrentSession() {
+    // 1) Parse/refresh structured candidate data from CV + profile text.
+    const { error: analyzeError } = await supabase.functions.invoke("analyze-candidate-profile", {
+      body: { profile_id: profileId },
+    });
+    if (analyzeError) throw analyzeError;
+
+    // 2) Regenerate candidate embedding with enriched fields.
+    const { error: embeddingError } = await supabase.functions.invoke("generate-embedding", {
+      body: { profile_id: profileId },
+    });
+    if (embeddingError) throw embeddingError;
+  }
+
+  await runWithCurrentSession();
+}
+
 export async function getCandidateDashboardData() {
   const { data, error } = await supabase
     .from("candidate_profiles")
@@ -73,6 +148,12 @@ export async function addCandidateSkill(
   });
 
   if (skillError) throw skillError;
+
+  try {
+    await refreshCandidateMatchingProfile(String(profile.id));
+  } catch (error) {
+    console.error("Failed to refresh candidate matching profile", error);
+  }
 }
 
 export async function uploadCandidateCV(file: File) {
@@ -90,12 +171,37 @@ export async function uploadCandidateCV(file: File) {
 
   if (uploadError) throw uploadError;
 
-  const { error: updateError } = await supabase
+  let { data: updatedProfile, error: updateError } = await supabase
     .from("candidate_profiles")
     .update({ cv_url: filePath })
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (updateError) throw updateError;
+
+  if (!updatedProfile?.id) {
+    const { data: createdProfile, error: createProfileError } = await supabase
+      .from("candidate_profiles")
+      .insert({
+        user_id: user.id,
+        full_name: String(user.user_metadata?.full_name ?? user.email ?? "Candidate"),
+        cv_url: filePath,
+      })
+      .select("id")
+      .single();
+
+    if (createProfileError) throw createProfileError;
+    updatedProfile = createdProfile;
+  }
+
+  if (updatedProfile?.id) {
+    try {
+      await refreshCandidateMatchingProfile(String(updatedProfile.id));
+    } catch (error) {
+      console.error("Failed to refresh candidate matching profile after CV upload", error);
+    }
+  }
 
   return filePath;
 }
@@ -165,6 +271,12 @@ export async function applyForJob(jobId: string) {
     .single();
 
   if (!profile) throw new Error("Candidate profile not found");
+
+  try {
+    await refreshCandidateMatchingProfile(String(profile.id));
+  } catch (error) {
+    console.error("Failed to refresh candidate matching profile before applying", error);
+  }
 
   // Prevent duplicate
   const { data: existing } = await supabase
@@ -280,7 +392,23 @@ export async function updateCandidateProfile(input: {
   const { error } = await supabase
     .from("candidate_profiles")
     .update(input)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) throw error;
+
+  try {
+    const { data: profile } = await supabase
+      .from("candidate_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profile?.id) {
+      await refreshCandidateMatchingProfile(String(profile.id));
+    }
+  } catch (refreshError) {
+    console.error("Failed to refresh candidate matching profile after profile update", refreshError);
+  }
 }

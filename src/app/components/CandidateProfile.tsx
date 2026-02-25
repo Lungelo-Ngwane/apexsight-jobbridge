@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
+import { refreshCandidateMatchingProfile } from "@/lib/candidate";
 
 interface CandidateProfileProps { }
 
@@ -118,6 +119,9 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         if (!error) {
             setSkills([...skills, { skill_id: skill.id, skill: skill.name }]);
             setNewSkill("");
+            await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+                console.error("Failed to refresh matching profile after adding skill", syncError),
+            );
         }
     };
 
@@ -137,6 +141,9 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             .eq("skill_id", skill_id);
 
         setSkills(skills.filter((s) => s.skill_id !== skill_id));
+        await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+            console.error("Failed to refresh matching profile after removing skill", syncError),
+        );
     };
 
     const handleSaveProfile = async () => {
@@ -154,6 +161,18 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             await supabase.from("candidate_profiles").update(updateData).eq("user_id", user.id);
         } else {
             await supabase.from("candidate_profiles").insert({ ...updateData, user_id: user.id });
+        }
+
+        const { data: candidateProfile } = await supabase
+            .from("candidate_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+        if (candidateProfile?.id) {
+            await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+                console.error("Failed to refresh matching profile after saving profile", syncError),
+            );
         }
 
         alert("Profile saved!");
@@ -259,6 +278,9 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                                 .update({ level: newLevel })
                                                 .eq("candidate_profile_id", candidateProfile.id)
                                                 .eq("skill_id", s.skill_id);
+                                            await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+                                                console.error("Failed to refresh matching profile after updating skill level", syncError),
+                                            );
                                         }
                                     }}
                                 >

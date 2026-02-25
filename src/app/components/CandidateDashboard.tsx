@@ -5,6 +5,14 @@ import { Card } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
 import { Badge } from "@/app/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import {
   Award,
   CheckCircle2,
   Clock,
@@ -37,6 +45,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const [cvName, setCvName] = useState<string | null>(null);
   const [cvUploading, setCvUploading] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showCvUploadSuccess, setShowCvUploadSuccess] = useState(false);
 
 
   useEffect(() => {
@@ -348,7 +357,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 {/* Upload */}
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.doc,.docx,.txt"
                   disabled={cvUploading}
                   onChange={async (e) => {
                     if (!e.target.files?.[0]) return;
@@ -359,6 +368,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                       setCvName(path.split("/").pop() ?? null);
                       const data = await getCandidateDashboardData();
                       setProfile(data);
+                      setShowCvUploadSuccess(true);
                     } catch (err) {
                       console.error("CV upload failed", err);
                     } finally {
@@ -455,6 +465,23 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             }}
           />
         )}
+        <Dialog open={showCvUploadSuccess} onOpenChange={setShowCvUploadSuccess}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                CV uploaded successfully
+              </DialogTitle>
+              <DialogDescription>
+                Your CV has been uploaded and your profile was refreshed for matching.
+                If scores do not change immediately, they will update after the next matching cycle.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setShowCvUploadSuccess(false)}>Okay</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

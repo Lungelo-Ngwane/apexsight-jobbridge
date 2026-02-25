@@ -23,12 +23,16 @@ async function ensureCandidateEmbeddings(
         full_name,
         headline,
         bio,
+        professional_bio_ai,
         location,
         years_experience,
         experience_level,
         availability,
         preferred_job_type,
         work_mode,
+        resume_text,
+        resume_summary,
+        cv_url,
         embedding,
         candidate_skills (
           skill,
@@ -60,12 +64,16 @@ async function ensureCandidateEmbeddings(
 Candidate Name: ${String(candidate.full_name ?? "")}
 Headline: ${String(candidate.headline ?? "")}
 Bio: ${String(candidate.bio ?? "")}
+AI Professional Bio: ${String(candidate.professional_bio_ai ?? "")}
 Location: ${String(candidate.location ?? "")}
 Years Experience: ${String(candidate.years_experience ?? "")}
 Experience Level: ${String(candidate.experience_level ?? "")}
 Availability: ${String(candidate.availability ?? "")}
 Preferred Job Type: ${String(candidate.preferred_job_type ?? "")}
 Work Mode: ${String(candidate.work_mode ?? "")}
+Resume Summary: ${String(candidate.resume_summary ?? "")}
+Resume Text: ${String(candidate.resume_text ?? "").slice(0, 12000)}
+CV Path: ${String(candidate.cv_url ?? "")}
 Skills: ${skills.join(", ")}
 `;
 
@@ -92,7 +100,7 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const { job_id } = await req.json();
+    const { job_id, skip_credit = false } = await req.json();
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
 
@@ -153,35 +161,38 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: aiCreditRow } = await supabase
-      .from("employer_credits")
-      .select("id, remaining")
-      .eq("employer_id", employer.id)
-      .eq("credit_type", "ai_credit")
-      .maybeSingle();
+    let currentCredits: number | null = null;
+    if (!skip_credit) {
+      const { data: aiCreditRow } = await supabase
+        .from("employer_credits")
+        .select("id, remaining")
+        .eq("employer_id", employer.id)
+        .eq("credit_type", "ai_credit")
+        .maybeSingle();
 
-    const currentCredits = Number(aiCreditRow?.remaining ?? 0);
-    if (!aiCreditRow?.id || currentCredits < 1) {
-      return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { error: deductError } = await supabase
-      .from("employer_credits")
-      .update({ remaining: currentCredits - 1 })
-      .eq("id", aiCreditRow.id)
-      .eq("remaining", currentCredits);
-
-    if (deductError) {
-      return new Response(
-        JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
-        {
-          status: 409,
+      currentCredits = Number(aiCreditRow?.remaining ?? 0);
+      if (!aiCreditRow?.id || currentCredits < 1) {
+        return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
+          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+        });
+      }
+
+      const { error: deductError } = await supabase
+        .from("employer_credits")
+        .update({ remaining: currentCredits - 1 })
+        .eq("id", aiCreditRow.id)
+        .eq("remaining", currentCredits);
+
+      if (deductError) {
+        return new Response(
+          JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
+          {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     const { data: jobSkills } = await supabase
@@ -275,8 +286,9 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        ai_credits_consumed: 1,
-        ai_credits_remaining: currentCredits - 1,
+        ai_credits_consumed: skip_credit ? 0 : 1,
+        ai_credits_remaining: skip_credit || currentCredits === null ? null : currentCredits - 1,
+        skip_credit: Boolean(skip_credit),
         matches_found: matches?.length || 0,
         matches: matches ?? [],
       }),

@@ -6,10 +6,12 @@ import {
     consumeCandidateViewAccess,
     getEmployerUsageSnapshot,
     getJobApplicants,
+    runAutoMatch,
     updateApplicationStatus,
 } from "@/lib/employer";
 import { CandidateProfileDrawer } from "./CandidateProfileDrawer";
 import { AddonUpsellModal } from "./employer/AddonUpsellModal";
+import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 
 
 interface Props {
@@ -27,11 +29,13 @@ const PIPELINE_STAGES = [
 
 
 export function JobCandidatesModal({ jobId, onClose }: Props) {
+    const { profile } = useEmployerProfile();
     const [candidates, setCandidates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeStage, setActiveStage] = useState("applied");
     const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
     const [unlockingProfileId, setUnlockingProfileId] = useState<string | null>(null);
+    const [refreshingMatchId, setRefreshingMatchId] = useState<string | null>(null);
     const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
     const [showUpsellModal, setShowUpsellModal] = useState(false);
 
@@ -62,6 +66,17 @@ async function changeStatus(
 
 async function handleViewProfile(appId: string) {
     try {
+        setRefreshingMatchId(appId);
+        try {
+            await runAutoMatch(jobId);
+            const refreshedApplicants = await getJobApplicants(jobId);
+            setCandidates(refreshedApplicants ?? []);
+        } catch (matchError) {
+            console.warn("Auto-match refresh failed before opening profile", matchError);
+        } finally {
+            setRefreshingMatchId(null);
+        }
+
         if (unlockedApplicationIds.includes(appId)) {
             setSelectedApplicationId(appId);
             return;
@@ -94,6 +109,8 @@ async function handleViewProfile(appId: string) {
     const filteredCandidates = candidates
         .filter((c) => c.status === activeStage)
         .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
+    const canShowScores = normalizedPlan === "professional" || normalizedPlan === "enterprise";
 
 
     console.log("Rendering JobCandidatesModal with candidates:", candidates);
@@ -159,7 +176,7 @@ async function handleViewProfile(appId: string) {
                                     <Badge className="mt-1">{app.status}</Badge>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    {typeof app.score === "number" && (
+                                    {canShowScores && typeof app.score === "number" && (
                                         <span
                                             className={`text-sm font-semibold px-2 py-1 rounded-full ${getMatchColor(
                                                 app.score
@@ -176,9 +193,13 @@ async function handleViewProfile(appId: string) {
                                         size="sm"
                                         variant="outline"
                                         onClick={() => handleViewProfile(app.id)}
-                                        disabled={unlockingProfileId === app.id}
+                                        disabled={unlockingProfileId === app.id || refreshingMatchId === app.id}
                                     >
-                                        {unlockingProfileId === app.id ? "Unlocking..." : "View Profile"}
+                                        {refreshingMatchId === app.id
+                                            ? "Refreshing Match..."
+                                            : unlockingProfileId === app.id
+                                                ? "Unlocking..."
+                                                : "View Profile"}
                                     </Button>
 
                                     <Button

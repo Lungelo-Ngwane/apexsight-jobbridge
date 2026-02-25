@@ -562,3 +562,9 @@ entrypoint = "./functions/get-invoice-download-url/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/get-invoice-download-url/*.html" ]
+
+[functions.analyze-candidate-profile]
+enabled = true
+verify_jwt = true
+import_map = "./functions/analyze-candidate-profile/deno.json"
+entrypoint = "./functions/analyze-candidate-profile/index.ts"

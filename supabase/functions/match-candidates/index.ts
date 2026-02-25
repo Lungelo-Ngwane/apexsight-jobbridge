@@ -28,12 +28,16 @@ async function ensureCandidateEmbeddings(jobId: string) {
         full_name,
         headline,
         bio,
+        professional_bio_ai,
         location,
         years_experience,
         experience_level,
         availability,
         preferred_job_type,
         work_mode,
+        resume_text,
+        resume_summary,
+        cv_url,
         embedding,
         candidate_skills (
           skill,
@@ -65,12 +69,16 @@ async function ensureCandidateEmbeddings(jobId: string) {
 Candidate Name: ${String(candidate.full_name ?? "")}
 Headline: ${String(candidate.headline ?? "")}
 Bio: ${String(candidate.bio ?? "")}
+AI Professional Bio: ${String(candidate.professional_bio_ai ?? "")}
 Location: ${String(candidate.location ?? "")}
 Years Experience: ${String(candidate.years_experience ?? "")}
 Experience Level: ${String(candidate.experience_level ?? "")}
 Availability: ${String(candidate.availability ?? "")}
 Preferred Job Type: ${String(candidate.preferred_job_type ?? "")}
 Work Mode: ${String(candidate.work_mode ?? "")}
+Resume Summary: ${String(candidate.resume_summary ?? "")}
+Resume Text: ${String(candidate.resume_text ?? "").slice(0, 12000)}
+CV Path: ${String(candidate.cv_url ?? "")}
 Skills: ${skills.join(", ")}
 `;
 
