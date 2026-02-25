@@ -30,7 +30,9 @@ import {
   updateJobStatus,
   updateApplicationStatus,
   getEmployerAnalytics,
+  getEmployerPremiumDashboardInsights,
   type EmployerCreditBalance,
+  type EmployerPremiumDashboardInsights,
   type EmployerUsageSnapshot,
 } from '@/lib/employer';
 import { StatBox } from "./ui/statbox";
@@ -62,6 +64,8 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
   const [usageSnapshot, setUsageSnapshot] = useState<EmployerUsageSnapshot | null>(null);
+  const [premiumInsights, setPremiumInsights] = useState<EmployerPremiumDashboardInsights | null>(null);
+  const [premiumInsightsLoading, setPremiumInsightsLoading] = useState(false);
 
 
 
@@ -133,6 +137,50 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const plan = profile?.plan ?? "free";
   const hasAnalytics = plan !== "free";
   const hasPremium = plan !== "free";
+  const hasPremiumInsights = plan !== "free";
+
+  function formatTimeAgo(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Just now";
+
+    const diffMs = Date.now() - date.getTime();
+    const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPremiumInsights() {
+      if (!hasPremiumInsights) {
+        setPremiumInsights(null);
+        return;
+      }
+
+      try {
+        setPremiumInsightsLoading(true);
+        const data = await getEmployerPremiumDashboardInsights();
+        if (!cancelled) setPremiumInsights(data);
+      } catch (error) {
+        if (!cancelled) setPremiumInsights(null);
+        console.error("Failed to load premium dashboard insights", error);
+      } finally {
+        if (!cancelled) setPremiumInsightsLoading(false);
+      }
+    }
+
+    loadPremiumInsights();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasPremiumInsights]);
 
   const analyticsStats = [
     {
@@ -509,69 +557,63 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             </Card>
 
             {/* Recent Activity */}
-            <Card className="p-6 border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
-              <div className="space-y-4">
-                {[
-                  {
-                    action: "New applicant",
-                    detail: "Sarah M. applied for Python Developer",
-                    time: "2 hours ago",
-                    score: 92
-                  },
-                  {
-                    action: "Interview scheduled",
-                    detail: "John K. - Senior Data Analyst",
-                    time: "5 hours ago",
-                    score: 88
-                  },
-                  {
-                    action: "New applicant",
-                    detail: "Thabo N. applied for Business Analyst",
-                    time: "1 day ago",
-                    score: 85
-                  }
-                ].map((activity, index) => (
-                  <div key={index} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">{activity.action}</span>
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                        {activity.score}%
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-1">{activity.detail}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+            {hasPremiumInsights && (
+              <Card className="p-6 border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                {premiumInsightsLoading ? (
+                  <p className="text-sm text-gray-500">Loading recent activity...</p>
+                ) : premiumInsights?.recentActivity?.length ? (
+                  <div className="space-y-4">
+                    {premiumInsights.recentActivity.map((activity) => (
+                      <div key={activity.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                        <div className="flex items-start justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-900">{activity.action}</span>
+                          <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                            {activity.score}%
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-1">{activity.detail}</p>
+                        <p className="text-xs text-gray-500">{formatTimeAgo(activity.time)}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </Card>
+                ) : (
+                  <p className="text-sm text-gray-500">No recent activity yet.</p>
+                )}
+              </Card>
+            )}
 
             {/* Skill Insights */}
-            {hasAnalytics && (
+            {hasPremiumInsights && (
               <Card className="p-6 border-gray-200 bg-blue-50">
                 <h3 className="font-semibold text-gray-900 mb-2">Talent Pool Insights</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Top skills available in your talent pool this week
                 </p>
-                <div className="space-y-2">
-                  {[
-                    { skill: "Python", count: 1240 },
-                    { skill: "Data Analysis", count: 980 },
-                    { skill: "SQL", count: 850 },
-                    { skill: "Project Management", count: 720 }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">{item.skill}</span>
-                      <span className="font-medium text-gray-900">{item.count}</span>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="w-full mt-4">
+                {premiumInsightsLoading ? (
+                  <p className="text-sm text-gray-500">Loading talent pool insights...</p>
+                ) : premiumInsights?.talentPoolInsights?.length ? (
+                  <div className="space-y-2">
+                    {premiumInsights.talentPoolInsights.map((item) => (
+                      <div key={item.skill} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">{item.skill}</span>
+                        <span className="font-medium text-gray-900">{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No talent pool insight data yet.</p>
+                )}
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => navigate("/employer/candidates")}
+                >
                   View Full Report
                 </Button>
               </Card>
             )}
-            {!hasAnalytics && (
+            {!hasPremiumInsights && (
               <Card className="p-6 border-dashed border-2 border-purple-300 bg-purple-50">
                 <h3 className="font-semibold text-purple-900 mb-2">
                   Talent Insights (Premium)

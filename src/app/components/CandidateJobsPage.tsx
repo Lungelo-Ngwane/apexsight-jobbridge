@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { applyForJob, getAppliedJobIds, getOpenJobs } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
@@ -13,9 +14,12 @@ import {
   Clock,
   Building2,
   ChevronLeft,
+  X,
   CheckCircle,
   Bookmark,
   ArrowLeft,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
 import {
   Sheet,
@@ -37,8 +41,6 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 
-const JOBS_PER_PAGE = 9;
-
 export interface Job {
   id: string;
   title: string;
@@ -56,7 +58,9 @@ export interface Job {
   };
 }
 
-export default function CandidateJobsPage() {
+const JOBS_PER_PAGE = 9;
+
+export function CandidateJobsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
@@ -81,24 +85,17 @@ export default function CandidateJobsPage() {
   }, []);
 
   const employmentTypes = useMemo(
-    () =>
-      Array.from(
-        new Set(jobs.map((j) => j.employment_type).filter(Boolean)),
-      ) as string[],
+    () => Array.from(new Set(jobs.map((j) => j.employment_type).filter(Boolean))) as string[],
     [jobs],
   );
 
   const experienceLevels = useMemo(
-    () =>
-      Array.from(
-        new Set(jobs.map((j) => j.experience_level).filter(Boolean)),
-      ) as string[],
+    () => Array.from(new Set(jobs.map((j) => j.experience_level).filter(Boolean))) as string[],
     [jobs],
   );
 
   const locations = useMemo(
-    () =>
-      Array.from(new Set(jobs.map((j) => j.location).filter(Boolean))) as string[],
+    () => Array.from(new Set(jobs.map((j) => j.location).filter(Boolean))) as string[],
     [jobs],
   );
 
@@ -112,17 +109,9 @@ export default function CandidateJobsPage() {
         (job.location ?? "").toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower);
 
-      const matchesType =
-        selectedTypes.length === 0 ||
-        selectedTypes.includes(job.employment_type ?? "");
-
-      const matchesLevel =
-        selectedLevels.length === 0 ||
-        selectedLevels.includes(job.experience_level ?? "");
-
-      const matchesLocation =
-        selectedLocations.length === 0 ||
-        selectedLocations.includes(job.location ?? "");
+      const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.employment_type ?? "");
+      const matchesLevel = selectedLevels.length === 0 || selectedLevels.includes(job.experience_level ?? "");
+      const matchesLocation = selectedLocations.length === 0 || selectedLocations.includes(job.location ?? "");
 
       return matchesSearch && matchesType && matchesLevel && matchesLocation;
     });
@@ -133,6 +122,8 @@ export default function CandidateJobsPage() {
   const endIndex = startIndex + JOBS_PER_PAGE;
   const currentJobs = filteredJobs.slice(startIndex, endIndex);
 
+  const activeFiltersCount = selectedTypes.length + selectedLevels.length + selectedLocations.length;
+
   const handleClearFilters = () => {
     setSelectedTypes([]);
     setSelectedLevels([]);
@@ -141,13 +132,8 @@ export default function CandidateJobsPage() {
     setCurrentPage(1);
   };
 
-  const activeFiltersCount =
-    selectedTypes.length + selectedLevels.length + selectedLocations.length;
-
   const toggleSaveJob = (jobId: string) => {
-    setSavedJobs((prev) =>
-      prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId],
-    );
+    setSavedJobs((prev) => (prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]));
   };
 
   async function handleApply(job: Job) {
@@ -163,7 +149,6 @@ export default function CandidateJobsPage() {
       const message = String(error?.message ?? "");
       if (message.toLowerCase().includes("already applied")) {
         setAppliedJobIds((prev) => [...new Set([...prev, job.id])]);
-        alert("You have already applied for this job.");
       } else {
         console.error("Failed to apply for job", error);
         alert("Unable to apply right now. Please try again.");
@@ -175,16 +160,16 @@ export default function CandidateJobsPage() {
 
   if (selectedJob) {
     return (
-        <JobDetailsView
-          job={selectedJob}
-          onBack={() => setSelectedJob(null)}
-          onSave={() => toggleSaveJob(selectedJob.id)}
-          isSaved={savedJobs.includes(selectedJob.id)}
-          onApply={() => handleApply(selectedJob)}
-          isApplying={applyingJobId === selectedJob.id}
-          hasApplied={appliedJobIds.includes(selectedJob.id)}
-        />
-      );
+      <JobDetailsView
+        job={selectedJob}
+        onBack={() => setSelectedJob(null)}
+        onSave={() => toggleSaveJob(selectedJob.id)}
+        isSaved={savedJobs.includes(selectedJob.id)}
+        onApply={() => handleApply(selectedJob)}
+        isApplying={applyingJobId === selectedJob.id}
+        hasApplied={appliedJobIds.includes(selectedJob.id)}
+      />
+    );
   }
 
   return (
@@ -208,11 +193,7 @@ export default function CandidateJobsPage() {
 
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="relative h-12 px-4 border-gray-300 rounded-xl lg:hidden"
-                  >
+                  <Button variant="outline" size="lg" className="relative h-12 px-4 border-gray-300 rounded-xl">
                     <SlidersHorizontal className="w-5 h-5" />
                     {activeFiltersCount > 0 && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
@@ -234,27 +215,15 @@ export default function CandidateJobsPage() {
                       selectedLevels={selectedLevels}
                       selectedLocations={selectedLocations}
                       onTypeChange={(type) => {
-                        setSelectedTypes((prev) =>
-                          prev.includes(type)
-                            ? prev.filter((t) => t !== type)
-                            : [...prev, type],
-                        );
+                        setSelectedTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
                         setCurrentPage(1);
                       }}
                       onLevelChange={(level) => {
-                        setSelectedLevels((prev) =>
-                          prev.includes(level)
-                            ? prev.filter((l) => l !== level)
-                            : [...prev, level],
-                        );
+                        setSelectedLevels((prev) => (prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]));
                         setCurrentPage(1);
                       }}
                       onLocationChange={(location) => {
-                        setSelectedLocations((prev) =>
-                          prev.includes(location)
-                            ? prev.filter((l) => l !== location)
-                            : [...prev, location],
-                        );
+                        setSelectedLocations((prev) => (prev.includes(location) ? prev.filter((l) => l !== location) : [...prev, location]));
                         setCurrentPage(1);
                       }}
                       onClearAll={handleClearFilters}
@@ -264,152 +233,134 @@ export default function CandidateJobsPage() {
                 </SheetContent>
               </Sheet>
             </div>
+
+            {activeFiltersCount > 0 && (
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                {selectedTypes.map((type) => (
+                  <Badge key={type} variant="secondary" className="pl-3 pr-2 py-1.5 bg-blue-100 text-blue-700 border-blue-200">
+                    {type}
+                    <button
+                      onClick={() => {
+                        setSelectedTypes((prev) => prev.filter((t) => t !== type));
+                        setCurrentPage(1);
+                      }}
+                      className="ml-2"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {selectedLevels.map((level) => (
+                  <Badge key={level} variant="secondary" className="pl-3 pr-2 py-1.5 bg-purple-100 text-purple-700 border-purple-200">
+                    {level}
+                    <button
+                      onClick={() => {
+                        setSelectedLevels((prev) => prev.filter((l) => l !== level));
+                        setCurrentPage(1);
+                      }}
+                      className="ml-2"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {selectedLocations.map((location) => (
+                  <Badge key={location} variant="secondary" className="pl-3 pr-2 py-1.5 bg-emerald-100 text-emerald-700 border-emerald-200">
+                    {location}
+                    <button
+                      onClick={() => {
+                        setSelectedLocations((prev) => prev.filter((l) => l !== location));
+                        setCurrentPage(1);
+                      }}
+                      className="ml-2"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <Button variant="ghost" size="sm" onClick={handleClearFilters} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                  Clear all
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="hidden lg:block w-72 flex-shrink-0">
-            <div className="sticky top-24 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <FilterContent
-                employmentTypes={employmentTypes}
-                experienceLevels={experienceLevels}
-                locations={locations}
-                selectedTypes={selectedTypes}
-                selectedLevels={selectedLevels}
-                selectedLocations={selectedLocations}
-                onTypeChange={(type) => {
-                  setSelectedTypes((prev) =>
-                    prev.includes(type)
-                      ? prev.filter((t) => t !== type)
-                      : [...prev, type],
-                  );
-                  setCurrentPage(1);
-                }}
-                onLevelChange={(level) => {
-                  setSelectedLevels((prev) =>
-                    prev.includes(level)
-                      ? prev.filter((l) => l !== level)
-                      : [...prev, level],
-                  );
-                  setCurrentPage(1);
-                }}
-                onLocationChange={(location) => {
-                  setSelectedLocations((prev) =>
-                    prev.includes(location)
-                      ? prev.filter((l) => l !== location)
-                      : [...prev, location],
-                  );
-                  setCurrentPage(1);
-                }}
-                onClearAll={handleClearFilters}
-                activeCount={activeFiltersCount}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            {filteredJobs.length === 0 ? "No jobs found" : `${filteredJobs.length} open positions`}
+          </h1>
+          <p className="text-sm text-gray-600">
+            Showing {Math.min(startIndex + 1, filteredJobs.length)}-{Math.min(endIndex, filteredJobs.length)} of {filteredJobs.length} verified opportunities
+          </p>
+        </div>
+
+        {loading ? (
+          <Card className="p-10 text-center border-gray-200">Loading jobs...</Card>
+        ) : currentJobs.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {currentJobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onClick={() => setSelectedJob(job)}
+                onSave={() => toggleSaveJob(job.id)}
+                isSaved={savedJobs.includes(job.id)}
+                onApply={() => handleApply(job)}
+                isApplying={applyingJobId === job.id}
+                hasApplied={appliedJobIds.includes(job.id)}
               />
+            ))}
+          </div>
+        ) : (
+          <Card className="p-12 text-center border-gray-200">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
             </div>
-          </aside>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
+            <p className="text-gray-600 mb-4">Try adjusting your filters or search terms</p>
+            <Button onClick={handleClearFilters} variant="outline">Clear all filters</Button>
+          </Card>
+        )}
 
-          <main className="flex-1">
-            <div className="mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {filteredJobs.length === 0
-                  ? "No jobs found"
-                  : `${filteredJobs.length} open positions`}
-              </h1>
-              <p className="text-sm text-gray-600">
-                Showing {Math.min(startIndex + 1, filteredJobs.length)}-
-                {Math.min(endIndex, filteredJobs.length)} of {filteredJobs.length} verified
-                opportunities
-              </p>
-            </div>
-
-            {loading ? (
-              <Card className="p-10 text-center border-gray-200">Loading jobs...</Card>
-            ) : currentJobs.length > 0 ? (
-              <div className="space-y-4">
-                {currentJobs.map((job) => (
-                  <CandidateJobCard
-                    key={job.id}
-                    job={job}
-                    onClick={() => setSelectedJob(job)}
-                    onSave={() => toggleSaveJob(job.id)}
-                    isSaved={savedJobs.includes(job.id)}
-                    onApply={() => handleApply(job)}
-                    isApplying={applyingJobId === job.id}
-                    hasApplied={appliedJobIds.includes(job.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card className="p-12 text-center border-gray-200">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
-                <p className="text-gray-600 mb-4">Try adjusting your filters or search terms</p>
-                <Button onClick={handleClearFilters} variant="outline">
-                  Clear all filters
-                </Button>
-              </Card>
-            )}
-
-            {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setCurrentPage(currentPage - 1);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  disabled={currentPage === 1}
-                  className="rounded-lg"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-
-                <div className="flex gap-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "outline"}
-                      onClick={() => {
-                        setCurrentPage(page);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className={`rounded-lg w-10 h-10 p-0 ${
-                        currentPage === page ? "bg-blue-600 hover:bg-blue-700 text-white" : ""
-                      }`}
-                    >
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setCurrentPage((prev) => prev - 1)} disabled={currentPage === 1} className="rounded-lg">
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Previous</span>
+              </Button>
+              <div className="flex gap-2">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let page = i + 1;
+                  if (totalPages > 5 && currentPage > 3) {
+                    page = currentPage - 2 + i;
+                    if (page > totalPages) page = totalPages - (4 - i);
+                  }
+                  return (
+                    <Button key={page} variant={currentPage === page ? "default" : "outline"} onClick={() => setCurrentPage(page)} className={`w-10 h-10 rounded-lg ${currentPage === page ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`}>
                       {page}
                     </Button>
-                  ))}
-                </div>
-
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setCurrentPage(currentPage + 1);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  disabled={currentPage === totalPages}
-                  className="rounded-lg"
-                >
-                  Next
-                  <ChevronLeft className="h-4 w-4 ml-1 rotate-180" />
-                </Button>
+                  );
+                })}
               </div>
-            )}
-          </main>
-        </div>
+              <Button variant="outline" onClick={() => setCurrentPage((prev) => prev + 1)} disabled={currentPage === totalPages} className="rounded-lg">
+                <span className="hidden sm:inline mr-2">Next</span>
+                <ChevronLeft className="h-4 w-4 rotate-180" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
       <Dialog open={showApplySuccessModal} onOpenChange={setShowApplySuccessModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Application sent</DialogTitle>
             <DialogDescription>
-              Congratulations! You have successfully applied for
-              {appliedJobTitle ? ` "${appliedJobTitle}"` : " this job"}.
+              Congratulations! You have successfully applied for {appliedJobTitle ? `"${appliedJobTitle}"` : "this job"}.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -421,7 +372,7 @@ export default function CandidateJobsPage() {
   );
 }
 
-function CandidateJobCard({
+function JobCard({
   job,
   onClick,
   onSave,
@@ -448,9 +399,7 @@ function CandidateJobCard({
   };
 
   const getTimeAgo = (date: string) => {
-    const days = Math.floor(
-      (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24),
-    );
+    const days = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
     if (days === 0) return "Today";
     if (days === 1) return "Yesterday";
     if (days < 7) return `${days} days ago`;
@@ -461,10 +410,7 @@ function CandidateJobCard({
   const salary = formatSalary(job.salary_min, job.salary_max);
 
   return (
-    <Card
-      className="group relative overflow-hidden border-gray-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white"
-      onClick={onClick}
-    >
+    <Card className="group relative overflow-hidden border-gray-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white" onClick={onClick}>
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="relative p-5 sm:p-6">
         <div className="flex items-start justify-between mb-4">
@@ -474,12 +420,8 @@ function CandidateJobCard({
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {job.employer.company_name}
-                </p>
-                {job.employer.industry && (
-                  <p className="text-xs text-gray-500 truncate">{job.employer.industry}</p>
-                )}
+                <p className="text-sm font-medium text-gray-900 truncate">{job.employer.company_name}</p>
+                {job.employer.industry && <p className="text-xs text-gray-500 truncate">{job.employer.industry}</p>}
               </div>
             </div>
           </div>
@@ -490,17 +432,11 @@ function CandidateJobCard({
             }}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
           >
-            <Bookmark
-              className={`w-5 h-5 ${
-                isSaved ? "fill-blue-600 text-blue-600" : "text-gray-400"
-              }`}
-            />
+            <Bookmark className={`w-5 h-5 ${isSaved ? "fill-blue-600 text-blue-600" : "text-gray-400"}`} />
           </button>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-          {job.title}
-        </h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{job.title}</h3>
 
         <div className="space-y-2 mb-4">
           {job.location && (
@@ -514,7 +450,7 @@ function CandidateJobCard({
             <span>{job.employment_type || "Not specified"}</span>
             {job.experience_level && (
               <>
-                <span>•</span>
+                <span>�</span>
                 <span>{job.experience_level}</span>
               </>
             )}
@@ -530,19 +466,12 @@ function CandidateJobCard({
         {job.skills_required && job.skills_required.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {job.skills_required.slice(0, 3).map((skill, index) => (
-              <Badge
-                key={`${job.id}-${skill}-${index}`}
-                variant="secondary"
-                className="bg-gray-100 text-gray-700 border-gray-200 text-xs"
-              >
+              <Badge key={`${job.id}-${skill}-${index}`} variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs">
                 {skill}
               </Badge>
             ))}
             {job.skills_required.length > 3 && (
-              <Badge
-                variant="secondary"
-                className="bg-gray-100 text-gray-700 border-gray-200 text-xs"
-              >
+              <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs">
                 +{job.skills_required.length - 3}
               </Badge>
             )}
@@ -555,26 +484,10 @@ function CandidateJobCard({
             {getTimeAgo(job.created_at)}
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-            >
+            <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); onClick(); }}>
               View Details
             </Button>
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs"
-              disabled={hasApplied || isApplying}
-              onClick={(e) => {
-                e.stopPropagation();
-                onApply();
-              }}
-            >
+            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs" disabled={hasApplied || isApplying} onClick={(e) => { e.stopPropagation(); onApply(); }}>
               {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply"}
             </Button>
           </div>
@@ -612,11 +525,7 @@ function FilterContent({
   return (
     <div className="space-y-6 pb-6">
       {activeCount > 0 && (
-        <Button
-          variant="outline"
-          onClick={onClearAll}
-          className="w-full border-red-200 text-red-600 hover:bg-red-50"
-        >
+        <Button variant="outline" onClick={onClearAll} className="w-full border-red-200 text-red-600 hover:bg-red-50">
           Clear all filters ({activeCount})
         </Button>
       )}
@@ -626,15 +535,8 @@ function FilterContent({
         <div className="space-y-3">
           {employmentTypes.map((type) => (
             <div key={type} className="flex items-center">
-              <Checkbox
-                id={`type-${type}`}
-                checked={selectedTypes.includes(type)}
-                onCheckedChange={() => onTypeChange(type)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor={`type-${type}`} className="ml-3 text-sm text-gray-700 cursor-pointer">
-                {type}
-              </Label>
+              <Checkbox id={`type-${type}`} checked={selectedTypes.includes(type)} onCheckedChange={() => onTypeChange(type)} className="rounded border-gray-300" />
+              <Label htmlFor={`type-${type}`} className="ml-3 text-sm text-gray-700 cursor-pointer">{type}</Label>
             </div>
           ))}
         </div>
@@ -647,15 +549,8 @@ function FilterContent({
         <div className="space-y-3">
           {experienceLevels.map((level) => (
             <div key={level} className="flex items-center">
-              <Checkbox
-                id={`level-${level}`}
-                checked={selectedLevels.includes(level)}
-                onCheckedChange={() => onLevelChange(level)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor={`level-${level}`} className="ml-3 text-sm text-gray-700 cursor-pointer">
-                {level}
-              </Label>
+              <Checkbox id={`level-${level}`} checked={selectedLevels.includes(level)} onCheckedChange={() => onLevelChange(level)} className="rounded border-gray-300" />
+              <Label htmlFor={`level-${level}`} className="ml-3 text-sm text-gray-700 cursor-pointer">{level}</Label>
             </div>
           ))}
         </div>
@@ -668,15 +563,8 @@ function FilterContent({
         <div className="space-y-3">
           {locations.map((location) => (
             <div key={location} className="flex items-center">
-              <Checkbox
-                id={`location-${location}`}
-                checked={selectedLocations.includes(location)}
-                onCheckedChange={() => onLocationChange(location)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor={`location-${location}`} className="ml-3 text-sm text-gray-700 cursor-pointer">
-                {location}
-              </Label>
+              <Checkbox id={`location-${location}`} checked={selectedLocations.includes(location)} onCheckedChange={() => onLocationChange(location)} className="rounded border-gray-300" />
+              <Label htmlFor={`location-${location}`} className="ml-3 text-sm text-gray-700 cursor-pointer">{location}</Label>
             </div>
           ))}
         </div>
@@ -711,17 +599,6 @@ function JobDetailsView({
     return "Salary not disclosed";
   };
 
-  const getTimeAgo = (date: string) => {
-    const days = Math.floor(
-      (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24),
-    );
-    if (days === 0) return "Posted today";
-    if (days === 1) return "Posted yesterday";
-    if (days < 7) return `Posted ${days} days ago`;
-    if (days < 30) return `Posted ${Math.floor(days / 7)} weeks ago`;
-    return `Posted ${Math.floor(days / 30)} months ago`;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
@@ -732,16 +609,16 @@ function JobDetailsView({
               <span className="hidden sm:inline">Back to jobs</span>
             </Button>
             <div className="flex items-center gap-2">
-              <Button
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-                onClick={onApply}
-                disabled={hasApplied || isApplying}
-              >
+              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white" onClick={onApply} disabled={hasApplied || isApplying}>
                 {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply"}
               </Button>
               <Button variant="outline" onClick={onSave} className="gap-2">
                 <Bookmark className={`w-4 h-4 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
                 <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Share</span>
               </Button>
             </div>
           </div>
@@ -750,34 +627,25 @@ function JobDetailsView({
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <Card className="p-6 sm:p-8 mb-6 border-gray-200 shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-              <Building2 className="w-8 sm:w-10 h-8 sm:h-10 text-white" />
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Building2 className="w-7 h-7 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
-              <p className="text-lg font-medium text-gray-700 mb-3">
-                {job.employer.company_name}
-                {job.employer.industry && (
-                  <span className="text-gray-500"> • {job.employer.industry}</span>
-                )}
-              </p>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                {job.location && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    {job.location}
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5">
-                  <Briefcase className="w-4 h-4 text-gray-400" />
-                  {job.employment_type || "Not specified"}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  {getTimeAgo(job.created_at)}
-                </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{job.title}</h1>
+              <p className="text-gray-700">{job.employer.company_name}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+            {job.location && (
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-gray-400" />
+                {job.location}
               </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Briefcase className="w-4 h-4 text-gray-400" />
+              {job.employment_type || "Not specified"}
             </div>
           </div>
         </Card>
@@ -789,31 +657,57 @@ function JobDetailsView({
             </div>
             <div>
               <p className="text-sm text-emerald-700 font-medium">Compensation</p>
-              <p className="text-xl font-bold text-gray-900">
-                {formatSalary(job.salary_min, job.salary_max)}
-              </p>
+              <p className="text-xl font-bold text-gray-900">{formatSalary(job.salary_min, job.salary_max)}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-gray-200 shadow-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Job Description</h2>
-          <p className="text-gray-700 leading-relaxed whitespace-pre-line">{job.description}</p>
-          {job.skills_required && job.skills_required.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {job.skills_required.map((skill, index) => (
-                  <Badge key={`${skill}-${index}`} className="px-3 py-1.5 bg-blue-100 text-blue-700 border-blue-200 text-sm">
-                    <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
-                    {skill}
-                  </Badge>
-                ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="p-6 border-gray-200 shadow-md lg:col-span-2">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Job Description</h2>
+            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{job.description}</p>
+
+            {job.skills_required && job.skills_required.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {job.skills_required.map((skill, index) => (
+                    <Badge key={`${skill}-${index}`} className="px-3 py-1.5 bg-blue-100 text-blue-700 border-blue-200 text-sm">
+                      <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </Card>
+            )}
+          </Card>
+
+          <div className="space-y-6">
+            <Card className="p-6 border-gray-200 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Ready to apply?</h3>
+              <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg mb-3" onClick={onApply} disabled={hasApplied || isApplying}>
+                {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply Now"}
+              </Button>
+              <Button variant="outline" onClick={onSave} className="w-full border-gray-300">
+                <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
+                {isSaved ? "Saved" : "Save for later"}
+              </Button>
+            </Card>
+
+            <Card className="p-6 border-gray-200 shadow-md">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">About the Company</h3>
+              <p className="text-sm text-gray-700 mb-3">{job.employer.company_name}</p>
+              {job.employer.industry && <p className="text-sm text-gray-600 mb-3">{job.employer.industry}</p>}
+              <Button variant="outline" className="w-full mt-2 border-gray-300">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View Company Profile
+              </Button>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+export default CandidateJobsPage;

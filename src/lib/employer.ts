@@ -60,6 +60,24 @@ export interface TalentPoolCandidate {
   skills: { skill: string; level: string | null }[];
 }
 
+export interface EmployerRecentActivityItem {
+  id: string;
+  action: "New applicant" | "Interview scheduled";
+  detail: string;
+  time: string;
+  score: number;
+}
+
+export interface EmployerTalentPoolInsightItem {
+  skill: string;
+  count: number;
+}
+
+export interface EmployerPremiumDashboardInsights {
+  recentActivity: EmployerRecentActivityItem[];
+  talentPoolInsights: EmployerTalentPoolInsightItem[];
+}
+
 async function getValidAccessToken(): Promise<string> {
   const {
     data: { session },
@@ -779,6 +797,107 @@ export async function getCandidateDeepView(applicationId: string) {
     ...data,
     ai_similarity: aiSimilarityPercent,
     hybrid_score: hybridScore,
+  };
+}
+
+export async function getEmployerPremiumDashboardInsights(): Promise<EmployerPremiumDashboardInsights> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select("id, plan")
+    .eq("user_id", user.id)
+    .single();
+
+  if (employerError || !employer?.id) {
+    throw new Error("Employer profile not found");
+  }
+
+  const plan = String(employer.plan ?? "free").toLowerCase();
+  const hasPremiumAccess = plan !== "free";
+
+  if (!hasPremiumAccess) {
+    throw new Error("PREMIUM_REQUIRED");
+  }
+
+  const { data: applications, error: applicationsError } = await supabase
+    .from("job_applications")
+    .select(
+      `
+      id,
+      status,
+      score,
+      created_at,
+      candidate:candidate_profiles (
+        full_name
+      ),
+      jobs!inner (
+        title,
+        employer_id
+      )
+    `,
+    )
+    .eq("jobs.employer_id", employer.id)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  if (applicationsError) throw applicationsError;
+
+  const recentActivity = (applications ?? [])
+    .filter((row) => row.status === "interview" || row.status === "applied")
+    .slice(0, 3)
+    .map((row) => {
+      const scoreValue = Number(row.score ?? 0);
+      const score = Number.isFinite(scoreValue)
+        ? Math.max(0, Math.min(100, Math.round(scoreValue)))
+        : 0;
+      const createdAt = String(row.created_at ?? new Date().toISOString());
+      const candidateName = String(
+        (row.candidate as { full_name?: string | null } | null)?.full_name ?? "A candidate",
+      );
+      const jobTitle = String(
+        (row.jobs as { title?: string | null } | null)?.title ?? "a role",
+      );
+      const action = row.status === "interview" ? "Interview scheduled" : "New applicant";
+      const detail =
+        row.status === "interview"
+          ? `${candidateName} - ${jobTitle}`
+          : `${candidateName} applied for ${jobTitle}`;
+
+      return {
+        id: String(row.id),
+        action,
+        detail,
+        time: createdAt,
+        score,
+      } satisfies EmployerRecentActivityItem;
+    });
+
+  const { data: candidateSkills, error: skillsError } = await supabase
+    .from("candidate_skills")
+    .select("skill");
+
+  if (skillsError) throw skillsError;
+
+  const skillCounts = new Map<string, number>();
+  for (const row of candidateSkills ?? []) {
+    const rawSkill = String(row.skill ?? "").trim();
+    if (!rawSkill) continue;
+    skillCounts.set(rawSkill, (skillCounts.get(rawSkill) ?? 0) + 1);
+  }
+
+  const talentPoolInsights = Array.from(skillCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([skill, count]) => ({ skill, count }));
+
+  return {
+    recentActivity,
+    talentPoolInsights,
   };
 }
 
