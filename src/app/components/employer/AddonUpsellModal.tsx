@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { getAddons, startAddonCheckout, type EmployerAddon } from "@/lib/employer";
 
 interface AddonUpsellModalProps {
@@ -55,6 +56,7 @@ export function AddonUpsellModal({
   const [addons, setAddons] = useState<EmployerAddon[]>([]);
   const [loading, setLoading] = useState(false);
   const [buying, setBuying] = useState(false);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
     if (!open) return;
@@ -81,49 +83,60 @@ export function AddonUpsellModal({
     } catch (error) {
       console.error("Failed to start add-on checkout", error);
       setBuying(false);
-      alert("Unable to start add-on checkout right now. Please try again.");
+      showFeedback(
+        "Checkout unavailable",
+        "We couldn't start add-on checkout right now. Please try again.",
+      );
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add-on Required</DialogTitle>
-          <DialogDescription>
-            To {actionLabel}, you need{" "}
-            <strong>{addonType ? prettifyAddonType(addonType) : "an add-on"}</strong> credits.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add-on Required</DialogTitle>
+            <DialogDescription>
+              To {actionLabel}, you need{" "}
+              <strong>{addonType ? prettifyAddonType(addonType) : "an add-on"}</strong> credits.
+            </DialogDescription>
+          </DialogHeader>
 
-        {loading && <p className="text-sm text-gray-500">Loading add-on details...</p>}
+          {loading && <p className="text-sm text-gray-500">Loading add-on details...</p>}
 
-        {!loading && addon && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-semibold text-gray-900">{addon.name}</p>
-            <p className="text-xs text-gray-600 mt-1">
-              {addon.credits} credit{addon.credits === 1 ? "" : "s"} • {prettifyAddonType(addon.type)}
+          {!loading && addon && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="text-sm font-semibold text-gray-900">{addon.name}</p>
+              <p className="text-xs text-gray-600 mt-1">
+                {addon.credits} credit{addon.credits === 1 ? "" : "s"} • {prettifyAddonType(addon.type)}
+              </p>
+              <p className="text-xs text-gray-700 mt-2">{addonDescription(addon.type)}</p>
+              <p className="text-sm font-bold text-gray-900 mt-2">{formatZarFromKobo(addon.price)}</p>
+            </div>
+          )}
+
+          {!loading && !addon && (
+            <p className="text-sm text-red-600">
+              No matching add-on is configured for this action yet.
             </p>
-            <p className="text-xs text-gray-700 mt-2">{addonDescription(addon.type)}</p>
-            <p className="text-sm font-bold text-gray-900 mt-2">{formatZarFromKobo(addon.price)}</p>
-          </div>
-        )}
+          )}
 
-        {!loading && !addon && (
-          <p className="text-sm text-red-600">
-            No matching add-on is configured for this action yet.
-          </p>
-        )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Maybe later
-          </Button>
-          <Button onClick={handleBuy} disabled={!addon || buying}>
-            {buying ? "Redirecting..." : "Buy Add-on"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Maybe later
+            </Button>
+            <Button onClick={handleBuy} disabled={!addon || buying}>
+              {buying ? "Redirecting..." : "Buy Add-on"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
+    </>
   );
 }

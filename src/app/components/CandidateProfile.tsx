@@ -13,6 +13,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { refreshCandidateMatchingProfile } from "@/lib/candidate";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 
 interface CandidateProfileProps { }
 
@@ -35,6 +36,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const [allSkills, setAllSkills] = useState<{ id: string; name: string }[]>([]);
     const [newSkill, setNewSkill] = useState("");
     const [loading, setLoading] = useState(true);
+    const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
     // Fetch profile and skills
     useEffect(() => {
@@ -90,7 +92,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
         const skill = allSkills.find((s) => s.name.toLowerCase() === newSkill.toLowerCase());
         if (!skill) {
-            alert("Skill not found in system");
+            showFeedback(
+                "Skill not found",
+                "That skill isn't currently in our system. Try selecting a different skill name.",
+            );
             return;
         }
 
@@ -105,7 +110,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             .single();
 
         if (!candidateProfile) {
-            alert("Candidate profile not found!");
+            showFeedback(
+                "Profile not found",
+                "We couldn't find your candidate profile. Refresh the page and try again.",
+            );
             return;
         }
 
@@ -175,7 +183,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             );
         }
 
-        alert("Profile saved!");
+        showFeedback(
+            "Profile saved",
+            "Your profile updates were saved successfully.",
+        );
     };
 
     if (loading) return <div>Loading...</div>;
@@ -305,6 +316,12 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     </Button>
                 </div>
             </div>
+            <FeedbackDialog
+                open={feedback.open}
+                title={feedback.title}
+                description={feedback.description}
+                onOpenChange={setFeedbackOpen}
+            />
         </div>
     );
 }

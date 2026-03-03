@@ -12,6 +12,7 @@ import {
 import { CandidateProfileDrawer } from "./CandidateProfileDrawer";
 import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 
 
 interface Props {
@@ -38,6 +39,7 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     const [refreshingMatchId, setRefreshingMatchId] = useState<string | null>(null);
     const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
     const [showUpsellModal, setShowUpsellModal] = useState(false);
+    const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
 
 
@@ -99,7 +101,10 @@ async function handleViewProfile(appId: string) {
             return;
         }
         console.error("Failed to unlock candidate profile", error);
-        alert("Unable to unlock candidate profile right now. Please try again.");
+        showFeedback(
+            "Unable to open profile",
+            "We couldn't unlock this candidate profile right now. Please try again.",
+        );
     } finally {
         setUnlockingProfileId(null);
     }
@@ -245,6 +250,12 @@ async function handleViewProfile(appId: string) {
                 onOpenChange={setShowUpsellModal}
                 addonType="candidate_unlock"
                 actionLabel="unlock this candidate profile"
+            />
+            <FeedbackDialog
+                open={feedback.open}
+                title={feedback.title}
+                description={feedback.description}
+                onOpenChange={setFeedbackOpen}
             />
         </div>
     );

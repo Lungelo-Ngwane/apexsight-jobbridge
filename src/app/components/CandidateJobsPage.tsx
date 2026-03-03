@@ -40,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 
 export interface Job {
   id: string;
@@ -74,6 +75,7 @@ export function CandidateJobsPage() {
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
   const [showApplySuccessModal, setShowApplySuccessModal] = useState(false);
   const [appliedJobTitle, setAppliedJobTitle] = useState("");
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
     Promise.all([getOpenJobs(), getAppliedJobIds()])
@@ -151,7 +153,10 @@ export function CandidateJobsPage() {
         setAppliedJobIds((prev) => [...new Set([...prev, job.id])]);
       } else {
         console.error("Failed to apply for job", error);
-        alert("Unable to apply right now. Please try again.");
+        showFeedback(
+          "Application failed",
+          "We couldn't submit your application right now. Please try again.",
+        );
       }
     } finally {
       setApplyingJobId(null);
@@ -368,6 +373,12 @@ export function CandidateJobsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </div>
   );
 }
@@ -450,7 +461,7 @@ function JobCard({
             <span>{job.employment_type || "Not specified"}</span>
             {job.experience_level && (
               <>
-                <span>•</span>
+                <span>â€¢</span>
                 <span>{job.experience_level}</span>
               </>
             )}
@@ -711,3 +722,4 @@ function JobDetailsView({
 }
 
 export default CandidateJobsPage;
+

@@ -5,6 +5,7 @@ import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { Send, MessageCircle, Search } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -51,6 +52,7 @@ export function MessagesPage() {
   const [startingChat, setStartingChat] = useState(false);
   const [candidateRecipients, setCandidateRecipients] = useState<EmployerMessageRecipient[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   async function refreshThreads() {
     const data = await getConversationThreads();
@@ -179,7 +181,10 @@ export function MessagesPage() {
       await refreshThreads();
     } catch (error) {
       console.error("Failed to send message", error);
-      alert("Unable to send message right now. Please try again.");
+      showFeedback(
+        "Message not sent",
+        "We couldn't send your message right now. Please try again.",
+      );
     } finally {
       setSending(false);
     }
@@ -196,7 +201,10 @@ export function MessagesPage() {
       await refreshThreads();
     } catch (error) {
       console.error("Failed to start conversation", error);
-      alert("Unable to start chat right now. Please try again.");
+      showFeedback(
+        "Unable to start chat",
+        "We couldn't open this conversation right now. Please try again.",
+      );
     } finally {
       setStartingChat(false);
     }
@@ -404,6 +412,12 @@ export function MessagesPage() {
           </Card>
         </div>
       </div>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </div>
   );
 }

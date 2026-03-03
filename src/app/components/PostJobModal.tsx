@@ -6,6 +6,7 @@ import { createJob, updateJob } from "@/lib/employer";
 import { supabase } from "@/lib/supabase";
 import { UpgradeModal } from "./UpgradeModal";
 import { useEmployerProfile } from "../../hooks/useEmployerProfile";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 
 type Status = "open" | "closed" | "archived";
 
@@ -53,6 +54,7 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { profile } = useEmployerProfile();
   const isEditMode = Boolean(job?.id);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
     if (!job) return;
@@ -104,7 +106,10 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
 
   async function handleSubmit() {
     if (!title || !description || !experienceLevel) {
-      alert("Please fill all required fields.");
+      showFeedback(
+        "Missing required fields",
+        "Please complete job title, description, and experience level before submitting.",
+      );
       return;
     }
 
@@ -142,7 +147,12 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
         setShowUpgradeModal(true);
       } else {
         console.error(e);
-        alert(isEditMode ? "Failed to update job. Please try again." : "Failed to post job. Please try again.");
+        showFeedback(
+          isEditMode ? "Unable to update job" : "Unable to post job",
+          isEditMode
+            ? "Your changes couldn't be saved right now. Please try again."
+            : "This job couldn't be posted right now. Please try again.",
+        );
       }
     } finally {
       setLoading(false);
@@ -261,6 +271,12 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
       {showUpgradeModal && (
         <UpgradeModal plan={profile?.plan ?? "free"} onClose={() => setShowUpgradeModal(false)} />
       )}
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </>
   );
 }

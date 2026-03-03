@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,6 +97,7 @@ export function EmployerJobsPage() {
     addonType: null,
     actionLabel: "perform this action",
   });
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   async function loadJobs() {
     try {
@@ -233,7 +235,10 @@ export function EmployerJobsPage() {
         return;
       }
       console.error("Failed to update job status", error);
-      alert("Unable to update job status right now. Please try again.");
+      showFeedback(
+        "Status update failed",
+        "We couldn't update this job status right now. Please try again.",
+      );
     }
   }
 
@@ -251,7 +256,10 @@ export function EmployerJobsPage() {
     try {
       setActionLoading(`feature-${job.id}`);
       await featureJob(job.id, 7);
-      alert("Job featured successfully for 7 days.");
+      showFeedback(
+        "Job featured",
+        "This job is now featured for 7 days.",
+      );
       await loadJobs();
     } catch (error: any) {
       const message = String(error?.message ?? "").toLowerCase();
@@ -263,7 +271,10 @@ export function EmployerJobsPage() {
         });
       } else {
         console.error("Failed to feature job", error);
-        alert("Unable to feature this job right now. Please try again.");
+        showFeedback(
+          "Unable to feature job",
+          "We couldn't feature this job right now. Please try again.",
+        );
       }
     } finally {
       setActionLoading(null);
@@ -286,7 +297,10 @@ export function EmployerJobsPage() {
         });
       } else {
         console.error("Failed to generate AI report", error);
-        alert("Unable to generate AI report right now. Please try again.");
+        showFeedback(
+          "AI report failed",
+          "We couldn't generate this AI report right now. Please try again.",
+        );
       }
     } finally {
       setActionLoading(null);
@@ -298,7 +312,10 @@ export function EmployerJobsPage() {
       setActionLoading(`match-${job.id}`);
       const data = await runAutoMatch(job.id);
       const matchesFound = Number(data?.matches_found ?? 0);
-      alert(`AI match completed. ${matchesFound} candidates matched.`);
+      showFeedback(
+        "AI match complete",
+        `${matchesFound} candidate${matchesFound === 1 ? "" : "s"} matched this job.`,
+      );
     } catch (error: any) {
       const message = String(error?.message ?? "").toLowerCase();
       if (message.includes("insufficient")) {
@@ -309,7 +326,10 @@ export function EmployerJobsPage() {
         });
       } else {
         console.error("Failed to run AI match", error);
-        alert("Unable to run AI match right now. Please try again.");
+        showFeedback(
+          "AI match failed",
+          "We couldn't run AI matching right now. Please try again.",
+        );
       }
     } finally {
       setActionLoading(null);
@@ -659,6 +679,12 @@ export function EmployerJobsPage() {
         }
         addonType={upsell.addonType}
         actionLabel={upsell.actionLabel}
+      />
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
       />
     </div>
   );

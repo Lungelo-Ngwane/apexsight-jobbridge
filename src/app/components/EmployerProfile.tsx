@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 
 interface EmployerProfileProps {
     onBack: () => void;
@@ -31,6 +32,7 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
     const [companyName, setCompanyName] = useState("");
     const [industry, setIndustry] = useState<string | null>(null);
@@ -84,10 +86,15 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
 
         if (error) {
             console.error("Failed to update profile:", error);
-            alert("Failed to save changes");
+            showFeedback(
+                "Save failed",
+                "We couldn't save your company profile changes. Please try again.",
+            );
         } else {
-            alert("Profile updated successfully");
-            onBack();
+            showFeedback(
+                "Profile updated",
+                "Your company profile was updated successfully.",
+            );
         }
     }
 
@@ -185,6 +192,12 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
                     </Button>
                 </div>
             </div>
+            <FeedbackDialog
+                open={feedback.open}
+                title={feedback.title}
+                description={feedback.description}
+                onOpenChange={setFeedbackOpen}
+            />
         </div>
     );
 }

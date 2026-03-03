@@ -13,42 +13,74 @@ async function ensureCandidateEmbeddings(
   openai: OpenAI,
   jobId: string,
 ) {
-  const { data: rows } = await supabase
+  const MAX_EMBEDDINGS_PER_RUN = 20;
+  const CONCURRENCY = 3;
+  const MAX_APPLICATION_SCAN = 500;
+
+  const { data: applicationRows, error: applicationError } = await supabase
     .from("job_applications")
+    .select("candidate_profile_id")
+    .eq("job_id", jobId)
+    .limit(MAX_APPLICATION_SCAN);
+
+  if (applicationError) {
+    throw applicationError;
+  }
+
+  const candidateIds = Array.from(
+    new Set(
+      (applicationRows ?? [])
+        .map((row) => String((row as { candidate_profile_id?: string | null }).candidate_profile_id ?? "").trim())
+        .filter((id) => id.length > 0),
+    ),
+  );
+
+  if (candidateIds.length === 0) {
+    return;
+  }
+
+  const { data: rows, error: candidatesError } = await supabase
+    .from("candidate_profiles")
     .select(
       `
-      candidate_profile_id,
-      candidate_profiles (
-        id,
-        full_name,
-        headline,
-        bio,
-        professional_bio_ai,
-        location,
-        years_experience,
-        experience_level,
-        availability,
-        preferred_job_type,
-        work_mode,
-        resume_text,
-        resume_summary,
-        cv_url,
-        embedding,
-        candidate_skills (
-          skill,
-          level
-        )
+      id,
+      full_name,
+      headline,
+      bio,
+      professional_bio_ai,
+      location,
+      years_experience,
+      experience_level,
+      availability,
+      preferred_job_type,
+      work_mode,
+      resume_text,
+      resume_summary,
+      cv_url,
+      embedding,
+      candidate_skills (
+        skill,
+        level
       )
     `,
     )
-    .eq("job_id", jobId);
+    .in("id", candidateIds)
+    .is("embedding", null)
+    .limit(MAX_EMBEDDINGS_PER_RUN);
+
+  if (candidatesError) {
+    throw candidatesError;
+  }
 
   const candidates = (rows ?? [])
-    .map((row) => (row as { candidate_profiles?: Record<string, unknown> | null }).candidate_profiles)
-    .filter((candidate): candidate is Record<string, unknown> => Boolean(candidate?.id));
+    .filter((candidate): candidate is Record<string, unknown> => Boolean((candidate as { id?: unknown }).id));
 
-  for (const candidate of candidates) {
-    if (candidate.embedding) continue;
+  if (candidates.length === 0) {
+    return;
+  }
+
+  async function processCandidate(candidate: Record<string, unknown>) {
+    if (candidate.embedding) return;
 
     const skills = Array.isArray(candidate.candidate_skills)
       ? candidate.candidate_skills
@@ -86,6 +118,11 @@ Skills: ${skills.join(", ")}
       .from("candidate_profiles")
       .update({ embedding: embeddingResponse.data[0].embedding })
       .eq("id", String(candidate.id));
+  }
+
+  for (let index = 0; index < candidates.length; index += CONCURRENCY) {
+    const batch = candidates.slice(index, index + CONCURRENCY);
+    await Promise.all(batch.map((candidate) => processCandidate(candidate)));
   }
 }
 
@@ -269,17 +306,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (matches) {
-      for (const match of matches) {
-        await supabase
-          .from("job_matches")
-          .upsert({
-            job_id,
-            candidate_id: match.id,
-            similarity: match.similarity,
-          }, {
-            onConflict: "job_id,candidate_id",
-          });
+    if (matches?.length) {
+      const payload = matches.map((match) => ({
+        job_id,
+        candidate_id: match.id,
+        similarity: match.similarity,
+      }));
+
+      const { error: upsertError } = await supabase
+        .from("job_matches")
+        .upsert(payload, {
+          onConflict: "job_id,candidate_id",
+        });
+
+      if (upsertError) {
+        return new Response(JSON.stringify({ error: upsertError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
 

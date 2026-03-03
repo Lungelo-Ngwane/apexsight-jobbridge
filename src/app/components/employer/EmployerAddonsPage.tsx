@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import {
   confirmAddonCheckout,
   getAddons,
@@ -16,6 +17,7 @@ export function EmployerAddonsPage() {
   const [credits, setCredits] = useState<EmployerCreditBalance[]>([]);
   const [buyingAddonId, setBuyingAddonId] = useState<string | null>(null);
   const [verifyingCheckout, setVerifyingCheckout] = useState(false);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   const formatZarFromKobo = (amount: number) =>
     `R ${Math.round(amount / 100).toLocaleString()}`;
@@ -74,10 +76,16 @@ export function EmployerAddonsPage() {
         setVerifyingCheckout(true);
         await confirmAddonCheckout(reference);
         await loadData();
-        alert("Add-on purchase successful. Credits were added to your account.");
+        showFeedback(
+          "Purchase successful",
+          "Your add-on purchase was successful and credits were added to your account.",
+        );
       } catch (error) {
         console.error("Failed to confirm add-on checkout", error);
-        alert("Payment received, but add-on crediting failed. Please contact support.");
+        showFeedback(
+          "Payment received, credit update pending",
+          "We received your payment but couldn't update credits yet. Please contact support.",
+        );
       } finally {
         setVerifyingCheckout(false);
         window.history.replaceState({}, "", "/employer/addons");
@@ -93,7 +101,10 @@ export function EmployerAddonsPage() {
       await startAddonCheckout(addonId);
     } catch (error) {
       console.error("Failed to start add-on checkout", error);
-      alert("Unable to start add-on checkout right now. Please try again.");
+      showFeedback(
+        "Checkout unavailable",
+        "We couldn't start add-on checkout right now. Please try again.",
+      );
       setBuyingAddonId(null);
     }
   }
@@ -176,6 +187,12 @@ export function EmployerAddonsPage() {
           </Card>
         </div>
       </div>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </div>
   );
 }

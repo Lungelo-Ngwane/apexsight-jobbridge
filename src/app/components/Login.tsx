@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { User, Building2, Mail, Lock, UserCircle2 } from "lucide-react";
 
 interface LoginProps {
@@ -32,6 +33,7 @@ export default function Login({
   const [role, setRole] = useState<'candidate' | 'employer'>('candidate');
   const [company, setCompany] = useState('');
   const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
     setIsRegister(initialMode === "register");
@@ -45,7 +47,10 @@ const handleSubmit = async () => {
       if (role === "employer") {
         setShowVerifyEmailModal(true);
       } else {
-        alert("Registered successfully. Please verify your email, then sign in.");
+        showFeedback(
+          "Registration complete",
+          "Your account was created. Please verify your email, then sign in.",
+        );
       }
 
       setIsRegister(false);
@@ -55,8 +60,11 @@ const handleSubmit = async () => {
       onLoginSuccess(result?.role ?? null);
     }
   } catch (err: any) {
-    console.error("LOGIN / REGISTER FAILED:", err);     // ← this is critical
-    alert(err.message || "Something went wrong - check console");
+    console.error("LOGIN / REGISTER FAILED:", err);    
+    showFeedback(
+      "Sign-in failed",
+      err?.message || "We couldn't complete this action. Please check your details and try again.",
+    );
   } finally {
     console.log("handleSubmit FINISHED");
   }
@@ -184,6 +192,13 @@ const handleSubmit = async () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </div>
   );
 }
+

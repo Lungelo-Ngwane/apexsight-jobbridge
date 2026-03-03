@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { updateEmployerProfile } from "@/lib/employer";
 import { useAuth } from "@/app/context/AuthContext";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 
 export function EmployerSettingsPage() {
   const [activeTab, setActiveTab] = useState("company");
@@ -45,6 +46,7 @@ export function EmployerSettingsPage() {
   const [showOnPlatform, setShowOnPlatform] = useState(true);
   const [publicCompanyPage, setPublicCompanyPage] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
     if (!profile) return;
@@ -77,10 +79,13 @@ export function EmployerSettingsPage() {
         public_company_page: publicCompanyPage,
       });
 
-      alert("Company settings saved.");
+      showFeedback(
+        "Settings saved",
+        "Your company settings were saved successfully.",
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save settings.";
-      alert(message);
+      const message = error instanceof Error ? error.message : "We couldn't save settings right now.";
+      showFeedback("Unable to save settings", message);
     } finally {
       setSaving(false);
     }
@@ -602,6 +607,12 @@ export function EmployerSettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </div>
   );
 }

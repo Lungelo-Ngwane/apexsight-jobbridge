@@ -1671,26 +1671,14 @@ export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot>
   startOfMonth.setUTCDate(1);
   startOfMonth.setUTCHours(0, 0, 0, 0);
 
-  const { data: viewsRows, error: viewsError } = await supabase
+  const { count: usedViewsThisMonth, error: viewsError } = await supabase
     .from("employer_credit_usage")
-    .select("context_id, amount")
+    .select("id", { count: "exact", head: true })
     .eq("employer_id", employer.id)
     .eq("context_type", "candidate_profile_view")
     .gte("created_at", startOfMonth.toISOString());
 
   if (viewsError) throw viewsError;
-
-  const viewedApplicationIds = new Set<string>();
-  let fallbackAmount = 0;
-  for (const row of viewsRows ?? []) {
-    const contextId = String((row as { context_id?: string | null }).context_id ?? "").trim();
-    if (contextId) {
-      viewedApplicationIds.add(contextId);
-      continue;
-    }
-    fallbackAmount += Number((row as { amount?: number | null }).amount ?? 0);
-  }
-  const usedViewsThisMonth = viewedApplicationIds.size + fallbackAmount;
 
   return {
     planName: String(planRow?.name ?? normalizedPlan),
@@ -1699,7 +1687,7 @@ export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot>
       planRow && planRow.job_limit === null
         ? null
         : (planRow?.job_limit ?? PLAN_LIMITS[normalizedPlan as keyof typeof PLAN_LIMITS]?.maxActiveJobs ?? null),
-    candidateViewsUsedThisMonth: usedViewsThisMonth,
+    candidateViewsUsedThisMonth: Number(usedViewsThisMonth ?? 0),
     candidateViewLimit:
       planRow && planRow.candidate_view_limit === null
         ? null

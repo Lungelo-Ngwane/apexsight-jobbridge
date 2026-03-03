@@ -27,9 +27,9 @@ async function getUsedViewsThisMonth(
   employerId: string,
   startIso: string,
 ) {
-  const { data: usageRows, error: usageError } = await supabase
+  const { count, error: usageError } = await supabase
     .from("employer_credit_usage")
-    .select("context_id, amount")
+    .select("id", { count: "exact", head: true })
     .eq("employer_id", employerId)
     .eq("context_type", "candidate_profile_view")
     .gte("created_at", startIso);
@@ -38,19 +38,7 @@ async function getUsedViewsThisMonth(
     throw usageError;
   }
 
-  const withContext = new Set<string>();
-  let withoutContextAmount = 0;
-
-  for (const row of usageRows ?? []) {
-    const contextId = String(row.context_id ?? "").trim();
-    if (contextId) {
-      withContext.add(contextId);
-      continue;
-    }
-    withoutContextAmount += Number(row.amount ?? 0);
-  }
-
-  return withContext.size + withoutContextAmount;
+  return Number(count ?? 0);
 }
 
 Deno.serve(async (req) => {

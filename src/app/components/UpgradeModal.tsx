@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { getActivePlans, startSubscriptionCheckout, type BillingPlan, type BillingPlanName } from "@/lib/employer";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import {
     X,
     Crown,
@@ -21,6 +22,7 @@ interface UpgradeModalProps {
 export function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
     const [loading, setLoading] = useState(false);
     const [plans, setPlans] = useState<BillingPlan[]>([]);
+    const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
     const targetPlan = useMemo((): BillingPlanName => {
         const normalizedPlan = plan.toLowerCase();
@@ -46,20 +48,24 @@ export function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
             await startSubscriptionCheckout(targetPlan, targetPlanDetails?.id);
         } catch (error) {
             console.error("Failed to start checkout", error);
-            alert("Unable to start checkout right now. Please try again.");
+            showFeedback(
+                "Checkout unavailable",
+                "We couldn't start checkout right now. Please try again in a moment.",
+            );
             setLoading(false);
         }
     }
 
     return (
-        <div
-            className="fixed inset-0 bg-black/60  backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-            onClick={onClose}
-        >
-            <Card
-                className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border-0 overflow-hidden animate-in zoom-in-95 duration-200"
-                onClick={(e) => e.stopPropagation()}
+        <>
+            <div
+                className="fixed inset-0 bg-black/60  backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+                onClick={onClose}
             >
+                <Card
+                    className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border-0 overflow-hidden animate-in zoom-in-95 duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                >
                 {/* Header with gradient */}
                 <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 p-8 text-white overflow-hidden">
                     {/* Decorative elements */}
@@ -183,7 +189,14 @@ export function UpgradeModal({ plan, onClose }: UpgradeModalProps) {
                         Cancel anytime. No hidden fees.
                     </p>
                 </div>
-            </Card>
-        </div>
+                </Card>
+            </div>
+            <FeedbackDialog
+                open={feedback.open}
+                title={feedback.title}
+                description={feedback.description}
+                onOpenChange={setFeedbackOpen}
+            />
+        </>
     );
 }

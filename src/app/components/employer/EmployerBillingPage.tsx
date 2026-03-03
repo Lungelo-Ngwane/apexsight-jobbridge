@@ -30,6 +30,17 @@ import {
   Briefcase
 } from "lucide-react";
 import { Progress } from "@/app/components/ui/progress";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 export function EmployerBillingPage() {
   const { profile } = useEmployerProfile();
@@ -43,6 +54,8 @@ export function EmployerBillingPage() {
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
     getActivePlans()
@@ -117,10 +130,13 @@ export function EmployerBillingPage() {
         try {
           setVerifyingCheckout(true);
           await confirmSubscriptionCheckout(reference);
-          alert("Plan upgraded successfully.");
+          showFeedback("Plan upgraded", "Your subscription has been upgraded successfully.");
         } catch (error) {
           console.error("Failed to confirm subscription", error);
-          alert("Payment received, but plan update failed. Please contact support.");
+          showFeedback(
+            "Payment received, update pending",
+            "We received your payment, but the plan update is still pending. Please contact support.",
+          );
         } finally {
           setVerifyingCheckout(false);
           window.history.replaceState({}, "", "/employer/billing");
@@ -142,26 +158,28 @@ export function EmployerBillingPage() {
       await startSubscriptionCheckout(plan, planId);
     } catch (error) {
       console.error("Failed to start checkout", error);
-      alert("Unable to start checkout right now. Please try again.");
+      showFeedback(
+        "Checkout unavailable",
+        "We couldn't start checkout right now. Please try again.",
+      );
       setLoadingSource(null);
     }
   }
 
   async function handleCancelSubscription() {
-    const shouldCancel = window.confirm(
-      "Cancel your subscription and downgrade to Free?",
-    );
-
-    if (!shouldCancel) return;
-
     try {
       setCancellingSubscription(true);
       await cancelSubscription();
-      alert("Subscription cancelled. Your account is now on the Free plan.");
-      window.location.reload();
+      showFeedback(
+        "Subscription cancelled",
+        "Your subscription was cancelled and your account is now on the Free plan.",
+      );
     } catch (error) {
       console.error("Failed to cancel subscription", error);
-      alert("Unable to cancel subscription right now. Please try again.");
+      showFeedback(
+        "Cancellation failed",
+        "We couldn't cancel your subscription right now. Please try again.",
+      );
     } finally {
       setCancellingSubscription(false);
     }
@@ -177,8 +195,8 @@ export function EmployerBillingPage() {
       const url = await getBillingInvoiceDownloadUrl(invoiceId);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to download invoice.";
-      alert(message);
+      const message = error instanceof Error ? error.message : "We couldn't download this invoice right now.";
+      showFeedback("Invoice download failed", message);
     } finally {
       setDownloadingInvoiceId(null);
     }
@@ -464,7 +482,7 @@ export function EmployerBillingPage() {
                   <Button
                     variant="ghost"
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={handleCancelSubscription}
+                    onClick={() => setShowCancelConfirm(true)}
                     disabled={loadingSource !== null || verifyingCheckout || cancellingSubscription}
                   >
                     {cancellingSubscription ? "Cancelling..." : "Cancel Subscription"}
@@ -635,6 +653,33 @@ export function EmployerBillingPage() {
           </div>
         </div>
       </div>
+      <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel subscription?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your plan will be downgraded to Free. You can re-upgrade anytime.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setShowCancelConfirm(false);
+                await handleCancelSubscription();
+              }}
+            >
+              Yes, Cancel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </div>
   );
 }
