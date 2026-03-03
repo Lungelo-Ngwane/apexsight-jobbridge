@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { registerUser, loginUser } from '../../lib/auth';
+import { registerUser, loginUser, signInWithGoogle } from '../../lib/auth';
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -32,6 +32,7 @@ export default function Login({
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<'candidate' | 'employer'>('candidate');
   const [company, setCompany] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
@@ -67,6 +68,19 @@ const handleSubmit = async () => {
     );
   } finally {
     console.log("handleSubmit FINISHED");
+  }
+};
+
+const handleGoogleSignIn = async () => {
+  try {
+    setGoogleLoading(true);
+    await signInWithGoogle();
+  } catch (err: any) {
+    setGoogleLoading(false);
+    showFeedback(
+      "Google sign-in failed",
+      err?.message || "We couldn't start Google sign-in. Please try again.",
+    );
   }
 };
 
@@ -168,6 +182,34 @@ const handleSubmit = async () => {
         <Button onClick={handleSubmit} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
           {isRegister ? 'Create Account' : 'Sign In'}
         </Button>
+
+        {!isRegister && (
+          <>
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              className="w-full border-gray-300"
+            >
+              <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true">
+                <path
+                  fill="#EA4335"
+                  d="M12 10.2v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.8-6-6.2s2.7-6.2 6-6.2c1.9 0 3.1.8 3.8 1.4l2.6-2.5C16.8 2.9 14.6 2 12 2 6.9 2 2.8 6.3 2.8 11.5S6.9 21 12 21c6.9 0 9.1-4.9 9.1-7.4 0-.5 0-.8-.1-1.2H12z"
+                />
+              </svg>
+              {googleLoading ? "Redirecting..." : "Continue with Google"}
+            </Button>
+          </>
+        )}
 
         <button
           type="button"

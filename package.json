@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "loadtest:env": "node ./load-tests/generate-loadtest-env.mjs",
+    "loadtest:smoke": "k6 run ./load-tests/smoke.js",
+    "loadtest:run": "k6 run ./load-tests/supabase-backend.js"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

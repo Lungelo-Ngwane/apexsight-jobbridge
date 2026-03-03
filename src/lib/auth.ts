@@ -98,3 +98,28 @@ export async function loginUser(email: string, password: string) {
     throw err;
   }
 }
+
+/**
+ * Start OAuth sign-in with Google.
+ * Supabase will redirect back to the app after authentication.
+ */
+export async function signInWithGoogle() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/`
+      : `${APP_BASE_URL}/`;
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: {
+        prompt: "select_account",
+      },
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
