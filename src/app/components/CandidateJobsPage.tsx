@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { applyForJob, getAppliedJobIds, getOpenJobs } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
@@ -21,6 +20,7 @@ import {
   Share2,
   ExternalLink,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   Sheet,
   SheetContent,
@@ -48,6 +48,8 @@ export interface Job {
   description: string;
   location: string | null;
   employment_type: string | null;
+  is_featured?: boolean;
+  featured_until?: string | null;
   salary_min?: number | null;
   salary_max?: number | null;
   experience_level?: string | null;
@@ -62,6 +64,7 @@ export interface Job {
 const JOBS_PER_PAGE = 9;
 
 export function CandidateJobsPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
@@ -178,10 +181,23 @@ export function CandidateJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+    <div className="min-h-screen bg-slate-50">
+      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="max-w-7xl mx-auto">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <Button
+                variant="outline"
+                className="h-10 rounded-lg border-slate-300 text-slate-700"
+                onClick={() => navigate("/candidate/dashboard")}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to dashboard
+              </Button>
+              <p className="hidden sm:block text-sm text-slate-500">
+                Find verified roles across South Africa
+              </p>
+            </div>
             <div className="flex items-center gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -192,13 +208,13 @@ export function CandidateJobsPage() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="pl-10 h-12 border-gray-300 focus:ring-2 focus:ring-blue-500 rounded-xl"
+                  className="pl-10 h-12 border-gray-300 focus:ring-2 focus:ring-blue-500 rounded-lg bg-white"
                 />
               </div>
 
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="lg" className="relative h-12 px-4 border-gray-300 rounded-xl">
+                  <Button variant="outline" size="lg" className="relative h-12 px-4 border-gray-300 rounded-xl lg:hidden">
                     <SlidersHorizontal className="w-5 h-5" />
                     {activeFiltersCount > 0 && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
@@ -302,33 +318,72 @@ export function CandidateJobsPage() {
           </p>
         </div>
 
-        {loading ? (
-          <Card className="p-10 text-center border-gray-200">Loading jobs...</Card>
-        ) : currentJobs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {currentJobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onClick={() => setSelectedJob(job)}
-                onSave={() => toggleSaveJob(job.id)}
-                isSaved={savedJobs.includes(job.id)}
-                onApply={() => handleApply(job)}
-                isApplying={applyingJobId === job.id}
-                hasApplied={appliedJobIds.includes(job.id)}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          <aside className="hidden lg:block">
+            <Card className="p-4 border-gray-200 sticky top-36 rounded-xl shadow-sm bg-white">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={handleClearFilters} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <FilterContent
+                employmentTypes={employmentTypes}
+                experienceLevels={experienceLevels}
+                locations={locations}
+                selectedTypes={selectedTypes}
+                selectedLevels={selectedLevels}
+                selectedLocations={selectedLocations}
+                onTypeChange={(type) => {
+                  setSelectedTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
+                  setCurrentPage(1);
+                }}
+                onLevelChange={(level) => {
+                  setSelectedLevels((prev) => (prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]));
+                  setCurrentPage(1);
+                }}
+                onLocationChange={(location) => {
+                  setSelectedLocations((prev) => (prev.includes(location) ? prev.filter((l) => l !== location) : [...prev, location]));
+                  setCurrentPage(1);
+                }}
+                onClearAll={handleClearFilters}
+                activeCount={activeFiltersCount}
               />
-            ))}
+            </Card>
+          </aside>
+
+          <div>
+            {loading ? (
+              <Card className="p-10 text-center border-gray-200">Loading jobs...</Card>
+            ) : currentJobs.length > 0 ? (
+              <div className="space-y-4">
+                {currentJobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    onClick={() => setSelectedJob(job)}
+                    onSave={() => toggleSaveJob(job.id)}
+                    isSaved={savedJobs.includes(job.id)}
+                    onApply={() => handleApply(job)}
+                    isApplying={applyingJobId === job.id}
+                    hasApplied={appliedJobIds.includes(job.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card className="p-12 text-center border-gray-200">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
+                <p className="text-gray-600 mb-4">Try adjusting your filters or search terms</p>
+                <Button onClick={handleClearFilters} variant="outline">Clear all filters</Button>
+              </Card>
+            )}
           </div>
-        ) : (
-          <Card className="p-12 text-center border-gray-200">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
-            <p className="text-gray-600 mb-4">Try adjusting your filters or search terms</p>
-            <Button onClick={handleClearFilters} variant="outline">Clear all filters</Button>
-          </Card>
-        )}
+        </div>
 
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center">
@@ -400,6 +455,10 @@ function JobCard({
   isApplying: boolean;
   hasApplied: boolean;
 }) {
+  const featuredActive =
+    Boolean(job.is_featured) &&
+    (!job.featured_until || new Date(job.featured_until).getTime() > Date.now());
+
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
     const format = (num: number) => `R${(num / 1000).toFixed(0)}k`;
@@ -421,8 +480,8 @@ function JobCard({
   const salary = formatSalary(job.salary_min, job.salary_max);
 
   return (
-    <Card className="group relative overflow-hidden border-gray-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white" onClick={onClick}>
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+    <Card className="group relative overflow-hidden border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer bg-white rounded-xl" onClick={onClick}>
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/70 to-white opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="relative p-5 sm:p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
@@ -447,21 +506,29 @@ function JobCard({
           </button>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{job.title}</h3>
-
-        <div className="space-y-2 mb-4">
-          {job.location && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span className="truncate">{job.location}</span>
-            </div>
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">{job.title}</h3>
+          {featuredActive && (
+            <Badge className="bg-amber-100 text-amber-700 border-amber-200 shrink-0">
+              Featured
+            </Badge>
           )}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+        </div>
+
+        <div className="mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+            {job.location && (
+              <>
+                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span>{job.location}</span>
+                <span className="text-gray-400">|</span>
+              </>
+            )}
             <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <span>{job.employment_type || "Not specified"}</span>
             {job.experience_level && (
               <>
-                <span>•</span>
+                <span className="text-gray-400">|</span>
                 <span>{job.experience_level}</span>
               </>
             )}
@@ -601,6 +668,11 @@ function JobDetailsView({
   isApplying: boolean;
   hasApplied: boolean;
 }) {
+  const navigate = useNavigate();
+  const featuredActive =
+    Boolean(job.is_featured) &&
+    (!job.featured_until || new Date(job.featured_until).getTime() > Date.now());
+
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return "Salary not disclosed";
     const format = (num: number) => `R${(num / 1000).toFixed(0)}k`;
@@ -612,13 +684,22 @@ function JobDetailsView({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Button variant="ghost" onClick={onBack} className="gap-2">
-              <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Back to jobs</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={onBack} className="gap-2">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden sm:inline">Back to jobs</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/candidate/dashboard")}
+                className="hidden sm:inline-flex"
+              >
+                Dashboard
+              </Button>
+            </div>
             <div className="flex items-center gap-2">
               <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white" onClick={onApply} disabled={hasApplied || isApplying}>
                 {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply"}
@@ -647,6 +728,12 @@ function JobDetailsView({
               <p className="text-gray-700">{job.employer.company_name}</p>
             </div>
           </div>
+          {featuredActive && (
+            <Badge className="mb-3 bg-amber-100 text-amber-700 border-amber-200">
+              Featured Position
+              {job.featured_until ? ` until ${new Date(job.featured_until).toLocaleDateString()}` : ""}
+            </Badge>
+          )}
           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
             {job.location && (
               <div className="flex items-center gap-1.5">
@@ -722,4 +809,3 @@ function JobDetailsView({
 }
 
 export default CandidateJobsPage;
-

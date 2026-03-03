@@ -18,6 +18,14 @@ interface AddonUpsellModalProps {
   actionLabel: string;
 }
 
+function getAddonTypeAliases(type: string | null): string[] {
+  const normalized = String(type ?? "").trim().toLowerCase();
+  if (!normalized) return [];
+  if (normalized === "candidate_unlock") return ["candidate_unlock", "candidate_profile_view"];
+  if (normalized === "candidate_profile_view") return ["candidate_profile_view", "candidate_unlock"];
+  return [normalized];
+}
+
 function prettifyAddonType(type: string) {
   return type
     .split("_")
@@ -38,6 +46,9 @@ function addonDescription(type: string) {
     return "Use AI matching credits to rank and identify top-fit candidates for your roles.";
   }
   if (normalized === "candidate_profile_view") {
+    return "Unlock extra full profile views after your monthly plan allocation is used.";
+  }
+  if (normalized === "candidate_unlock") {
     return "Unlock extra full profile views after your monthly plan allocation is used.";
   }
   if (normalized === "job_slot") {
@@ -70,7 +81,11 @@ export function AddonUpsellModal({
 
   const addon = useMemo(() => {
     if (!addonType) return null;
-    return addons.find((item) => item.type === addonType) ?? null;
+    const aliases = getAddonTypeAliases(addonType);
+    return (
+      addons.find((item) => aliases.includes(String(item.type ?? "").trim().toLowerCase())) ??
+      null
+    );
   }, [addonType, addons]);
 
   const formatZarFromKobo = (amount: number) => `R ${Math.round(amount / 100).toLocaleString()}`;

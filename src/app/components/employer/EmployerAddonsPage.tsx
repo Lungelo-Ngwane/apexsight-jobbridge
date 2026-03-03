@@ -44,6 +44,9 @@ export function EmployerAddonsPage() {
     if (normalized === "candidate_profile_view") {
       return "Unlock extra full profile views after your monthly plan allocation is used.";
     }
+    if (normalized === "candidate_unlock") {
+      return "Unlock extra full profile views after your monthly plan allocation is used.";
+    }
     if (normalized === "job_slot") {
       return "Add temporary extra active job slots without changing your subscription plan.";
     }
@@ -74,12 +77,31 @@ export function EmployerAddonsPage() {
 
       try {
         setVerifyingCheckout(true);
-        await confirmAddonCheckout(reference);
+        const result = await confirmAddonCheckout(reference);
         await loadData();
-        showFeedback(
-          "Purchase successful",
-          "Your add-on purchase was successful and credits were added to your account.",
-        );
+        const creditType = String(result?.creditType ?? "").trim().toLowerCase();
+        const creditsAdded = Number(result?.creditsAdded ?? 0);
+        const creditText =
+          creditsAdded > 0
+            ? `${creditsAdded} credit${creditsAdded === 1 ? "" : "s"}`
+            : "Credits";
+
+        if (creditType === "featured_job") {
+          showFeedback(
+            "Featured credits added",
+            `${creditText} were added. Go to Jobs and click "Feature Job" on the job you want to promote.`,
+          );
+        } else if (creditType === "job_slot") {
+          showFeedback(
+            "Job slot credits added",
+            `${creditText} were added. You can now publish more open jobs.`,
+          );
+        } else {
+          showFeedback(
+            "Purchase successful",
+            `${creditText} were added to your account.`,
+          );
+        }
       } catch (error) {
         console.error("Failed to confirm add-on checkout", error);
         showFeedback(

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Briefcase,
@@ -14,14 +14,39 @@ import { Button } from "@/app/components/ui/button";
 import { useAuth } from "../context/AuthContext";
 import { useEmployerProfile } from "../../hooks/useEmployerProfile";
 import { NavLink } from "react-router-dom";
+import { getEmployerUnreadMessageCount, subscribeToMyMessageChanges } from "@/lib/messages";
 
 interface EmployerLayoutProps {
   children: ReactNode;
 }
 
 export function EmployerLayout({ children }: EmployerLayoutProps) {
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const { profile } = useEmployerProfile();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user || role !== "employer") {
+      setUnreadCount(0);
+      return;
+    }
+
+    const refresh = () => {
+      getEmployerUnreadMessageCount()
+        .then(setUnreadCount)
+        .catch((error) => console.error("Failed to load employer unread messages", error));
+    };
+
+    refresh();
+    const unsub = subscribeToMyMessageChanges(refresh);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      unsub();
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [user, role]);
 
   return (
     <div className="min-h-screen md:flex bg-gray-50">
@@ -47,7 +72,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
           <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/employer/dashboard" />
           <SidebarItem icon={Briefcase} label="Jobs" to="/employer/jobs" />
           <SidebarItem icon={Users} label="Candidates" to="/employer/candidates" />
-          <SidebarItem icon={MessageSquare} label="Messages" to="/employer/messages" />
+          <SidebarItem icon={MessageSquare} label="Messages" to="/employer/messages" badgeCount={unreadCount} />
           <SidebarItem icon={ShoppingBag} label="Add-ons" to="/employer/addons" />
           <SidebarItem icon={CreditCard} label="Billing" to="/employer/billing" />
           <SidebarItem icon={Settings} label="Settings" to="/employer/settings" />
@@ -78,7 +103,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
             <MobileNavItem label="Dashboard" to="/employer/dashboard" />
             <MobileNavItem label="Jobs" to="/employer/jobs" />
             <MobileNavItem label="Candidates" to="/employer/candidates" />
-            <MobileNavItem label="Messages" to="/employer/messages" />
+            <MobileNavItem label="Messages" to="/employer/messages" badgeCount={unreadCount} />
             <MobileNavItem label="Add-ons" to="/employer/addons" />
             <MobileNavItem label="Billing" to="/employer/billing" />
             <MobileNavItem label="Settings" to="/employer/settings" />
@@ -106,9 +131,10 @@ interface SidebarItemProps {
   icon: any;
   label: string;
   to?: string;
+  badgeCount?: number;
 }
 
-function SidebarItem({ icon: Icon, label, to }: SidebarItemProps) {
+function SidebarItem({ icon: Icon, label, to, badgeCount = 0 }: SidebarItemProps) {
   if (!to) {
     return (
       <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-left transition-all text-gray-400 cursor-not-allowed">
@@ -133,13 +159,18 @@ function SidebarItem({ icon: Icon, label, to }: SidebarItemProps) {
         <>
           <Icon className={`w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}`} />
           <span className="text-sm">{label}</span>
+          {badgeCount > 0 && (
+            <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[11px] font-semibold inline-flex items-center justify-center">
+              {badgeCount > 99 ? "99+" : badgeCount}
+            </span>
+          )}
         </>
       )}
     </NavLink>
   );
 }
 
-function MobileNavItem({ label, to }: { label: string; to: string }) {
+function MobileNavItem({ label, to, badgeCount = 0 }: { label: string; to: string; badgeCount?: number }) {
   return (
     <NavLink
       to={to}
@@ -151,7 +182,12 @@ function MobileNavItem({ label, to }: { label: string; to: string }) {
         }`
       }
     >
-      {label}
+      <span>{label}</span>
+      {badgeCount > 0 && (
+        <span className="ml-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-semibold inline-flex items-center justify-center">
+          {badgeCount > 99 ? "99+" : badgeCount}
+        </span>
+      )}
     </NavLink>
   );
 }

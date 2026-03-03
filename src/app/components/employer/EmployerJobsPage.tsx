@@ -56,6 +56,12 @@ type JobRow = {
   job_applications?: { id: string; status: string }[];
 };
 
+function isJobFeaturedActive(job: Pick<JobRow, "is_featured" | "featured_until">) {
+  if (!job.is_featured) return false;
+  if (!job.featured_until) return true;
+  return new Date(job.featured_until).getTime() > Date.now();
+}
+
 function tabToStatus(tab: JobStatusTab): JobRow["status"] {
   if (tab === "active") return "open";
   if (tab === "draft") return "archived";
@@ -171,6 +177,12 @@ export function EmployerJobsPage() {
           (job.location ?? "").toLowerCase() === selectedLocation.toLowerCase();
 
         return matchesSearch && matchesType && matchesLocation;
+      })
+      .sort((a, b) => {
+        const aFeatured = isJobFeaturedActive(a) ? 1 : 0;
+        const bFeatured = isJobFeaturedActive(b) ? 1 : 0;
+        if (aFeatured !== bFeatured) return bFeatured - aFeatured;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
   }, [activeTab, jobs, searchTerm, selectedLocation, selectedType]);
 
@@ -455,6 +467,7 @@ export function EmployerJobsPage() {
               {!loadingJobs &&
                 activeTab === tab &&
                 filteredJobsForActiveTab.map((job) => {
+                  const featuredActive = isJobFeaturedActive(job);
                   const applicants = job.job_applications?.length ?? 0;
                   const shortlisted =
                     job.job_applications?.filter((app) => app.status === "shortlisted").length ?? 0;
@@ -495,7 +508,7 @@ export function EmployerJobsPage() {
                         </Badge>
                       </div>
 
-                      {job.is_featured && (
+                      {featuredActive && (
                         <div className="mb-3">
                           <Badge className="bg-amber-100 text-amber-700 border-amber-200">
                             Featured
@@ -544,9 +557,13 @@ export function EmployerJobsPage() {
                           variant="outline"
                           className="border-gray-300"
                           onClick={() => handleFeatureJob(job)}
-                          disabled={actionLoading === `feature-${job.id}`}
+                          disabled={actionLoading === `feature-${job.id}` || featuredActive}
                         >
-                          {actionLoading === `feature-${job.id}` ? "Featuring..." : "Feature Job"}
+                          {actionLoading === `feature-${job.id}`
+                            ? "Featuring..."
+                            : featuredActive
+                              ? "Featured"
+                              : "Feature Job"}
                         </Button>
 
                         <Button

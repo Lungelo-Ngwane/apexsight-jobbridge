@@ -406,6 +406,21 @@ export async function getCandidateUnreadMessageCount(): Promise<number> {
   return Number(count ?? 0);
 }
 
+export async function getEmployerUnreadMessageCount(): Promise<number> {
+  const actor = await getCurrentActor();
+  if (actor.role !== "employer" || !actor.employerProfileId) return 0;
+
+  const { count, error } = await supabase
+    .from("messages")
+    .select("id, conversations!inner(employer_id)", { count: "exact", head: true })
+    .eq("conversations.employer_id", actor.employerProfileId)
+    .eq("sender_role", "candidate")
+    .is("read_at", null);
+
+  if (error) throw error;
+  return Number(count ?? 0);
+}
+
 export function subscribeToMyMessageChanges(onChanged: () => void): () => void {
   const channel = supabase
     .channel("messages:my-updates")

@@ -216,10 +216,13 @@ export async function getOpenJobs() {
       location,
       employment_type,
       experience_level,
+      is_featured,
+      featured_until,
       created_at,
       employer_id
     `)
     .eq("status", "open")
+    .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (jobsError) throw jobsError;
