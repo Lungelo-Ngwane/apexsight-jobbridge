@@ -934,12 +934,25 @@ export async function getCandidateProfile(applicationId: string) {
 }
 
 export async function getCandidateCV(cvPath: string) {
-  const { data, error } = await supabase.storage
-    .from("resumes")
-    .createSignedUrl(cvPath, 60 * 10); // 10 minutes
+  const normalized = String(cvPath ?? "").trim();
+  if (!normalized) throw new Error("Missing CV path.");
 
-  if (error) throw error;
-  return data.signedUrl;
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
+  }
+
+  const buckets = ["resume", "resumes"];
+  for (const bucket of buckets) {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(normalized, 60 * 10); // 10 minutes
+
+    if (!error && data?.signedUrl) {
+      return data.signedUrl;
+    }
+  }
+
+  throw new Error("Unable to create a secure CV download link.");
 }
 
 export async function getAllSkills() {
@@ -1851,4 +1864,34 @@ export async function updateEmployerProfile(payload: {
     console.error("Failed to update employer profile", error);
     throw error;
   }
+}
+
+export async function uploadEmployerLogo(file: File): Promise<string> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Not authenticated");
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+  const path = `${user.id}/logo.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("employer-logos")
+    .upload(path, file, { upsert: true });
+
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrlData } = supabase.storage
+    .from("employer-logos")
+    .getPublicUrl(path);
+
+  const publicUrl = String(publicUrlData?.publicUrl ?? "").trim();
+  if (!publicUrl) throw new Error("Failed to resolve logo URL.");
+
+  await updateEmployerProfile({ logo_url: publicUrl });
+  return publicUrl;
 }

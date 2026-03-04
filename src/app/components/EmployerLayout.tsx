@@ -15,6 +15,7 @@ import { useAuth } from "../context/AuthContext";
 import { useEmployerProfile } from "../../hooks/useEmployerProfile";
 import { NavLink } from "react-router-dom";
 import { getEmployerUnreadMessageCount, subscribeToMyMessageChanges } from "@/lib/messages";
+import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
 
 interface EmployerLayoutProps {
   children: ReactNode;
@@ -24,9 +25,10 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
   const { user, role, signOut } = useAuth();
   const { profile } = useEmployerProfile();
   const [unreadCount, setUnreadCount] = useState(0);
+  const hasCandidateMessagingAccess = hasEmployerPaidAccess(profile);
 
   useEffect(() => {
-    if (!user || role !== "employer") {
+    if (!user || role !== "employer" || !hasCandidateMessagingAccess) {
       setUnreadCount(0);
       return;
     }
@@ -46,7 +48,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
       unsub();
       window.removeEventListener("focus", onFocus);
     };
-  }, [user, role]);
+  }, [hasCandidateMessagingAccess, user, role]);
 
   return (
     <div className="min-h-screen md:flex bg-gray-50">
@@ -55,8 +57,18 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
         {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center">
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={`${profile?.company_name ?? "Company"} logo`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-base font-bold text-gray-900 truncate">
@@ -71,8 +83,17 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/employer/dashboard" />
           <SidebarItem icon={Briefcase} label="Jobs" to="/employer/jobs" />
-          <SidebarItem icon={Users} label="Candidates" to="/employer/candidates" />
-          <SidebarItem icon={MessageSquare} label="Messages" to="/employer/messages" badgeCount={unreadCount} />
+          <SidebarItem
+            icon={Users}
+            label="Candidates"
+            to={hasCandidateMessagingAccess ? "/employer/candidates" : undefined}
+          />
+          <SidebarItem
+            icon={MessageSquare}
+            label="Messages"
+            to={hasCandidateMessagingAccess ? "/employer/messages" : undefined}
+            badgeCount={hasCandidateMessagingAccess ? unreadCount : 0}
+          />
           <SidebarItem icon={ShoppingBag} label="Add-ons" to="/employer/addons" />
           <SidebarItem icon={CreditCard} label="Billing" to="/employer/billing" />
           <SidebarItem icon={Settings} label="Settings" to="/employer/settings" />
@@ -94,16 +115,38 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
       {/* Mobile top nav */}
       <div className="md:hidden bg-white border-b border-gray-200 sticky top-16 z-40">
         <div className="px-4 py-3">
-          <p className="text-sm font-semibold text-gray-900 truncate">
-            {profile?.company_name ?? "Employer Portal"}
-          </p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-md overflow-hidden border border-gray-200 bg-white flex items-center justify-center shrink-0">
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={`${profile?.company_name ?? "Company"} logo`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <Building2 className="w-4 h-4 text-white" />
+                </div>
+              )}
+            </div>
+            <p className="text-sm font-semibold text-gray-900 truncate">
+              {profile?.company_name ?? "Employer Portal"}
+            </p>
+          </div>
         </div>
         <nav className="px-2 pb-2 overflow-x-auto">
           <div className="flex gap-2 min-w-max">
             <MobileNavItem label="Dashboard" to="/employer/dashboard" />
             <MobileNavItem label="Jobs" to="/employer/jobs" />
-            <MobileNavItem label="Candidates" to="/employer/candidates" />
-            <MobileNavItem label="Messages" to="/employer/messages" badgeCount={unreadCount} />
+            <MobileNavItem
+              label="Candidates"
+              to={hasCandidateMessagingAccess ? "/employer/candidates" : ""}
+            />
+            <MobileNavItem
+              label="Messages"
+              to={hasCandidateMessagingAccess ? "/employer/messages" : ""}
+              badgeCount={hasCandidateMessagingAccess ? unreadCount : 0}
+            />
             <MobileNavItem label="Add-ons" to="/employer/addons" />
             <MobileNavItem label="Billing" to="/employer/billing" />
             <MobileNavItem label="Settings" to="/employer/settings" />
@@ -171,6 +214,14 @@ function SidebarItem({ icon: Icon, label, to, badgeCount = 0 }: SidebarItemProps
 }
 
 function MobileNavItem({ label, to, badgeCount = 0 }: { label: string; to: string; badgeCount?: number }) {
+  if (!to) {
+    return (
+      <button className="h-9 px-3 rounded-lg text-sm whitespace-nowrap inline-flex items-center text-gray-400 cursor-not-allowed">
+        <span>{label}</span>
+      </button>
+    );
+  }
+
   return (
     <NavLink
       to={to}

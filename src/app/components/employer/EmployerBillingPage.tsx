@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -43,6 +44,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 
 export function EmployerBillingPage() {
+  const navigate = useNavigate();
   const { profile } = useEmployerProfile();
   const [loadingSource, setLoadingSource] = useState<
     "header" | "card" | "sidebar" | null
@@ -290,6 +292,12 @@ export function EmployerBillingPage() {
   const jobUsagePercent = finiteJobLimit && finiteJobLimit > 0
     ? Math.round((currentPlan.usage.jobs.used / finiteJobLimit) * 100)
     : 0;
+  const isOverJobLimit = Boolean(
+    finiteJobLimit !== null && currentPlan.usage.jobs.used > finiteJobLimit,
+  );
+  const jobsOverLimit = finiteJobLimit !== null
+    ? Math.max(currentPlan.usage.jobs.used - finiteJobLimit, 0)
+    : 0;
   const showUsageAlert = Boolean(finiteJobLimit && finiteJobLimit > 0 && jobUsagePercent >= 80);
 
   const availablePlans = [
@@ -416,7 +424,9 @@ export function EmployerBillingPage() {
                     <p className="text-xs text-gray-500 mt-2">
                       {finiteJobLimit === null
                         ? "Unlimited slots"
-                        : `${Math.max(finiteJobLimit - currentPlan.usage.jobs.used, 0)} slots remaining`}
+                        : isOverJobLimit
+                          ? `${jobsOverLimit} job posting${jobsOverLimit === 1 ? "" : "s"} above plan limit`
+                          : `${Math.max(finiteJobLimit - currentPlan.usage.jobs.used, 0)} slots remaining`}
                     </p>
                   </div>
 
@@ -605,21 +615,35 @@ export function EmployerBillingPage() {
                     <AlertCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900 mb-1">Approaching Limit</h4>
+                    <h4 className="text-sm font-bold text-gray-900 mb-1">
+                      {isOverJobLimit ? "Over Job Limit" : "Approaching Limit"}
+                    </h4>
                     <p className="text-xs text-gray-700 mb-3">
-                      You&apos;re using {jobUsagePercent}% of your job posting slots. Consider upgrading to avoid disruption.
+                      {isOverJobLimit
+                        ? `You are using ${jobUsagePercent}% of your job posting slots. Close at least ${jobsOverLimit} active job posting${jobsOverLimit === 1 ? "" : "s"} to stay on this plan, or upgrade.`
+                        : `You are using ${jobUsagePercent}% of your job posting slots. Consider upgrading to avoid disruption.`}
                     </p>
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        nextUpgradePlan &&
-                        handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "sidebar")
-                      }
-                      disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
-                      className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                    >
-                      {loadingSource === "sidebar" ? "Redirecting..." : "Upgrade Now"}
-                    </Button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate("/employer/jobs")}
+                        className="border-amber-300 bg-white hover:bg-amber-100"
+                      >
+                        Manage Jobs
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          nextUpgradePlan &&
+                          handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "sidebar")
+                        }
+                        disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
+                        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                      >
+                        {loadingSource === "sidebar" ? "Redirecting..." : "Upgrade Now"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>

@@ -24,9 +24,9 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Switch } from "@/app/components/ui/switch";
-import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
-import { updateEmployerProfile } from "@/lib/employer";
+import { updateEmployerProfile, uploadEmployerLogo } from "@/lib/employer";
 import { useAuth } from "@/app/context/AuthContext";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 
@@ -45,6 +45,8 @@ export function EmployerSettingsPage() {
   const [address, setAddress] = useState("");
   const [showOnPlatform, setShowOnPlatform] = useState(true);
   const [publicCompanyPage, setPublicCompanyPage] = useState(true);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
@@ -61,6 +63,7 @@ export function EmployerSettingsPage() {
     setAddress(profile.address ?? "");
     setShowOnPlatform(profile.show_on_platform ?? true);
     setPublicCompanyPage(profile.public_company_page ?? true);
+    setLogoUrl(profile.logo_url ?? null);
   }, [profile, user?.email]);
 
   async function handleSaveCompanySettings() {
@@ -75,6 +78,7 @@ export function EmployerSettingsPage() {
         contact_email: contactEmail.trim() || null,
         phone: phone.trim() || null,
         address: address.trim() || null,
+        logo_url: logoUrl,
         show_on_platform: showOnPlatform,
         public_company_page: publicCompanyPage,
       });
@@ -88,6 +92,20 @@ export function EmployerSettingsPage() {
       showFeedback("Unable to save settings", message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleLogoUpload(file: File) {
+    try {
+      setUploadingLogo(true);
+      const url = await uploadEmployerLogo(file);
+      setLogoUrl(url);
+      showFeedback("Logo uploaded", "Your company logo has been uploaded successfully.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We couldn't upload your logo right now.";
+      showFeedback("Logo upload failed", message);
+    } finally {
+      setUploadingLogo(false);
     }
   }
 
@@ -128,15 +146,28 @@ export function EmployerSettingsPage() {
                     <Label className="text-sm font-medium text-gray-700 mb-3 block">Company Logo</Label>
                     <div className="flex items-center gap-4">
                       <Avatar className="w-20 h-20 border-2 border-gray-200">
+                        {logoUrl ? <AvatarImage src={logoUrl} alt="Company logo" /> : null}
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
                           {companyName?.trim()?.charAt(0)?.toUpperCase() || "C"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <Button variant="outline" size="sm" className="mb-2 border-gray-300">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload New Logo
-                        </Button>
+                        <label className="inline-flex items-center gap-2 mb-2 px-3 py-2 border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-50">
+                          <Upload className="w-4 h-4" />
+                          {uploadingLogo ? "Uploading..." : "Upload New Logo"}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                            className="hidden"
+                            disabled={uploadingLogo}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (!file) return;
+                              void handleLogoUpload(file);
+                              event.currentTarget.value = "";
+                            }}
+                          />
+                        </label>
                         <p className="text-xs text-gray-500">
                           Recommended size: 400x400px. Max file size: 2MB.
                         </p>

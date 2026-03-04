@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -40,6 +40,10 @@ import { PostJobModal } from "./PostJobModal";
 import { JobCandidatesModal } from "./JobCandidatesModal";
 import { useEmployerProfile } from "../../hooks/useEmployerProfile";
 import { UpgradeModal } from "./UpgradeModal";
+import { Skeleton } from "./ui/skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
+import { getCachedQuery, invalidateQueryCacheByPrefix } from "@/lib/queryCache";
+import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
 
 // import { getEmployerOpenJobs } from "../../lib/employer";
 
@@ -51,6 +55,7 @@ interface EmployerDashboardProps {
 
 export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashboardProps) {
   const navigate = useNavigate();
+  const analyticsSectionRef = useRef<HTMLDivElement | null>(null);
   const { user, role, loading } = useAuth();
   const [jobs, setJobs] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
@@ -58,27 +63,99 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const [totalOpenJobs, setTotalOpenJobs] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const JOBS_PER_PAGE = 3;
   const [visibleCount, setVisibleCount] = useState(JOBS_PER_PAGE);
-  const { profile } = useEmployerProfile();
+  const { profile, loading: profileLoading } = useEmployerProfile();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
   const [usageSnapshot, setUsageSnapshot] = useState<EmployerUsageSnapshot | null>(null);
   const [premiumInsights, setPremiumInsights] = useState<EmployerPremiumDashboardInsights | null>(null);
   const [premiumInsightsLoading, setPremiumInsightsLoading] = useState(false);
+  const showAnalyticsSkeleton = useDelayedLoading(analyticsLoading && !stats, 180);
 
+  const cachePrefix = user?.id ? `employer-dashboard:${user.id}` : null;
+  const keyFor = useCallback(
+    (segment: string) => (cachePrefix ? `${cachePrefix}:${segment}` : segment),
+    [cachePrefix],
+  );
 
+  const loadDashboardMetrics = useCallback(
+    async (options?: { force?: boolean }) => {
+      if (!user) return;
+      const force = Boolean(options?.force);
 
+      try {
+        if (!stats) {
+          setAnalyticsLoading(true);
+        }
+
+        const [analytics, credits, usage] = await Promise.all([
+          getCachedQuery(keyFor("analytics"), 60_000, getEmployerAnalytics, { force }),
+          getCachedQuery(keyFor("credits"), 45_000, getEmployerCredits, { force }),
+          getCachedQuery(keyFor("usage"), 20_000, getEmployerUsageSnapshot, { force }),
+        ]);
+
+        setStats(analytics);
+        setCreditBalances(credits);
+        setUsageSnapshot(usage);
+      } catch (error) {
+        console.error("Failed to load employer dashboard metrics", error);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    },
+    [keyFor, stats, user],
+  );
+
+  const loadJobs = useCallback(
+    async (options?: { force?: boolean }) => {
+      if (!user) return;
+      const force = Boolean(options?.force);
+
+      try {
+        if (jobs.length === 0) {
+          setJobsLoading(true);
+        }
+        const data = await getCachedQuery(keyFor("jobs"), 20_000, getEmployerJobs, { force });
+        setJobs(data || []);
+        setVisibleCount(JOBS_PER_PAGE);
+      } catch (err) {
+        console.error("Failed to load jobs", err);
+      } finally {
+        setJobsLoading(false);
+      }
+    },
+    [jobs.length, keyFor, user],
+  );
+
+  const loadPremiumInsights = useCallback(
+    async (options?: { force?: boolean }) => {
+      if (!user) return;
+      const force = Boolean(options?.force);
+
+      try {
+        setPremiumInsightsLoading(true);
+        const data = await getCachedQuery(
+          keyFor("premium-insights"),
+          30_000,
+          getEmployerPremiumDashboardInsights,
+          { force },
+        );
+        setPremiumInsights(data);
+      } catch (error) {
+        setPremiumInsights(null);
+        console.error("Failed to load premium dashboard insights", error);
+      } finally {
+        setPremiumInsightsLoading(false);
+      }
+    },
+    [keyFor, user],
+  );
 
   useEffect(() => {
-    getEmployerAnalytics().then(setStats);
-    getEmployerCredits()
-      .then(setCreditBalances)
-      .catch((error) => console.error("Failed to load employer credits", error));
-    getEmployerUsageSnapshot()
-      .then(setUsageSnapshot)
-      .catch((error) => console.error("Failed to load usage snapshot", error));
-  }, []);
+    void loadDashboardMetrics();
+  }, [loadDashboardMetrics]);
 
   useEffect(() => {
     function handleCandidateViewConsumed(
@@ -103,9 +180,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             : prev,
         );
       } else {
-        getEmployerUsageSnapshot()
-          .then(setUsageSnapshot)
-          .catch((error) => console.error("Failed to refresh usage snapshot", error));
+        void loadDashboardMetrics({ force: true });
       }
     }
 
@@ -113,31 +188,49 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     return () => {
       window.removeEventListener("candidate-view-consumed", handleCandidateViewConsumed);
     };
-  }, []);
+  }, [loadDashboardMetrics]);
 
 
   useEffect(() => {
-    async function loadJobs() {
-      try {
-        const data = await getEmployerJobs();
-        setJobs(data || []);
-        setVisibleCount(JOBS_PER_PAGE);
-      } catch (err) {
-        console.error("Failed to load jobs", err);
-      } finally {
-        setJobsLoading(false);
-      }
-    }
-
-    loadJobs();
-  }, []);
+    void loadJobs();
+  }, [loadJobs]);
 
   const openJobs = jobs.filter((job) => job.status === 'open');
 
   const plan = profile?.plan ?? "free";
-  const hasAnalytics = plan !== "free";
-  const hasPremium = plan !== "free";
-  const hasPremiumInsights = plan !== "free";
+  const hasResolvedPlan = !profileLoading;
+  const hasPaidAccess = hasEmployerPaidAccess(profile);
+  const hasAnalytics = hasPaidAccess;
+  const hasPremium = hasPaidAccess;
+  const hasPremiumInsights = hasPaidAccess;
+  const hasCandidateMessagingAccess = hasPaidAccess;
+  const activeJobs = Number(usageSnapshot?.activeJobs ?? 0);
+  const finiteJobLimit =
+    typeof usageSnapshot?.jobLimit === "number" ? usageSnapshot.jobLimit : null;
+  const isOverJobLimit = finiteJobLimit !== null && activeJobs >= finiteJobLimit;
+
+  const refreshDashboardData = useCallback(async () => {
+    if (!cachePrefix) return;
+    invalidateQueryCacheByPrefix(cachePrefix);
+
+    await Promise.all([
+      loadDashboardMetrics({ force: true }),
+      loadJobs({ force: true }),
+      hasPremiumInsights ? loadPremiumInsights({ force: true }) : Promise.resolve(),
+    ]);
+  }, [cachePrefix, hasPremiumInsights, loadDashboardMetrics, loadJobs, loadPremiumInsights]);
+
+  const handleCloseJob = useCallback(
+    async (jobId: string) => {
+      try {
+        await updateJobStatus(jobId, "closed");
+        await refreshDashboardData();
+      } catch (error) {
+        console.error("Failed to close job", error);
+      }
+    },
+    [refreshDashboardData],
+  );
 
   function formatTimeAgo(value: string): string {
     const date = new Date(value);
@@ -157,30 +250,22 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   useEffect(() => {
     let cancelled = false;
 
-    async function loadPremiumInsights() {
+    async function loadInsights() {
       if (!hasPremiumInsights) {
         setPremiumInsights(null);
         return;
       }
 
-      try {
-        setPremiumInsightsLoading(true);
-        const data = await getEmployerPremiumDashboardInsights();
-        if (!cancelled) setPremiumInsights(data);
-      } catch (error) {
-        if (!cancelled) setPremiumInsights(null);
-        console.error("Failed to load premium dashboard insights", error);
-      } finally {
-        if (!cancelled) setPremiumInsightsLoading(false);
-      }
+      if (cancelled) return;
+      await loadPremiumInsights();
     }
 
-    loadPremiumInsights();
+    void loadInsights();
 
     return () => {
       cancelled = true;
     };
-  }, [hasPremiumInsights]);
+  }, [hasPremiumInsights, loadPremiumInsights]);
 
   const analyticsStats = [
     {
@@ -193,7 +278,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     },
     {
       label: "Total Applicants",
-      value: stats?.totalApplicants,
+      value: stats?.totalApplicants ?? "—",
       change: "All-time applications",
       icon: Users,
       color: "bg-emerald-500",
@@ -209,7 +294,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     },
     {
       label: "Interview Ready",
-      value: stats?.shortlisted,
+      value: stats?.shortlisted ?? "—",
       change: "Candidates shortlisted",
       icon: Star,
       color: "bg-amber-500",
@@ -245,6 +330,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
           <Button
             onClick={() => setShowPostJob(true)}
+            disabled={isOverJobLimit}
             className="bg-blue-600 hover:bg-blue-700 text-white"
             size="lg"
           >
@@ -254,9 +340,12 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div
+          ref={analyticsSectionRef}
+          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+        >
           {analyticsStats.map((stat, index) => {
-            const isLocked = stat.premium && !hasPremium;
+            const isLocked = hasResolvedPlan && stat.premium && !hasPremium;
 
             return (
               <div key={index} className="relative">
@@ -273,7 +362,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   </div>
 
                   <div className="text-3xl font-bold text-gray-900 mb-1">
-                    {stat.value}
+                    {showAnalyticsSkeleton ? (
+                      <Skeleton className="h-9 w-16 rounded-md" />
+                    ) : (
+                      stat.value
+                    )}
                   </div>
                   <div className="text-sm text-gray-600 mb-2">
                     {stat.label}
@@ -473,7 +566,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() => updateJobStatus(job.id, "closed")}
+                      onClick={() => void handleCloseJob(job.id)}
                     >
                       Close Job
                     </Button>
@@ -505,9 +598,10 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   onClick={() => setShowPostJob(true)}
                   variant="outline"
                   className="w-full justify-start"
+                  disabled={isOverJobLimit}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Post New Job
+                  {isOverJobLimit ? "Job Limit Reached" : "Post New Job"}
                 </Button>
 
                 {hasAnalytics ? (
@@ -529,16 +623,36 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                     Upgrade to Browse Talent Pool
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate("/employer/messages")}
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Message Candidates
-                </Button>
+                {hasCandidateMessagingAccess ? (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => navigate("/employer/messages")}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message Candidates
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-blue-600"
+                    onClick={() => setShowUpgradeModal(true)}
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Upgrade to Message Candidates
+                  </Button>
+                )}
                 {hasAnalytics ? (
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() =>
+                      analyticsSectionRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      })
+                    }
+                  >
                     <TrendingUp className="w-4 h-4 mr-2" />
                     View Analytics
                   </Button>
@@ -637,10 +751,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       {showPostJob && (
         <PostJobModal
           onClose={() => setShowPostJob(false)}
-          onSuccess={() => {
-            // reload jobs
-            getEmployerJobs().then(setJobs);
-          }}
+          onSuccess={() => void refreshDashboardData()}
         />
       )}
       {selectedJobId && (

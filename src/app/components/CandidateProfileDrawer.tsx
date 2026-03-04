@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { getCandidateDeepView, getEmployerCredits, type EmployerCreditBalance } from "../../lib/employer";
+import {
+  getCandidateCV,
+  getCandidateDeepView,
+  getEmployerCredits,
+  type EmployerCreditBalance,
+} from "../../lib/employer";
 import { Badge } from "./ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { X } from "lucide-react";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 import { UpgradeModal } from "./UpgradeModal";
+import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
 
 export function CandidateProfileDrawer({
   applicationId,
@@ -20,6 +26,8 @@ export function CandidateProfileDrawer({
   const [loadingCredits, setLoadingCredits] = useState(true);
   const [showAiCreditUpsell, setShowAiCreditUpsell] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [cvDownloadUrl, setCvDownloadUrl] = useState<string | null>(null);
+  const [cvLoading, setCvLoading] = useState(false);
 
   useEffect(() => {
     getCandidateDeepView(applicationId).then(setData);
@@ -32,6 +40,33 @@ export function CandidateProfileDrawer({
       .finally(() => setLoadingCredits(false));
   }, []);
 
+  useEffect(() => {
+    const cvPath = String(data?.candidate_profiles?.cv_url ?? "").trim();
+    if (!cvPath) {
+      setCvDownloadUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCvLoading(true);
+
+    getCandidateCV(cvPath)
+      .then((url) => {
+        if (!cancelled) setCvDownloadUrl(url);
+      })
+      .catch((error) => {
+        if (!cancelled) setCvDownloadUrl(null);
+        console.error("Failed to prepare CV download URL", error);
+      })
+      .finally(() => {
+        if (!cancelled) setCvLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data?.candidate_profiles?.cv_url]);
+
   console.log("Candidate Data:", data);
 
   if (!data) return null;
@@ -39,6 +74,7 @@ export function CandidateProfileDrawer({
   const aiSimilarity = data.ai_similarity === null || data.ai_similarity === undefined ? null : Number(data.ai_similarity);
   const hybridScore = data.hybrid_score === null || data.hybrid_score === undefined ? null : Number(data.hybrid_score);
   const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
+  const hasPaidAccess = hasEmployerPaidAccess(profile);
   const isStarter = normalizedPlan === "starter";
   const isProfessional = normalizedPlan === "professional";
   const isEnterprise = normalizedPlan === "enterprise";
@@ -218,11 +254,17 @@ export function CandidateProfileDrawer({
 
         {data.candidate_profiles.cv_url ? (
           <a
-            href={data.candidate_profiles.cv_url}
+            href={cvDownloadUrl ?? "#"}
             target="_blank"
+            rel="noreferrer"
             className="text-blue-600 text-sm underline"
+            onClick={(event) => {
+              if (!cvDownloadUrl) {
+                event.preventDefault();
+              }
+            }}
           >
-            Download CV
+            {cvLoading ? "Preparing CV..." : "Download CV"}
           </a>
         ) : (
           <p className="text-sm text-gray-500">No CV uploaded</p>
@@ -233,9 +275,15 @@ export function CandidateProfileDrawer({
       {/* Actions */}
       <div className="mt-8 space-y-2">
         <Button className="w-full">Shortlist</Button>
-        <Button variant="outline" className="w-full">
-          Message Candidate
-        </Button>
+        {!hasPaidAccess ? (
+          <Button variant="outline" className="w-full" onClick={() => setShowUpgradeModal(true)}>
+            Upgrade to Message Candidate
+          </Button>
+        ) : (
+          <Button variant="outline" className="w-full">
+            Message Candidate
+          </Button>
+        )}
       </div>
       <AddonUpsellModal
         open={showAiCreditUpsell}

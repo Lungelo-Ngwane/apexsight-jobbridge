@@ -7,7 +7,8 @@ import {
     ArrowLeft,
     Building2,
     Briefcase,
-    Users
+    Users,
+    Upload
 } from "lucide-react";
 import {
     Select,
@@ -20,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { uploadEmployerLogo } from "@/lib/employer";
 
 interface EmployerProfileProps {
     onBack: () => void;
@@ -37,6 +39,8 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
     const [companyName, setCompanyName] = useState("");
     const [industry, setIndustry] = useState<string | null>(null);
     const [companySize, setCompanySize] = useState<string | null>(null);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
 
     /* -----------------------------
        Load existing employer profile
@@ -47,7 +51,7 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
         async function loadProfile() {
             const { data, error } = await supabase
                 .from("employer_profiles")
-                .select("company_name, industry, company_size")
+                .select("company_name, industry, company_size, logo_url")
                 .eq("user_id", user.id)
                 .single();
 
@@ -57,6 +61,7 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
                 setCompanyName(data.company_name);
                 setIndustry(data.industry);
                 setCompanySize(data.company_size);
+                setLogoUrl(data.logo_url ?? null);
             }
 
             setLoading(false);
@@ -78,7 +83,8 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
             .update({
                 company_name: companyName,
                 industry,
-                company_size: companySize
+                company_size: companySize,
+                logo_url: logoUrl,
             })
             .eq("user_id", user.id);
 
@@ -108,6 +114,26 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
         else navigate("/");
     };
 
+    async function handleLogoUpload(file: File) {
+        try {
+            setUploadingLogo(true);
+            const url = await uploadEmployerLogo(file);
+            setLogoUrl(url);
+            showFeedback(
+                "Logo uploaded",
+                "Your company logo has been uploaded successfully.",
+            );
+        } catch (error) {
+            console.error("Failed to upload logo", error);
+            showFeedback(
+                "Logo upload failed",
+                "We couldn't upload your logo right now. Please try again.",
+            );
+        } finally {
+            setUploadingLogo(false);
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -123,6 +149,35 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
 
                 {/* Company Information */}
                 <Card className="p-6 border-gray-200 space-y-4">
+                    <div className="space-y-2">
+                        <Label>Company Logo</Label>
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                                {logoUrl ? (
+                                    <img src={logoUrl} alt="Company logo" className="w-full h-full object-cover" />
+                                ) : (
+                                    <Building2 className="w-6 h-6 text-gray-400" />
+                                )}
+                            </div>
+                            <label className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-50">
+                                <Upload className="w-4 h-4" />
+                                {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                                <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                    className="hidden"
+                                    disabled={uploadingLogo}
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (!file) return;
+                                        void handleLogoUpload(file);
+                                        event.currentTarget.value = "";
+                                    }}
+                                />
+                            </label>
+                        </div>
+                        <p className="text-xs text-gray-500">PNG, JPG, WEBP or SVG recommended.</p>
+                    </div>
 
                     {/* Company Name */}
                     <div className="space-y-2">

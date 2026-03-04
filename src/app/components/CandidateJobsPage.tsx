@@ -58,6 +58,7 @@ export interface Job {
   employer: {
     company_name: string;
     industry?: string | null;
+    logo_url?: string | null;
   };
 }
 
@@ -455,6 +456,7 @@ function JobCard({
   isApplying: boolean;
   hasApplied: boolean;
 }) {
+  const [logoBroken, setLogoBroken] = useState(false);
   const featuredActive =
     Boolean(job.is_featured) &&
     (!job.featured_until || new Date(job.featured_until).getTime() > Date.now());
@@ -487,7 +489,16 @@ function JobCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
-                <Building2 className="w-5 h-5 text-white" />
+                {job.employer.logo_url && !logoBroken ? (
+                  <img
+                    src={job.employer.logo_url}
+                    alt={`${job.employer.company_name} logo`}
+                    className="w-full h-full object-cover rounded-lg"
+                    onError={() => setLogoBroken(true)}
+                  />
+                ) : (
+                  <Building2 className="w-5 h-5 text-white" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900 truncate">{job.employer.company_name}</p>
@@ -669,6 +680,7 @@ function JobDetailsView({
   hasApplied: boolean;
 }) {
   const navigate = useNavigate();
+  const [logoBroken, setLogoBroken] = useState(false);
   const featuredActive =
     Boolean(job.is_featured) &&
     (!job.featured_until || new Date(job.featured_until).getTime() > Date.now());
@@ -721,7 +733,16 @@ function JobDetailsView({
         <Card className="p-6 sm:p-8 mb-6 border-gray-200 shadow-lg">
           <div className="flex items-center gap-4 mb-3">
             <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Building2 className="w-7 h-7 text-white" />
+              {job.employer.logo_url && !logoBroken ? (
+                <img
+                  src={job.employer.logo_url}
+                  alt={`${job.employer.company_name} logo`}
+                  className="w-full h-full object-cover rounded-xl"
+                  onError={() => setLogoBroken(true)}
+                />
+              ) : (
+                <Building2 className="w-7 h-7 text-white" />
+              )}
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{job.title}</h1>

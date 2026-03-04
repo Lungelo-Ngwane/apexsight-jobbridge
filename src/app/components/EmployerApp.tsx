@@ -1,9 +1,11 @@
 import { EmployerLayout } from "./EmployerLayout";
 import { EmployerOnboarding } from "./EmployerOnBoarding";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
 
 export function EmployerApp() {
+  const location = useLocation();
   const { profile, loading } = useEmployerProfile();
 
   if (loading) {
@@ -28,6 +30,15 @@ export function EmployerApp() {
         initialStep={profile.onboarding_step ?? 0}
       />
     );
+  }
+
+  const hasCandidateMessagingAccess = hasEmployerPaidAccess(profile);
+
+  if (!hasCandidateMessagingAccess) {
+    const path = location.pathname.toLowerCase();
+    if (path === "/employer/candidates" || path === "/employer/messages") {
+      return <Navigate to="/employer/dashboard" replace />;
+    }
   }
 
   return (

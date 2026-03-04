@@ -14,12 +14,15 @@ import {
 } from "lucide-react";
 import logo from "../assets/ApexSight_logo.png";
 import { updateEmployerProfile } from "../../lib/employer";
+import { useEmployerProfile } from "@/hooks/useEmployerProfile";
+import { isActiveEmployerTrial } from "@/lib/subscriptionAccess";
 
 export function EmployerOnboarding({
     initialStep
 }: {
     initialStep: number;
 }) {
+    const { profile } = useEmployerProfile();
     const [step, setStep] = useState(initialStep);
     const [companyName, setCompanyName] = useState("");
     const [industry, setIndustry] = useState("");
@@ -40,10 +43,17 @@ export function EmployerOnboarding({
     }
 
     async function selectPlan(plan: string) {
-        await updateEmployerProfile({
-            plan,
-            onboarding_step: 2,
-        });
+        const trialActive = isActiveEmployerTrial(profile);
+        if (trialActive) {
+            await updateEmployerProfile({
+                onboarding_step: 2,
+            });
+        } else {
+            await updateEmployerProfile({
+                plan,
+                onboarding_step: 2,
+            });
+        }
 
         setStep(2);
     }

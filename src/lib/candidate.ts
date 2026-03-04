@@ -233,19 +233,29 @@ const employerIds = [...new Set(jobs.map(job => String(job.employer_id)))]; // a
 
 const { data: employers, error: empError } = await supabase
   .from("employer_profiles")
-  .select("id, company_name, industry")
+  .select("id, company_name, industry, logo_url")
   .in("id", employerIds); // <-- must be an array
 if (empError) throw empError;
 
+  const resolveLogoUrl = (value: unknown): string | null => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw)) return raw;
+
+    const normalizedPath = raw.replace(/^\/+/, "");
+    const { data } = supabase.storage.from("employer-logos").getPublicUrl(normalizedPath);
+    return String(data?.publicUrl ?? "").trim() || null;
+  };
 
   // Map employer_id -> employer details
   const employerMap = (employers || []).reduce((acc, emp) => {
     acc[String(emp.id)] = {
       company_name: emp.company_name,
       industry: emp.industry ?? null,
+      logo_url: resolveLogoUrl(emp.logo_url),
     };
     return acc;
-  }, {} as Record<string, { company_name: string; industry: string | null }>);
+  }, {} as Record<string, { company_name: string; industry: string | null; logo_url: string | null }>);
 
   // Attach employer info to jobs
   const jobsWithEmployer = jobs.map(job => ({
@@ -253,6 +263,7 @@ if (empError) throw empError;
     employer: {
       company_name: employerMap[String(job.employer_id)]?.company_name || "Unknown Company",
       industry: employerMap[String(job.employer_id)]?.industry || null,
+      logo_url: employerMap[String(job.employer_id)]?.logo_url || null,
     }
   }));
 

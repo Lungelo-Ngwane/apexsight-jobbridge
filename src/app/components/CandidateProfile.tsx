@@ -7,13 +7,14 @@ import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 // import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { refreshCandidateMatchingProfile } from "@/lib/candidate";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 interface CandidateProfileProps { }
 
@@ -34,23 +35,42 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
     const [skills, setSkills] = useState<{ id?: string; skill_id?: string; skill: string; level?: string }[]>([]);
     const [allSkills, setAllSkills] = useState<{ id: string; name: string }[]>([]);
+    const [candidateProfileId, setCandidateProfileId] = useState<string | null>(null);
     const [newSkill, setNewSkill] = useState("");
     const [loading, setLoading] = useState(true);
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
+
+    const resolveCandidateProfileId = useCallback(async () => {
+        if (!user) return null;
+        if (candidateProfileId) return candidateProfileId;
+
+        const { data: candidateProfile } = await supabase
+            .from("candidate_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+        const id = candidateProfile?.id ? String(candidateProfile.id) : null;
+        if (id) setCandidateProfileId(id);
+        return id;
+    }, [candidateProfileId, user]);
 
     // Fetch profile and skills
     useEffect(() => {
         if (!user) return;
 
         const fetchData = async () => {
-            // Candidate profile
-            const { data: candidateProfile } = await supabase
-                .from("candidate_profiles")
-                .select("*")
-                .eq("user_id", user.id)
-                .single();
+            const [{ data: candidateProfile }, { data: skillsData }] = await Promise.all([
+                supabase
+                    .from("candidate_profiles")
+                    .select("*")
+                    .eq("user_id", user.id)
+                    .single(),
+                supabase.from("skills").select("id, name"),
+            ]);
 
             if (candidateProfile) {
+                setCandidateProfileId(String(candidateProfile.id));
                 setProfile({
                     full_name: candidateProfile.full_name || "",
                     headline: candidateProfile.headline || "",
@@ -71,8 +91,6 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 setSkills(candidateSkills || []);
             }
 
-            // Fetch all skills for dropdown/search
-            const { data: skillsData } = await supabase.from("skills").select("id, name");
             setAllSkills(skillsData || []);
 
             setLoading(false);
@@ -103,13 +121,8 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         if (skills.some((s) => s.skill_id === skill.id)) return;
 
         // Get candidate_profile_id
-        const { data: candidateProfile } = await supabase
-            .from("candidate_profiles")
-            .select("id")
-            .eq("user_id", user.id)
-            .single();
-
-        if (!candidateProfile) {
+        const profileId = await resolveCandidateProfileId();
+        if (!profileId) {
             showFeedback(
                 "Profile not found",
                 "We couldn't find your candidate profile. Refresh the page and try again.",
@@ -119,7 +132,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
         // Insert into candidate_skills
         const { error } = await supabase.from("candidate_skills").insert({
-            candidate_profile_id: candidateProfile.id,
+            candidate_profile_id: profileId,
             skill: skill.name,
             skill_id: skill.id,
         });
@@ -127,7 +140,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         if (!error) {
             setSkills([...skills, { skill_id: skill.id, skill: skill.name }]);
             setNewSkill("");
-            await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+            await refreshCandidateMatchingProfile(profileId).catch((syncError) =>
                 console.error("Failed to refresh matching profile after adding skill", syncError),
             );
         }
@@ -136,18 +149,13 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const handleRemoveSkill = async (skillRow: { id?: string; skill_id?: string; skill: string }) => {
         if (!user) return;
 
-        const { data: candidateProfile } = await supabase
-            .from("candidate_profiles")
-            .select("id")
-            .eq("user_id", user.id)
-            .single();
-
-        if (!candidateProfile) return;
+        const profileId = await resolveCandidateProfileId();
+        if (!profileId) return;
 
         let deleteQuery = supabase
             .from("candidate_skills")
             .delete()
-            .eq("candidate_profile_id", candidateProfile.id);
+            .eq("candidate_profile_id", profileId);
 
         if (skillRow.id) {
             deleteQuery = deleteQuery.eq("id", skillRow.id);
@@ -174,7 +182,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             }),
         );
 
-        await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+        await refreshCandidateMatchingProfile(profileId).catch((syncError) =>
             console.error("Failed to refresh matching profile after removing skill", syncError),
         );
     };
@@ -182,28 +190,24 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const handleSaveProfile = async () => {
         if (!user) return;
 
-        const { data: existingProfile } = await supabase
-            .from("candidate_profiles")
-            .select("*")
-            .eq("user_id", user.id)
-            .single();
-
         const updateData = { ...profile, updated_at: new Date().toISOString() };
+        const profileId = await resolveCandidateProfileId();
+        let finalProfileId = profileId;
 
-        if (existingProfile) {
-            await supabase.from("candidate_profiles").update(updateData).eq("user_id", user.id);
+        if (profileId) {
+            await supabase.from("candidate_profiles").update(updateData).eq("id", profileId);
         } else {
-            await supabase.from("candidate_profiles").insert({ ...updateData, user_id: user.id });
+            const { data: createdProfile } = await supabase
+                .from("candidate_profiles")
+                .insert({ ...updateData, user_id: user.id })
+                .select("id")
+                .single();
+            finalProfileId = createdProfile?.id ? String(createdProfile.id) : null;
+            if (finalProfileId) setCandidateProfileId(finalProfileId);
         }
 
-        const { data: candidateProfile } = await supabase
-            .from("candidate_profiles")
-            .select("id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-        if (candidateProfile?.id) {
-            await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+        if (finalProfileId) {
+            await refreshCandidateMatchingProfile(finalProfileId).catch((syncError) =>
                 console.error("Failed to refresh matching profile after saving profile", syncError),
             );
         }
@@ -214,7 +218,15 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         );
     };
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+                <Card className="w-full max-w-sm p-8 border-gray-200">
+                    <CircularLoader size="lg" label="Loading your profile..." />
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -298,6 +310,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                     value={s.level || "beginner"}
                                     className="border rounded px-1 text-sm"
                                     onChange={async (e) => {
+                                        if (!user) return;
                                         const newLevel = e.target.value;
                                         setSkills((prev) =>
                                             prev.map((skill) =>
@@ -307,18 +320,12 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                             ),
                                         );
 
-                                        // Update in DB
-                                        const { data: candidateProfile } = await supabase
-                                            .from("candidate_profiles")
-                                            .select("id")
-                                            .eq("user_id", user!.id)
-                                            .single();
-
-                                        if (candidateProfile) {
+                                        const profileId = await resolveCandidateProfileId();
+                                        if (profileId) {
                                             let updateQuery = supabase
                                                 .from("candidate_skills")
                                                 .update({ level: newLevel })
-                                                .eq("candidate_profile_id", candidateProfile.id);
+                                                .eq("candidate_profile_id", profileId);
 
                                             if (s.id) {
                                                 updateQuery = updateQuery.eq("id", s.id);
@@ -329,7 +336,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                             }
 
                                             await updateQuery;
-                                            await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
+                                            await refreshCandidateMatchingProfile(profileId).catch((syncError) =>
                                                 console.error("Failed to refresh matching profile after updating skill level", syncError),
                                             );
                                         }
