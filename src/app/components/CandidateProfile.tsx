@@ -32,7 +32,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         work_mode: "",
     });
 
-    const [skills, setSkills] = useState<{ skill_id: string; skill: string; level?: string }[]>([]);
+    const [skills, setSkills] = useState<{ id?: string; skill_id?: string; skill: string; level?: string }[]>([]);
     const [allSkills, setAllSkills] = useState<{ id: string; name: string }[]>([]);
     const [newSkill, setNewSkill] = useState("");
     const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 // Fetch candidate skills
                 const { data: candidateSkills } = await supabase
                     .from("candidate_skills")
-                    .select("skill, skill_id, level")
+                    .select("id, skill, skill_id, level")
                     .eq("candidate_profile_id", candidateProfile.id);
 
                 setSkills(candidateSkills || []);
@@ -133,7 +133,9 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         }
     };
 
-    const handleRemoveSkill = async (skill_id: string) => {
+    const handleRemoveSkill = async (skillRow: { id?: string; skill_id?: string; skill: string }) => {
+        if (!user) return;
+
         const { data: candidateProfile } = await supabase
             .from("candidate_profiles")
             .select("id")
@@ -142,13 +144,36 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
         if (!candidateProfile) return;
 
-        await supabase
+        let deleteQuery = supabase
             .from("candidate_skills")
             .delete()
-            .eq("candidate_profile_id", candidateProfile.id)
-            .eq("skill_id", skill_id);
+            .eq("candidate_profile_id", candidateProfile.id);
 
-        setSkills(skills.filter((s) => s.skill_id !== skill_id));
+        if (skillRow.id) {
+            deleteQuery = deleteQuery.eq("id", skillRow.id);
+        } else if (skillRow.skill_id) {
+            deleteQuery = deleteQuery.eq("skill_id", skillRow.skill_id);
+        } else {
+            deleteQuery = deleteQuery.eq("skill", skillRow.skill);
+        }
+
+        const { error } = await deleteQuery;
+        if (error) {
+            showFeedback(
+                "Could not remove skill",
+                "We couldn't remove this skill right now. Please try again.",
+            );
+            return;
+        }
+
+        setSkills((prev) =>
+            prev.filter((s) => {
+                if (skillRow.id && s.id) return s.id !== skillRow.id;
+                if (skillRow.skill_id && s.skill_id) return s.skill_id !== skillRow.skill_id;
+                return s.skill !== skillRow.skill;
+            }),
+        );
+
         await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
             console.error("Failed to refresh matching profile after removing skill", syncError),
         );
@@ -261,9 +286,9 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {skills.map((s) => (
+                        {skills.map((s, index) => (
                             <div
-                                key={s.skill_id}
+                                key={`${s.id ?? s.skill_id ?? s.skill}-${index}`}
                                 className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1.5 rounded"
                             >
                                 <span>{s.skill}</span>
@@ -274,7 +299,13 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                     className="border rounded px-1 text-sm"
                                     onChange={async (e) => {
                                         const newLevel = e.target.value;
-                                        setSkills(skills.map(skill => skill.skill_id === s.skill_id ? { ...skill, level: newLevel } : skill));
+                                        setSkills((prev) =>
+                                            prev.map((skill) =>
+                                                (s.id && skill.id === s.id) || (!s.id && s.skill_id && skill.skill_id === s.skill_id)
+                                                    ? { ...skill, level: newLevel }
+                                                    : skill,
+                                            ),
+                                        );
 
                                         // Update in DB
                                         const { data: candidateProfile } = await supabase
@@ -284,11 +315,20 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                             .single();
 
                                         if (candidateProfile) {
-                                            await supabase
+                                            let updateQuery = supabase
                                                 .from("candidate_skills")
                                                 .update({ level: newLevel })
-                                                .eq("candidate_profile_id", candidateProfile.id)
-                                                .eq("skill_id", s.skill_id);
+                                                .eq("candidate_profile_id", candidateProfile.id);
+
+                                            if (s.id) {
+                                                updateQuery = updateQuery.eq("id", s.id);
+                                            } else if (s.skill_id) {
+                                                updateQuery = updateQuery.eq("skill_id", s.skill_id);
+                                            } else {
+                                                updateQuery = updateQuery.eq("skill", s.skill);
+                                            }
+
+                                            await updateQuery;
                                             await refreshCandidateMatchingProfile(String(candidateProfile.id)).catch((syncError) =>
                                                 console.error("Failed to refresh matching profile after updating skill level", syncError),
                                             );
@@ -301,7 +341,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                     <option value="expert">Expert</option>
                                 </select>
 
-                                <button onClick={() => handleRemoveSkill(s.skill_id)}>
+                                <button type="button" onClick={() => handleRemoveSkill(s)}>
                                     <X className="w-3 h-3" />
                                 </button>
                             </div>
