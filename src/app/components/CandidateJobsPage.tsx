@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { applyForJob, getAppliedJobIds, getOpenJobs } from "@/lib/candidate";
+import { applyForJob, getAppliedJobIds, getCandidateDashboardData, getOpenJobs } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
@@ -41,6 +41,7 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { calculateProfileCompletion, isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
 
 export interface Job {
   id: string;
@@ -78,14 +79,22 @@ export function CandidateJobsPage() {
   const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
   const [showApplySuccessModal, setShowApplySuccessModal] = useState(false);
+  const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
   const [appliedJobTitle, setAppliedJobTitle] = useState("");
+  const [profileCompletion, setProfileCompletion] = useState<number | null>(null);
+  const [profileReadyForApplication, setProfileReadyForApplication] = useState<boolean | null>(null);
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
-    Promise.all([getOpenJobs(), getAppliedJobIds()])
-      .then(([jobsData, appliedIds]) => {
+    Promise.all([getOpenJobs(), getAppliedJobIds(), getCandidateDashboardData()])
+      .then(([jobsData, appliedIds, profileData]) => {
         setJobs((jobsData as Job[]) ?? []);
         setAppliedJobIds(appliedIds ?? []);
+        setProfileCompletion(calculateProfileCompletion(profileData));
+        setProfileReadyForApplication(isCandidateProfileReadyForApplication(profileData));
+      })
+      .catch((error) => {
+        console.error("Failed to load candidate jobs page data", error);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -144,6 +153,10 @@ export function CandidateJobsPage() {
 
   async function handleApply(job: Job) {
     if (appliedJobIds.includes(job.id)) return;
+    if (profileReadyForApplication === false) {
+      setShowCompleteProfileModal(true);
+      return;
+    }
 
     try {
       setApplyingJobId(job.id);
@@ -426,6 +439,30 @@ export function CandidateJobsPage() {
           </DialogHeader>
           <DialogFooter>
             <Button onClick={() => setShowApplySuccessModal(false)}>Awesome</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showCompleteProfileModal} onOpenChange={setShowCompleteProfileModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete your profile first</DialogTitle>
+            <DialogDescription>
+              Add your full name, at least one skill, and a CV before applying.
+              {profileCompletion !== null ? ` Your current profile completion is ${profileCompletion}%.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCompleteProfileModal(false)}>
+              Maybe Later
+            </Button>
+            <Button
+              onClick={() => {
+                setShowCompleteProfileModal(false);
+                navigate("/candidate/profile");
+              }}
+            >
+              Complete Profile
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

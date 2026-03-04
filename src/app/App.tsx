@@ -18,9 +18,22 @@ import { EmployerBillingPage } from "./components/employer/EmployerBillingPage";
 import { EmployerAddonsPage } from "./components/employer/EmployerAddonsPage";
 import { EmployerSettingsPage } from "./components/employer/EmployerSettingsPage";
 import { MessagesPage } from "./components/messages/MessagesPage";
+import { supabase } from "@/lib/supabase";
 // import { useAuth } from '../context/AuthContext'; // adjust path
 
 type View = 'home' | 'candidate-dashboard' | 'employer-dashboard';
+
+function getCandidateSeenDashboardKey(userId: string) {
+  return `candidate_seen_dashboard_${userId}`;
+}
+
+function getCandidatePostLoginPath(userId?: string | null) {
+  if (!userId) return "/candidate/dashboard";
+  const seen =
+    typeof window !== "undefined" &&
+    window.localStorage.getItem(getCandidateSeenDashboardKey(userId)) === "1";
+  return seen ? "/candidate/jobs" : "/candidate/dashboard";
+}
 
 export default function App() {
   const { user, role, loading } = useAuth();
@@ -54,7 +67,7 @@ export default function App() {
         navigate('/');
       }
     } else if (role === 'candidate' && currentPath === '/') {
-      navigate('/candidate/dashboard');
+      navigate(getCandidatePostLoginPath(user?.id));
     } else if (role === 'employer' && currentPath === '/') {
       navigate('/employer/dashboard');
     }
@@ -88,11 +101,19 @@ export default function App() {
     setShowLoginModal(true);
   };
 
-  const handleLoginSuccess = (resolvedRole?: "candidate" | "employer" | null) => {
+  const handleLoginSuccess = async (resolvedRole?: "candidate" | "employer" | null) => {
     setShowLoginModal(false);
 
+    let authenticatedUserId: string | null = null;
+    try {
+      const { data } = await supabase.auth.getUser();
+      authenticatedUserId = data.user?.id ?? null;
+    } catch (error) {
+      console.error("Failed to resolve authenticated user during login redirect", error);
+    }
+
     if (resolvedRole === "candidate") {
-      navigate("/candidate/dashboard");
+      navigate(getCandidatePostLoginPath(authenticatedUserId ?? user?.id));
       return;
     }
 
@@ -102,7 +123,7 @@ export default function App() {
     }
 
     if (role === "candidate") {
-      navigate("/candidate/dashboard");
+      navigate(getCandidatePostLoginPath(authenticatedUserId ?? user?.id));
       return;
     }
 

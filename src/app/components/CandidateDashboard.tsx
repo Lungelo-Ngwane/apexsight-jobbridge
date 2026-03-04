@@ -75,6 +75,11 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
     loadDashboard();
   }, []);
 
+  useEffect(() => {
+    if (!user || role !== "candidate") return;
+    window.localStorage.setItem(`candidate_seen_dashboard_${user.id}`, "1");
+  }, [role, user]);
+
 
   if (loading) {
     return <div className="p-8">Loading...</div>;
@@ -448,12 +453,12 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 </div>
               </div>
               <Button
-                disabled={completion === 100}
                 className="w-full bg-blue-600"
+                onClick={() => navigate("/candidate/profile")}
               >
                 {completion < 100
                   ? `Complete Profile (${completion}%)`
-                  : "Profile Complete 🎉"}
+                  : "View Profile"}
               </Button>
               <Button
                 variant="outline"
@@ -505,3 +510,4 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
     </div>
   );
 }
+
