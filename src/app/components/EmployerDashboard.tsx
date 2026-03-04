@@ -186,7 +186,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     {
       label: "Open Job Postings",
       value: stats?.activeJobs ?? "—",
-      change: "+3 this month",
+      change: "Currently open jobs",
       icon: Briefcase,
       color: "bg-blue-500",
       premium: false
@@ -194,15 +194,15 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     {
       label: "Total Applicants",
       value: stats?.totalApplicants,
-      change: "+124 this week",
+      change: "All-time applications",
       icon: Users,
       color: "bg-emerald-500",
       premium: false
     },
     {
       label: "Avg. Time-to-Hire",
-      value: `1 days`,
-      change: "-7 days vs. avg",
+      value: stats?.avgTimeToHire && stats.avgTimeToHire > 0 ? `${stats.avgTimeToHire} days` : "N/A",
+      change: "Available after hires are recorded",
       icon: Clock,
       color: "bg-purple-500",
       premium: true
@@ -210,7 +210,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     {
       label: "Interview Ready",
       value: stats?.shortlisted,
-      change: "Across all roles",
+      change: "Candidates shortlisted",
       icon: Star,
       color: "bg-amber-500",
       premium: true
@@ -655,3 +655,4 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     </div>
   );
 }
+

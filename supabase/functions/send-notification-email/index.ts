@@ -23,6 +23,8 @@ const supabase = createClient(supabaseUrl ?? "", supabaseServiceKey ?? "", {
   auth: { persistSession: false },
 });
 
+type SupportedEmailType = "APPLICATION_CREATED" | "CANDIDATE_SHORTLISTED";
+
 async function sendEmailOrThrow(args: {
   from: string;
   to: string;
@@ -118,6 +120,11 @@ function emailShell(params: {
 }
 
 serve(async (req) => {
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json",
+  };
+
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -130,10 +137,12 @@ serve(async (req) => {
     });
   }
 
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  };
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers,
+    });
+  }
 
   try {
     if (!resendApiKey) {
@@ -143,8 +152,31 @@ serve(async (req) => {
       });
     }
 
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
+
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Missing access token" }), {
+        status: 401,
+        headers,
+      });
+    }
+
+    const {
+      data: { user: actor },
+      error: actorError,
+    } = await supabase.auth.getUser(token);
+
+    if (actorError || !actor) {
+      return new Response(JSON.stringify({ error: "Invalid user session" }), {
+        status: 401,
+        headers,
+      });
+    }
+
     const payload = await req.json();
-    const { type, data } = payload;
+    const type = String(payload?.type ?? "") as SupportedEmailType;
+    const data = payload?.data;
     const applicationId = data?.applicationId as string | undefined;
 
     if (!applicationId) {
@@ -194,6 +226,20 @@ serve(async (req) => {
 
     const candidateUserId = application.candidate_profiles?.user_id;
     const employerUserId = application.jobs?.employer_profiles?.user_id;
+
+    if (type === "APPLICATION_CREATED" && candidateUserId !== actor.id) {
+      return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
+        status: 403,
+        headers,
+      });
+    }
+
+    if (type === "CANDIDATE_SHORTLISTED" && employerUserId !== actor.id) {
+      return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
+        status: 403,
+        headers,
+      });
+    }
 
     const candidateUser = candidateUserId
       ? await supabase.auth.admin.getUserById(candidateUserId)
@@ -290,6 +336,13 @@ serve(async (req) => {
         });
         sent.push({ recipient: candidateEmail, messageId });
       }
+    }
+
+    if (type !== "APPLICATION_CREATED" && type !== "CANDIDATE_SHORTLISTED") {
+      return new Response(JSON.stringify({ error: "Unsupported notification type" }), {
+        status: 400,
+        headers,
+      });
     }
 
     if (sent.length === 0) {

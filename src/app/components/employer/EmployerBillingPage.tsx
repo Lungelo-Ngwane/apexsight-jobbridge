@@ -222,6 +222,11 @@ export function EmployerBillingPage() {
   const nextUpgradePlanRow = nextUpgradePlan
     ? plans.find((p) => p.name === nextUpgradePlan)
     : null;
+  const latestPaidInvoice = useMemo(
+    () => invoices.find((invoice) => invoice.status === "paid") ?? null,
+    [invoices],
+  );
+  const paymentCustomerCode = String((profile as { paystack_customer_code?: string | null } | null)?.paystack_customer_code ?? "").trim();
 
   const totalKobo = currentPlanRow?.priceMonthly ?? 0;
   const vatKobo = Math.round(totalKobo * 0.15);
@@ -491,20 +496,37 @@ export function EmployerBillingPage() {
               </div>
             </Card>
 
-            {/* Payment Method */}
+            {/* Payment Source */}
             <Card className="p-6 border-gray-200 shadow-md">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Payment Method</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Payment Source</h3>
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center shadow-md">
                   <CreditCard className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Visa ending in 4242</p>
-                  <p className="text-sm text-gray-600">Expires 12/2028</p>
+                  <p className="text-sm font-medium text-gray-900">Provider: Paystack</p>
+                  {paymentCustomerCode ? (
+                    <p className="text-sm text-gray-600">
+                      Customer ID: {paymentCustomerCode}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-600">
+                      Customer ID will appear after first successful payment.
+                    </p>
+                  )}
+                  {loadingInvoices ? (
+                    <p className="text-xs text-gray-500 mt-1">Loading payment history...</p>
+                  ) : latestPaidInvoice ? (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Last successful charge: {formatZarFromKobo(latestPaidInvoice.totalKobo)} on{" "}
+                      {formatInvoiceDate(latestPaidInvoice.paidAt ?? latestPaidInvoice.issuedAt)}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">
+                      No successful payments recorded yet.
+                    </p>
+                  )}
                 </div>
-                <Button variant="outline" size="sm" className="border-gray-300">
-                  Update
-                </Button>
               </div>
             </Card>
 

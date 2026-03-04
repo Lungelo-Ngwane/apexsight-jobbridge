@@ -114,30 +114,6 @@ export function EmployerSettingsPage() {
               <Building2 className="w-4 h-4 mr-2" />
               Company Profile
             </TabsTrigger>
-            <TabsTrigger
-              value="team"
-              disabled
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm opacity-50 cursor-not-allowed"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Team Members (Soon)
-            </TabsTrigger>
-            <TabsTrigger
-              value="notifications"
-              disabled
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm opacity-50 cursor-not-allowed"
-            >
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications (Soon)
-            </TabsTrigger>
-            <TabsTrigger
-              value="security"
-              disabled
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm opacity-50 cursor-not-allowed"
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Security (Soon)
-            </TabsTrigger>
           </TabsList>
 
           {/* Company Profile Tab */}

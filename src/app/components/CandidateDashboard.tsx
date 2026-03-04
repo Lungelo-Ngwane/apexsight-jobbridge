@@ -33,7 +33,7 @@ import { useNavigate } from "react-router-dom";
 
 interface CandidateDashboardProps {
   onViewJobs: () => void;
-  onStartAssessment: () => void;
+  onStartAssessment?: () => void;
 }
 
 export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateDashboardProps) {
@@ -93,6 +93,19 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
     100,
     Math.round(skillsCount * 15 + certsCount * 10)
   );
+  const remainingToNextMilestone = Math.max(0, 90 - readinessScore);
+  const matchingRoleEstimate = Math.max(1, skillsCount * 3 + certsCount * 2);
+  const assessmentRows = Array.isArray(profile?.candidate_assessments)
+    ? profile.candidate_assessments
+    : [];
+
+  const scoreFromLevel = (level?: string | null) => {
+    const normalized = String(level ?? "").toLowerCase();
+    if (normalized === "advanced") return 85;
+    if (normalized === "intermediate") return 65;
+    if (normalized === "beginner") return 40;
+    return 50;
+  };
 
   const completion = profile
     ? calculateProfileCompletion(profile)
@@ -132,7 +145,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 <div className="text-6xl font-bold">{readinessScore}%</div>
                 <div className="mb-3 flex items-center gap-1 text-blue-100">
                   <TrendingUp className="w-4 h-4" />
-                  <span className="text-sm">+12% this month</span>
+                  <span className="text-sm">Based on your verified profile data</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -143,14 +156,16 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 <Progress value={readinessScore} className="h-2 bg-blue-500" />
               </div>
               <p className="text-sm text-blue-100 mt-4">
-                Complete 2 more certifications to reach 90% and unlock premium opportunities
+                {remainingToNextMilestone > 0
+                  ? `${remainingToNextMilestone}% more to reach the 90% profile readiness milestone.`
+                  : "Great job. Your profile is at or above the 90% readiness milestone."}
               </p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 flex flex-col justify-between">
               <div>
                 <div className="text-sm text-blue-100 mb-2">You are ready for</div>
-                <div className="text-2xl font-bold mb-4">34 Job Roles</div>
+                <div className="text-2xl font-bold mb-4">~{matchingRoleEstimate} Job Roles</div>
               </div>
               <Button
                 onClick={onViewJobs}
@@ -187,16 +202,23 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Score</span>
-                      <span className="font-semibold text-gray-900">{60}%</span>
-                    </div>
-                    <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`absolute left-0 top-0 h-full bg-purple-500`}
-                        style={{ width: `${60}%` }}
-                      />
-                    </div>
+                    {(() => {
+                      const skillScore = scoreFromLevel(item?.level);
+                      return (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Score</span>
+                            <span className="font-semibold text-gray-900">{skillScore}%</span>
+                          </div>
+                          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="absolute left-0 top-0 h-full bg-purple-500"
+                              style={{ width: `${skillScore}%` }}
+                            />
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </Card>
               ))}
@@ -224,59 +246,56 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
 
               </Card>
             </div> */}
-                        <div>
+            <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Assessment Progress</h2>
               <Card className="p-6 border-gray-200">
-                <div className="space-y-4">
-                  {[
-                    {
-                      name: "Digital Marketing Fundamentals",
-                      progress: 100,
-                      status: "Completed",
-                      icon: CheckCircle2,
-                      iconColor: "text-green-600"
-                    },
-                    {
-                      name: "SQL Database Management",
-                      progress: 65,
-                      status: "In Progress",
-                      icon: Clock,
-                      iconColor: "text-blue-600"
-                    },
-                    {
-                      name: "Business Analytics",
-                      progress: 0,
-                      status: "Not Started",
-                      icon: Target,
-                      iconColor: "text-gray-400"
-                    }
-                  ].map((assessment, index) => (
-                    <div key={index} className="flex items-center gap-4">
-                      <assessment.icon className={`w-5 h-5 ${assessment.iconColor} flex-shrink-0`} />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-gray-900">{assessment.name}</span>
-                          <span className="text-sm text-gray-600">{assessment.progress}%</span>
+                {assessmentRows.length === 0 ? (
+                  <div className="text-sm text-gray-600">
+                    No assessments available yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {assessmentRows.map((assessment: any, index: number) => {
+                      const progress = Number(assessment?.progress ?? 0);
+                      const done = progress >= 100 || String(assessment?.status ?? "").toLowerCase() === "completed";
+                      const inProgress = progress > 0 && progress < 100;
+                      const iconClass = done ? "text-green-600" : inProgress ? "text-blue-600" : "text-gray-400";
+                      return (
+                        <div key={`${assessment?.name ?? "assessment"}-${index}`} className="flex items-center gap-4">
+                          {done ? (
+                            <CheckCircle2 className={`w-5 h-5 ${iconClass} flex-shrink-0`} />
+                          ) : inProgress ? (
+                            <Clock className={`w-5 h-5 ${iconClass} flex-shrink-0`} />
+                          ) : (
+                            <Target className={`w-5 h-5 ${iconClass} flex-shrink-0`} />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-gray-900">{assessment?.name ?? "Assessment"}</span>
+                              <span className="text-sm text-gray-600">{progress}%</span>
+                            </div>
+                            <Progress value={progress} className="h-1.5" />
+                          </div>
+                          {inProgress && (
+                            <Button size="sm" variant="ghost" className="text-blue-600">
+                              Continue
+                            </Button>
+                          )}
+                          {!done && progress === 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onStartAssessment?.()}
+                              disabled={!onStartAssessment}
+                            >
+                              Start
+                            </Button>
+                          )}
                         </div>
-                        <Progress value={assessment.progress} className="h-1.5" />
-                      </div>
-                      {assessment.progress > 0 && assessment.progress < 100 && (
-                        <Button size="sm" variant="ghost" className="text-blue-600">
-                          Continue
-                        </Button>
-                      )}
-                      {assessment.progress === 0 && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={onStartAssessment}
-                        >
-                          Start
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </Card>
             </div>
           </div>

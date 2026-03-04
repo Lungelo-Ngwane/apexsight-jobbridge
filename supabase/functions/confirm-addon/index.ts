@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logError, logInfo, logWarn } from "../_shared/observability.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,12 +85,27 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+
   try {
+    logInfo("confirm_addon.request_received", {
+      requestId,
+      method: req.method,
+    });
+
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
     const { reference } = await req.json();
 
     if (!token) {
+      logWarn("confirm_addon.missing_access_token", { requestId });
       return new Response(JSON.stringify({ error: "Missing access token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -97,6 +113,7 @@ Deno.serve(async (req) => {
     }
 
     if (!reference) {
+      logWarn("confirm_addon.missing_reference", { requestId });
       return new Response(JSON.stringify({ error: "Missing reference" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -109,6 +126,7 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
+      logWarn("confirm_addon.invalid_user_session", { requestId });
       return new Response(JSON.stringify({ error: "Invalid user session" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -122,29 +140,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (employerError || !employer?.id) {
+      logWarn("confirm_addon.employer_not_found", { requestId });
       return new Response(JSON.stringify({ error: "Employer profile not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    const { data: existingPurchase } = await supabase
-      .from("employer_addon_purchases")
-      .select("id, addon_id, credits_added")
-      .eq("reference", reference)
-      .maybeSingle();
-
-    if (existingPurchase?.id) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          alreadyProcessed: true,
-          reference,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
     }
 
     const verifyResponse = await fetch(
@@ -159,6 +159,11 @@ Deno.serve(async (req) => {
     const verifyPayload = await verifyResponse.json();
 
     if (!verifyResponse.ok || !verifyPayload?.status) {
+      logWarn("confirm_addon.paystack_verify_failed", {
+        requestId,
+        reference,
+        status: verifyResponse.status,
+      });
       return new Response(
         JSON.stringify({
           error: verifyPayload?.message ?? "Failed to verify add-on payment",
@@ -172,6 +177,11 @@ Deno.serve(async (req) => {
 
     const paymentStatus = String(verifyPayload?.data?.status ?? "");
     if (paymentStatus !== "success") {
+      logWarn("confirm_addon.payment_not_success", {
+        requestId,
+        reference,
+        paymentStatus,
+      });
       return new Response(JSON.stringify({ error: "Payment not successful" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -183,6 +193,11 @@ Deno.serve(async (req) => {
     const employerId = String(metadata.employerId ?? "").trim();
 
     if (!addonId || !employerId || employerId !== employer.id) {
+      logWarn("confirm_addon.metadata_mismatch", {
+        requestId,
+        reference,
+        employerId,
+      });
       return new Response(
         JSON.stringify({ error: "Transaction metadata does not match this employer" }),
         {
@@ -199,6 +214,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (addonError || !addon) {
+      logWarn("confirm_addon.addon_not_found", {
+        requestId,
+        reference,
+        addonId,
+      });
       return new Response(JSON.stringify({ error: "Add-on not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -207,6 +227,11 @@ Deno.serve(async (req) => {
 
     const creditsToAdd = Number(addon.credits ?? 0);
     if (!Number.isFinite(creditsToAdd) || creditsToAdd <= 0) {
+      logWarn("confirm_addon.invalid_credit_quantity", {
+        requestId,
+        reference,
+        creditsToAdd,
+      });
       return new Response(
         JSON.stringify({ error: "Invalid credit quantity for add-on" }),
         {
@@ -216,28 +241,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { error: purchaseError } = await supabase
-      .from("employer_addon_purchases")
-      .insert({
-        employer_id: employer.id,
-        addon_id: addon.id,
+    const amountPaid = Number(verifyPayload?.data?.amount ?? 0);
+    const { data: grantRows, error: grantError } = await supabase.rpc(
+      "grant_addon_credits",
+      {
+        p_reference: reference,
+        p_employer_id: employer.id,
+        p_addon_id: addon.id,
+        p_amount_paid: amountPaid,
+        p_credit_type: String(addon.type ?? ""),
+        p_credits_to_add: creditsToAdd,
+      },
+    );
+
+    if (grantError) {
+      logError("confirm_addon.credit_grant_failed", {
+        requestId,
         reference,
-        amount_paid: Number(verifyPayload?.data?.amount ?? 0),
-        status: "success",
+        error: grantError.message,
       });
-
-    if (purchaseError) {
-      if (purchaseError.code === "23505") {
-        return new Response(
-          JSON.stringify({ success: true, alreadyProcessed: true, reference }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-
       return new Response(
-        JSON.stringify({ error: `Failed to record purchase: ${purchaseError.message}` }),
+        JSON.stringify({ error: `Failed to grant add-on credits: ${grantError.message}` }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -245,69 +269,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data: existingCredit } = await supabase
-      .from("employer_credits")
-      .select("id, remaining")
-      .eq("employer_id", employer.id)
-      .eq("credit_type", addon.type)
-      .maybeSingle();
+    const grantResult = Array.isArray(grantRows) ? grantRows[0] : grantRows;
+    const alreadyProcessed = Boolean(grantResult?.already_processed);
+    const appliedCredits = Number(grantResult?.credits_added ?? creditsToAdd);
 
-    if (existingCredit?.id) {
-      const { error: updateCreditError } = await supabase
-        .from("employer_credits")
-        .update({ remaining: Number(existingCredit.remaining ?? 0) + creditsToAdd })
-        .eq("id", existingCredit.id);
-
-      if (updateCreditError) {
-        return new Response(
-          JSON.stringify({ error: `Failed to update credits: ${updateCreditError.message}` }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-    } else {
-      const { error: insertCreditError } = await supabase
-        .from("employer_credits")
-        .insert({
-          employer_id: employer.id,
-          credit_type: addon.type,
-          remaining: creditsToAdd,
-        });
-
-      if (insertCreditError) {
-        return new Response(
-          JSON.stringify({ error: `Failed to add credits: ${insertCreditError.message}` }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-    }
-
-    const { error: markPurchaseError } = await supabase
-      .from("employer_addon_purchases")
-      .update({ credits_added: creditsToAdd })
-      .eq("reference", reference);
-
-    if (markPurchaseError) {
-      return new Response(
-        JSON.stringify({ error: `Failed to finalize purchase: ${markPurchaseError.message}` }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
+    logInfo("confirm_addon.credit_grant_succeeded", {
+      requestId,
+      reference,
+      employerId: employer.id,
+      addonId: addon.id,
+      creditType: String(addon.type ?? ""),
+      appliedCredits,
+      alreadyProcessed,
+    });
 
     await upsertAddonInvoice({
       employerId: employer.id,
       reference,
       addonType: String(addon.type ?? ""),
-      creditsAdded: creditsToAdd,
-      amountKobo: Number(verifyPayload?.data?.amount ?? 0),
+      creditsAdded: appliedCredits,
+      amountKobo: amountPaid,
       paidAt: String(verifyPayload?.data?.paid_at ?? "") || new Date().toISOString(),
     });
 
@@ -316,13 +297,18 @@ Deno.serve(async (req) => {
         success: true,
         reference,
         creditType: addon.type,
-        creditsAdded: creditsToAdd,
+        creditsAdded: appliedCredits,
+        alreadyProcessed,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
   } catch (error) {
+    logError("confirm_addon.unhandled_exception", {
+      requestId,
+      error: String(error),
+    });
     return new Response(JSON.stringify({ error: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

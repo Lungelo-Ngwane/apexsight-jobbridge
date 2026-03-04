@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logError, logInfo, logWarn } from "../_shared/observability.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -97,6 +98,56 @@ function timingSafeEqual(a: string, b: string) {
     diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
   return diff === 0;
+}
+
+async function sha256Hex(input: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(input),
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function buildWebhookEventKey(
+  event: string,
+  data: Record<string, unknown>,
+  payloadHash: string,
+) {
+  const paymentId = String(data.id ?? "").trim();
+  if (paymentId) return `paystack:${event}:id:${paymentId}`;
+
+  const reference = String(data.reference ?? "").trim();
+  if (reference) return `paystack:${event}:ref:${reference}`;
+
+  const subscriptionCode = String(data.subscription_code ?? "").trim();
+  if (subscriptionCode) {
+    const mark = String(
+      data.paid_at ??
+      data.next_payment_date ??
+      data.created_at ??
+      "",
+    ).trim();
+    return `paystack:${event}:sub:${subscriptionCode}:${mark || "na"}`;
+  }
+
+  return `paystack:${event}:hash:${payloadHash.slice(0, 32)}`;
+}
+
+async function markWebhookEvent(
+  eventKey: string,
+  status: "processed" | "failed",
+  errorMessage?: string,
+) {
+  await supabase
+    .from("payment_webhook_events")
+    .update({
+      status,
+      processed_at: status === "processed" ? new Date().toISOString() : null,
+      last_error: status === "failed" ? String(errorMessage ?? "Unknown webhook error") : null,
+    })
+    .eq("event_key", eventKey);
 }
 
 async function verifyPaystackSignature(
@@ -204,12 +255,21 @@ Deno.serve(async (req) => {
     return buildJsonResponse({ error: "Method not allowed" }, 405);
   }
 
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  let currentEventKey: string | null = null;
+
   try {
+    logInfo("paystack_webhook.request_received", {
+      requestId,
+      method: req.method,
+    });
+
     const rawBody = await req.text();
     const signature = req.headers.get("x-paystack-signature");
 
     const validSignature = await verifyPaystackSignature(rawBody, signature);
     if (!validSignature) {
+      logWarn("paystack_webhook.invalid_signature", { requestId });
       return buildJsonResponse({ error: "Invalid signature" }, 401);
     }
 
@@ -220,13 +280,66 @@ Deno.serve(async (req) => {
 
     const event = String(payload.event ?? "").trim().toLowerCase();
     const data = (payload.data ?? {}) as Record<string, unknown>;
+    const payloadHash = await sha256Hex(rawBody);
 
     if (!event) {
+      logWarn("paystack_webhook.missing_event", { requestId });
       return buildJsonResponse({ error: "Missing event" }, 400);
     }
 
+    const reference = String(data.reference ?? "").trim() || null;
+    currentEventKey = buildWebhookEventKey(event, data, payloadHash);
+
+    const { error: receiptInsertError } = await supabase
+      .from("payment_webhook_events")
+      .insert({
+        provider: "paystack",
+        event_key: currentEventKey,
+        event_name: event,
+        reference,
+        status: "received",
+        payload: payload,
+      });
+
+    if (receiptInsertError?.code === "23505") {
+      const { data: existingReceipt } = await supabase
+        .from("payment_webhook_events")
+        .select("status")
+        .eq("event_key", currentEventKey)
+        .maybeSingle();
+
+      if (existingReceipt?.status === "processed") {
+        logInfo("paystack_webhook.duplicate_ignored", {
+          requestId,
+          event,
+          eventKey: currentEventKey,
+        });
+        return buildJsonResponse({
+          received: true,
+          duplicate: true,
+          ignored: true,
+          event,
+        });
+      }
+    } else if (receiptInsertError) {
+      throw new Error(`Failed to log webhook receipt: ${receiptInsertError.message}`);
+    }
+
+    logInfo("paystack_webhook.receipt_logged", {
+      requestId,
+      event,
+      eventKey: currentEventKey,
+      reference,
+    });
+
     const employerId = await resolveEmployerId(data);
     if (!employerId) {
+      logWarn("paystack_webhook.employer_unresolved", {
+        requestId,
+        event,
+        eventKey: currentEventKey,
+      });
+      await markWebhookEvent(currentEventKey, "processed");
       return buildJsonResponse({
         received: true,
         ignored: true,
@@ -262,6 +375,13 @@ Deno.serve(async (req) => {
       }
 
       await applyEmployerUpdate(employerId, update);
+      logInfo("paystack_webhook.subscription_create_applied", {
+        requestId,
+        eventKey: currentEventKey,
+        employerId,
+        resolvedPlan: resolvedPlan ?? null,
+      });
+      await markWebhookEvent(currentEventKey, "processed");
       return buildJsonResponse({ received: true, applied: true, event });
     }
 
@@ -273,6 +393,13 @@ Deno.serve(async (req) => {
         paystack_subscription_email_token: null,
       });
 
+      logInfo("paystack_webhook.subscription_disable_applied", {
+        requestId,
+        eventKey: currentEventKey,
+        employerId,
+      });
+
+      await markWebhookEvent(currentEventKey, "processed");
       return buildJsonResponse({ received: true, applied: true, event });
     }
 
@@ -281,7 +408,6 @@ Deno.serve(async (req) => {
         subscription_status: "past_due",
       });
 
-      const reference = String(data.reference ?? "").trim();
       if (reference) {
         await upsertBillingInvoice({
           employerId,
@@ -293,6 +419,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      logInfo("paystack_webhook.invoice_payment_failed_applied", {
+        requestId,
+        eventKey: currentEventKey,
+        employerId,
+        reference,
+      });
+
+      await markWebhookEvent(currentEventKey, "processed");
       return buildJsonResponse({ received: true, applied: true, event });
     }
 
@@ -330,7 +464,6 @@ Deno.serve(async (req) => {
 
       await applyEmployerUpdate(employerId, update);
 
-      const reference = String(data.reference ?? "").trim();
       if (reference) {
         const isAddon = Boolean(String(metadata.addonId ?? "").trim());
         await upsertBillingInvoice({
@@ -348,11 +481,34 @@ Deno.serve(async (req) => {
         });
       }
 
+      logInfo("paystack_webhook.charge_success_applied", {
+        requestId,
+        eventKey: currentEventKey,
+        employerId,
+        reference,
+        resolvedPlan: resolvedPlan ?? null,
+      });
+
+      await markWebhookEvent(currentEventKey, "processed");
       return buildJsonResponse({ received: true, applied: true, event });
     }
 
+    logInfo("paystack_webhook.event_ignored", {
+      requestId,
+      event,
+      eventKey: currentEventKey,
+    });
+    await markWebhookEvent(currentEventKey, "processed");
     return buildJsonResponse({ received: true, ignored: true, event });
   } catch (error) {
+    if (currentEventKey) {
+      await markWebhookEvent(currentEventKey, "failed", String(error));
+    }
+    logError("paystack_webhook.unhandled_exception", {
+      requestId,
+      eventKey: currentEventKey,
+      error: String(error),
+    });
     return buildJsonResponse({ error: String(error) }, 500);
   }
 });

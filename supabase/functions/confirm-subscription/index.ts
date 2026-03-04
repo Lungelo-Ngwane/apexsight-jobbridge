@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logError, logInfo, logWarn } from "../_shared/observability.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,12 +88,27 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+
   try {
+    logInfo("confirm_subscription.request_received", {
+      requestId,
+      method: req.method,
+    });
+
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
     const { reference } = await req.json();
 
     if (!token) {
+      logWarn("confirm_subscription.missing_access_token", { requestId });
       return new Response(JSON.stringify({ error: "Missing access token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -100,6 +116,7 @@ Deno.serve(async (req) => {
     }
 
     if (!reference) {
+      logWarn("confirm_subscription.missing_reference", { requestId });
       return new Response(JSON.stringify({ error: "Missing reference" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -112,6 +129,7 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
+      logWarn("confirm_subscription.invalid_user_session", { requestId });
       return new Response(JSON.stringify({ error: "Invalid user session" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -132,6 +150,11 @@ Deno.serve(async (req) => {
     const paystackData = await paystackRes.json();
 
     if (!paystackRes.ok || !paystackData?.status) {
+      logWarn("confirm_subscription.paystack_verify_failed", {
+        requestId,
+        reference,
+        status: paystackRes.status,
+      });
       return new Response(
         JSON.stringify({
           error: paystackData?.message ?? "Failed to verify payment",
@@ -145,6 +168,11 @@ Deno.serve(async (req) => {
 
     const paymentStatus = paystackData?.data?.status;
     if (paymentStatus !== "success") {
+      logWarn("confirm_subscription.payment_not_success", {
+        requestId,
+        reference,
+        paymentStatus,
+      });
       return new Response(JSON.stringify({ error: "Payment not successful" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -175,6 +203,10 @@ Deno.serve(async (req) => {
     }
 
     if (!allowedPlans.has(targetPlan)) {
+      logWarn("confirm_subscription.unresolved_target_plan", {
+        requestId,
+        reference,
+      });
       return new Response(
         JSON.stringify({ error: "Could not resolve upgraded plan from transaction" }),
         {
@@ -208,6 +240,10 @@ Deno.serve(async (req) => {
     }
 
     if (!employer) {
+      logWarn("confirm_subscription.employer_not_found", {
+        requestId,
+        reference,
+      });
       return new Response(
         JSON.stringify({ error: "Employer profile not found for this user" }),
         {
@@ -251,6 +287,12 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id);
 
     if (updateError) {
+      logError("confirm_subscription.plan_update_failed", {
+        requestId,
+        reference,
+        employerId: employer.id,
+        error: updateError.message,
+      });
       return new Response(
         JSON.stringify({
           error: `Failed to update employer plan: ${updateError.message}`,
@@ -274,6 +316,13 @@ Deno.serve(async (req) => {
       subscriptionCode,
     });
 
+    logInfo("confirm_subscription.success", {
+      requestId,
+      reference,
+      employerId: employer.id,
+      plan: targetPlan,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -285,6 +334,10 @@ Deno.serve(async (req) => {
       },
     );
   } catch (error) {
+    logError("confirm_subscription.unhandled_exception", {
+      requestId,
+      error: String(error),
+    });
     return new Response(JSON.stringify({ error: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

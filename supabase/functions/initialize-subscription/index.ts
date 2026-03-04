@@ -23,12 +23,46 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  try {
-    const { employerId, planId, planName, email } = await req.json();
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
-    if (!email) {
-      return new Response(JSON.stringify({ error: "Missing email" }), {
-        status: 400,
+  try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    const { planId, planName } = await req.json();
+
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Missing access token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid user session" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: employer, error: employerError } = await supabase
+      .from("employer_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (employerError || !employer?.id) {
+      return new Response(JSON.stringify({ error: "Employer profile not found" }), {
+        status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -91,11 +125,11 @@ Deno.serve(async (req) => {
     const callbackUrl = `${origin}/employer/billing?success=true`;
 
     const payload: Record<string, unknown> = {
-      email: email,
+      email: String(user.email ?? ""),
       plan: plan.paystack_plan_code,
       callback_url: callbackUrl,
       metadata: {
-        employerId,
+        employerId: employer.id,
         planId: plan.id,
         targetPlan: resolvedPlanSlug,
       },
