@@ -67,7 +67,6 @@ export function CandidateProfileDrawer({
     };
   }, [data?.candidate_profiles?.cv_url]);
 
-  console.log("Candidate Data:", data);
 
   if (!data) return null;
   const applicationScore = Number(data.score ?? 0);
@@ -83,7 +82,6 @@ export function CandidateProfileDrawer({
   const hideScoresForStarterNoCredits = isStarter && !loadingCredits && aiCreditRemaining <= 0;
   const showBreakdown = isEnterprise && Boolean(data.score_breakdown);
 
-  console.log("Rendering Candidate Profile Drawer with data:", data);
 
   return (
     <aside className="fixed right-0 top-0 h-full w-[420px] bg-white shadow-xl p-6 overflow-y-auto">

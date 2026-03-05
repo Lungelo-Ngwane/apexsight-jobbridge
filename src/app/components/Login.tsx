@@ -67,7 +67,6 @@ const handleSubmit = async () => {
       err?.message || "We couldn't complete this action. Please check your details and try again.",
     );
   } finally {
-    console.log("handleSubmit FINISHED");
   }
 };
 

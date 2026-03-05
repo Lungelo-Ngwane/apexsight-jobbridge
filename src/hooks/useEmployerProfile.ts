@@ -9,11 +9,13 @@ export function useEmployerProfile() {
 
   useEffect(() => {
     if (!user) {
+      setProfile(null);
       setLoading(false);
       return;
     }
 
     async function loadProfile() {
+      setLoading(true);
       const { data, error } = await supabase
         .from("employer_profiles")
         .select("*")

@@ -25,7 +25,6 @@ export function AddSkillModal({ onClose, onSuccess }: Props) {
       setLoading(true);
       setError(null);
 
-      console.log(skill.trim(), level);
 
       await addCandidateSkill(skill.trim(), level);
 

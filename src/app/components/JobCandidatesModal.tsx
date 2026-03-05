@@ -56,13 +56,10 @@ async function changeStatus(
 ) {
     await updateApplicationStatus(appId, status);
 
-    console.log(`Updated application ${appId} to status ${status}`);
-
     setCandidates((prev) => {
         const updated = prev.map((c) =>
             c.id === appId ? { ...c, status } : c
         );
-        console.log("Candidates after status change:", updated);
         return updated;
     });
 }
@@ -117,10 +114,6 @@ async function handleViewProfile(appId: string) {
         .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
     const canShowScores = normalizedPlan === "professional" || normalizedPlan === "enterprise";
-
-
-    console.log("Rendering JobCandidatesModal with candidates:", candidates);
-
     function getMatchColor(score: number) {
         if (score >= 80) return "bg-green-100 text-green-700";
         if (score >= 60) return "bg-yellow-100 text-yellow-700";

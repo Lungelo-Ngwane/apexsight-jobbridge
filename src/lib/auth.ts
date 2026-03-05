@@ -17,7 +17,6 @@ export async function registerUser(
   company?: string,
 ) {
   try {
-    console.log("Registering:", email, fullName, role, company);
 
     // Prepare data for raw_user_meta_data
     const userData: Record<string, string> = {
@@ -57,7 +56,6 @@ export async function registerUser(
  */
 export async function loginUser(email: string, password: string) {
   try {
-    console.log("loginUser started");
 
     // Supabase signIn
     const { data: authData, error: authError } =

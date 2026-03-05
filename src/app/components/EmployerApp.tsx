@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { EmployerLayout } from "./EmployerLayout";
 import { EmployerOnboarding } from "./EmployerOnBoarding";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
@@ -8,6 +9,20 @@ import { CircularLoader } from "@/app/components/ui/circular-loader";
 export function EmployerApp() {
   const location = useLocation();
   const { profile, loading } = useEmployerProfile();
+  const [canShowMissingProfile, setCanShowMissingProfile] = useState(false);
+
+  useEffect(() => {
+    if (loading || profile) {
+      setCanShowMissingProfile(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setCanShowMissingProfile(true);
+    }, 2500);
+
+    return () => window.clearTimeout(timer);
+  }, [loading, profile]);
 
   if (loading) {
     return (
@@ -19,6 +34,14 @@ export function EmployerApp() {
 
   // 🚨 HARD GUARD — prevents crashes
   if (!profile) {
+    if (!canShowMissingProfile) {
+      return (
+        <div className="p-8 flex items-center justify-center">
+          <CircularLoader size="md" label="Finalizing employer profile..." />
+        </div>
+      );
+    }
+
     return (
       <div className="p-8 text-red-600">
         Employer profile not found
@@ -26,7 +49,6 @@ export function EmployerApp() {
     );
   }
 
-  console.log("Employer Profile:", profile);
 
   // 👇 onboarding gate
   if ((profile.onboarding_step ?? 0) < 3) {
