@@ -29,6 +29,7 @@ import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { updateEmployerProfile, uploadEmployerLogo } from "@/lib/employer";
 import { useAuth } from "@/app/context/AuthContext";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 export function EmployerSettingsPage() {
   const [activeTab, setActiveTab] = useState("company");
@@ -110,7 +111,11 @@ export function EmployerSettingsPage() {
   }
 
   if (loading) {
-    return <div className="p-8">Loading settings...</div>;
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <CircularLoader size="md" label="Loading settings..." />
+      </div>
+    );
   }
 
   return (

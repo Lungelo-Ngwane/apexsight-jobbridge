@@ -42,6 +42,7 @@ import {
 } from "@/app/components/ui/dialog";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { calculateProfileCompletion, isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 export interface Job {
   id: string;
@@ -370,7 +371,9 @@ export function CandidateJobsPage() {
 
           <div>
             {loading ? (
-              <Card className="p-10 text-center border-gray-200">Loading jobs...</Card>
+              <Card className="p-10 text-center border-gray-200">
+                <CircularLoader size="md" label="Loading jobs..." />
+              </Card>
             ) : currentJobs.length > 0 ? (
               <div className="space-y-4">
                 {currentJobs.map((job) => (

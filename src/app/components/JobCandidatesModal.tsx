@@ -13,6 +13,7 @@ import { CandidateProfileDrawer } from "./CandidateProfileDrawer";
 import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 
 interface Props {
@@ -159,7 +160,9 @@ async function handleViewProfile(appId: string) {
 
 
                 {loading ? (
-                    <p>Loading...</p>
+                    <div className="py-3">
+                        <CircularLoader size="sm" label="Loading..." />
+                    </div>
                 ) : filteredCandidates.length === 0 ? (
                     <p className="text-gray-500">No applicants yet</p>
                 ) : (

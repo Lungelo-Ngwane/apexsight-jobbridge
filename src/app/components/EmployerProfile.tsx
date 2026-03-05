@@ -22,6 +22,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { uploadEmployerLogo } from "@/lib/employer";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 interface EmployerProfileProps {
     onBack: () => void;
@@ -105,7 +106,11 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
     }
 
     if (loading) {
-        return <div className="p-8">Loading profile...</div>;
+        return (
+            <div className="p-8 flex items-center justify-center">
+                <CircularLoader size="md" label="Loading profile..." />
+            </div>
+        );
     }
 
     const handleBack = () => {

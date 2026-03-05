@@ -6,6 +6,7 @@ import { Input } from "@/app/components/ui/input";
 import { Briefcase, MapPin, Search, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getTalentPoolCandidates, type TalentPoolCandidate } from "@/lib/employer";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 type ExperienceFilter = "all" | "junior" | "mid" | "senior";
 
@@ -162,7 +163,9 @@ export function EmployerCandidatesPage() {
         </Card>
 
         {loading && (
-          <Card className="p-6 text-center text-gray-500">Loading candidates...</Card>
+          <Card className="p-6 text-center text-gray-500">
+            <CircularLoader size="md" label="Loading candidates..." />
+          </Card>
         )}
 
         {!loading && filteredCandidates.length === 0 && (

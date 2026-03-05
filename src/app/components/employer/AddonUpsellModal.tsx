@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { getAddons, startAddonCheckout, type EmployerAddon } from "@/lib/employer";
 
 interface AddonUpsellModalProps {
@@ -117,7 +118,7 @@ export function AddonUpsellModal({
             </DialogDescription>
           </DialogHeader>
 
-          {loading && <p className="text-sm text-gray-500">Loading add-on details...</p>}
+          {loading && <CircularLoader size="sm" label="Loading add-on details..." />}
 
           {!loading && addon && (
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">

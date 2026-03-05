@@ -3,13 +3,18 @@ import { EmployerOnboarding } from "./EmployerOnBoarding";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 export function EmployerApp() {
   const location = useLocation();
   const { profile, loading } = useEmployerProfile();
 
   if (loading) {
-    return <div className="p-8">Loading employer data...</div>;
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <CircularLoader size="md" label="Loading employer data..." />
+      </div>
+    );
   }
 
   // 🚨 HARD GUARD — prevents crashes

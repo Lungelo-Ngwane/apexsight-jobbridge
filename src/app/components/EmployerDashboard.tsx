@@ -44,6 +44,7 @@ import { Skeleton } from "./ui/skeleton";
 import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { getCachedQuery, invalidateQueryCacheByPrefix } from "@/lib/queryCache";
 import { hasEmployerPaidAccess, isActiveEmployerTrial } from "@/lib/subscriptionAccess";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 // import { getEmployerOpenJobs } from "../../lib/employer";
 
@@ -321,7 +322,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <CircularLoader size="md" label="Loading..." />
+      </div>
+    );
   }
 
   if (!user || role !== 'employer') {
@@ -454,7 +459,9 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         <Card className="p-6 border-gray-200 mb-8">
           <h3 className="font-semibold text-gray-900 mb-4">Plan Usage Counters</h3>
           {!usageSnapshot ? (
-            <p className="text-sm text-gray-500">Loading usage...</p>
+            <div className="py-2">
+              <CircularLoader size="sm" label="Loading usage..." />
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-lg border border-gray-200 p-4">
@@ -498,7 +505,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             <div className="space-y-4">
               {jobsLoading && (
                 <Card className="p-6 text-center text-gray-500">
-                  Loading job postings...
+                  <CircularLoader size="md" label="Loading job postings..." />
                 </Card>
               )}
 
@@ -718,7 +725,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
               <Card className="p-6 border-gray-200">
                 <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
                 {premiumInsightsLoading ? (
-                  <p className="text-sm text-gray-500">Loading recent activity...</p>
+                  <CircularLoader size="sm" label="Loading recent activity..." />
                 ) : premiumInsights?.recentActivity?.length ? (
                   <div className="space-y-4">
                     {premiumInsights.recentActivity.map((activity) => (
@@ -748,7 +755,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   Top skills available in your talent pool this week
                 </p>
                 {premiumInsightsLoading ? (
-                  <p className="text-sm text-gray-500">Loading talent pool insights...</p>
+                  <CircularLoader size="sm" label="Loading talent pool insights..." />
                 ) : premiumInsights?.talentPoolInsights?.length ? (
                   <div className="space-y-2">
                     {premiumInsights.talentPoolInsights.map((item) => (

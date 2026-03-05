@@ -39,6 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 type JobStatusTab = "active" | "draft" | "closed";
 
@@ -458,7 +459,11 @@ export function EmployerJobsPage() {
 
           {(["active", "draft", "closed"] as JobStatusTab[]).map((tab) => (
             <TabsContent key={tab} value={tab} className="space-y-4">
-              {loadingJobs && <Card className="p-6 text-center text-gray-500">Loading jobs...</Card>}
+              {loadingJobs && (
+                <Card className="p-6 text-center text-gray-500">
+                  <CircularLoader size="md" label="Loading jobs..." />
+                </Card>
+              )}
 
               {!loadingJobs && filteredJobsForActiveTab.length === 0 && activeTab === tab && (
                 <Card className="p-6 text-center text-gray-500">No jobs match your filters.</Card>

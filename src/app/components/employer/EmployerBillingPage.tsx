@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Progress } from "@/app/components/ui/progress";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -566,7 +567,9 @@ export function EmployerBillingPage() {
                     </p>
                   )}
                   {loadingInvoices ? (
-                    <p className="text-xs text-gray-500 mt-1">Loading payment history...</p>
+                    <div className="mt-1">
+                      <CircularLoader size="sm" label="Loading payment history..." />
+                    </div>
                   ) : latestPaidInvoice ? (
                     <p className="text-xs text-gray-500 mt-1">
                       Last successful charge: {formatZarFromKobo(latestPaidInvoice.totalKobo)} on{" "}
@@ -584,7 +587,7 @@ export function EmployerBillingPage() {
             <Card className="p-6 border-gray-200 shadow-md">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Invoices</h3>
               {loadingInvoices ? (
-                <p className="text-sm text-gray-600">Loading invoices...</p>
+                <CircularLoader size="sm" label="Loading invoices..." />
               ) : invoices.length === 0 ? (
                 <p className="text-sm text-gray-600">No invoices yet. Paid invoices will appear here.</p>
               ) : (

@@ -6,6 +6,7 @@ import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { Send, MessageCircle, Search } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -236,7 +237,11 @@ export function MessagesPage() {
               />
             </div>
             <div className="overflow-y-auto space-y-2 pr-1">
-              {threadsLoading && <p className="text-sm text-gray-500 p-2">Loading conversations...</p>}
+              {threadsLoading && (
+                <div className="p-2">
+                  <CircularLoader size="sm" label="Loading conversations..." />
+                </div>
+              )}
 
               {!threadsLoading && filteredThreads.length === 0 && (
                 <div className="p-4 text-center text-gray-500 text-sm border border-dashed rounded-lg">
@@ -344,7 +349,7 @@ export function MessagesPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 bg-gray-50">
-                  {messagesLoading && <p className="text-sm text-gray-500">Loading messages...</p>}
+                  {messagesLoading && <CircularLoader size="sm" label="Loading messages..." />}
 
                   {!messagesLoading && messages.length === 0 && (
                     <div className="text-center text-gray-500 text-sm pt-10">

@@ -29,6 +29,7 @@ import { calculateProfileCompletion } from "@/lib/profileCompletion";
 import { AddSkillModal } from "./AddSkillModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { useNavigate } from "react-router-dom";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 
 interface CandidateDashboardProps {
@@ -82,7 +83,11 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
 
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <CircularLoader size="md" label="Loading..." />
+      </div>
+    );
   }
 
   if (!user || role !== 'candidate') {
@@ -122,7 +127,11 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   // ).length;
 
   if (loading || loadingData) {
-    return <div className="p-8">Loading...</div>;
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <CircularLoader size="md" label="Loading..." />
+      </div>
+    );
   }
 
   return (
