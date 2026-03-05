@@ -1,5 +1,6 @@
 import { PLAN_LIMITS } from "./plan";
 import { supabase } from "./supabase";
+import { hasEmployerPaidAccess } from "./subscriptionAccess";
 
 export type BillingPlanName = "starter" | "professional" | "enterprise";
 
@@ -809,7 +810,7 @@ export async function getEmployerPremiumDashboardInsights(): Promise<EmployerPre
 
   const { data: employer, error: employerError } = await supabase
     .from("employer_profiles")
-    .select("id, plan")
+    .select("id, plan, subscription_status, trial_granted, trial_started_at, trial_ends_at")
     .eq("user_id", user.id)
     .single();
 
@@ -817,10 +818,7 @@ export async function getEmployerPremiumDashboardInsights(): Promise<EmployerPre
     throw new Error("Employer profile not found");
   }
 
-  const plan = String(employer.plan ?? "free").toLowerCase();
-  const hasPremiumAccess = plan !== "free";
-
-  if (!hasPremiumAccess) {
+  if (!hasEmployerPaidAccess(employer)) {
     throw new Error("PREMIUM_REQUIRED");
   }
 
@@ -1845,6 +1843,14 @@ export async function updateEmployerProfile(payload: {
   public_company_page?: boolean;
   onboarding_step?: number;
   plan?: string;
+  selected_plan?: string | null;
+  subscription_status?:
+    | "inactive"
+    | "active"
+    | "past_due"
+    | "cancelled"
+    | "trialing"
+    | "pending_payment";
 }) {
   const {
     data: { user },

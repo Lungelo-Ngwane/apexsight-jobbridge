@@ -90,6 +90,7 @@ Deno.serve(async (req) => {
       .update({
         plan: "free",
         subscription_status: "cancelled",
+        selected_plan: null,
         paystack_subscription_code: null,
         paystack_subscription_email_token: null,
       })

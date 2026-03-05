@@ -269,6 +269,7 @@ Deno.serve(async (req) => {
     const updates: Record<string, unknown> = {
       plan: targetPlan,
       subscription_status: "active",
+      selected_plan: null,
       paystack_customer_code: customerCode,
     };
 

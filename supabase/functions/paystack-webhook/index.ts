@@ -359,6 +359,7 @@ Deno.serve(async (req) => {
 
       const update: Record<string, unknown> = {
         subscription_status: "active",
+        selected_plan: null,
         paystack_customer_code: String(customerObj.customer_code ?? "") || null,
         paystack_subscription_code: String(data.subscription_code ?? "") || null,
         paystack_subscription_email_token:
@@ -389,6 +390,7 @@ Deno.serve(async (req) => {
       await applyEmployerUpdate(employerId, {
         plan: "free",
         subscription_status: "cancelled",
+        selected_plan: null,
         paystack_subscription_code: null,
         paystack_subscription_email_token: null,
       });
@@ -443,6 +445,7 @@ Deno.serve(async (req) => {
 
       const update: Record<string, unknown> = {
         subscription_status: "active",
+        selected_plan: null,
         paystack_customer_code: String(customerObj.customer_code ?? "") || null,
       };
 

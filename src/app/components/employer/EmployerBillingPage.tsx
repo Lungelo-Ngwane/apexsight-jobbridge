@@ -205,18 +205,30 @@ export function EmployerBillingPage() {
   }
 
   const currentPlanName = String(profile?.plan ?? "free").toLowerCase();
+  const selectedPlanRaw = String((profile as { selected_plan?: string | null } | null)?.selected_plan ?? "").toLowerCase();
+  const selectedPendingPlan: BillingPlanName | null =
+    selectedPlanRaw === "starter" || selectedPlanRaw === "professional" || selectedPlanRaw === "enterprise"
+      ? selectedPlanRaw
+      : null;
   const isFreePlan = currentPlanName === "free";
   const currentPlanRow =
     plans.find((p) => p.name === currentPlanName) ??
     (isFreePlan ? null : plans.find((p) => p.name === "starter")) ??
     null;
 
+  const normalizedSubscriptionStatus = String(
+    profile?.subscription_status ?? (isFreePlan ? "free" : "inactive"),
+  ).toLowerCase();
+  const hasPendingPayment =
+    normalizedSubscriptionStatus === "pending_payment" && selectedPendingPlan !== null;
+
   const nextUpgradePlan = useMemo((): BillingPlanName | null => {
+    if (hasPendingPayment && selectedPendingPlan) return selectedPendingPlan;
     if (currentPlanName === "free") return "starter";
     if (currentPlanName === "starter") return "professional";
     if (currentPlanName === "professional") return "enterprise";
     return null;
-  }, [currentPlanName]);
+  }, [currentPlanName, hasPendingPayment, selectedPendingPlan]);
 
   const nextUpgradeLabel = nextUpgradePlan
     ? `${nextUpgradePlan.charAt(0).toUpperCase()}${nextUpgradePlan.slice(1)}`
@@ -245,7 +257,8 @@ export function EmployerBillingPage() {
         day: "numeric",
       })
     : "No active subscription";
-  const subscriptionStatus = String(profile?.subscription_status ?? (isFreePlan ? "free" : "inactive"));
+  const subscriptionStatusLabel =
+    normalizedSubscriptionStatus.charAt(0).toUpperCase() + normalizedSubscriptionStatus.slice(1);
 
   const currentPlan = isFreePlan
     ? {
@@ -265,7 +278,7 @@ export function EmployerBillingPage() {
           users: { used: teamMembersUsed, total: teamMemberLimit },
         },
         renewalDate: nextBillingDate,
-        status: subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1),
+        status: subscriptionStatusLabel,
       }
     : {
         name: currentPlanRow?.label ?? "Starter",
@@ -284,7 +297,7 @@ export function EmployerBillingPage() {
           users: { used: teamMembersUsed, total: teamMemberLimit },
         },
         renewalDate: nextBillingDate,
-        status: subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1),
+        status: subscriptionStatusLabel,
       };
 
   const finiteJobLimit = typeof currentPlan.usage.jobs.total === "number" ? currentPlan.usage.jobs.total : null;
@@ -371,13 +384,39 @@ export function EmployerBillingPage() {
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30"
             >
               <Crown className="w-4 h-4 mr-2" />
-              {loadingSource === "header" ? "Redirecting..." : (nextUpgradeLabel ? `Upgrade to ${nextUpgradeLabel}` : "Current Top Plan")}
+              {loadingSource === "header"
+                ? "Redirecting..."
+                : hasPendingPayment
+                  ? (nextUpgradeLabel ? `Complete Payment for ${nextUpgradeLabel}` : "Complete Payment")
+                  : (nextUpgradeLabel ? `Upgrade to ${nextUpgradeLabel}` : "Current Top Plan")}
             </Button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {hasPendingPayment && (
+          <Card className="mb-6 border-amber-200 bg-amber-50 shadow-md">
+            <div className="p-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-amber-900 mb-1">Payment required to activate your plan</h2>
+                <p className="text-sm text-amber-800">
+                  You selected the {nextUpgradeLabel ?? "paid"} plan. Complete checkout to unlock premium features.
+                </p>
+              </div>
+              <Button
+                onClick={() =>
+                  nextUpgradePlan &&
+                  handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "header")
+                }
+                disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {loadingSource === "header" ? "Redirecting..." : "Complete Payment"}
+              </Button>
+            </div>
+          </Card>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
@@ -489,7 +528,9 @@ export function EmployerBillingPage() {
                     <Crown className="w-4 h-4 mr-2" />
                     {loadingSource === "card"
                       ? "Redirecting..."
-                      : (nextUpgradeLabel ? `Upgrade to ${nextUpgradeLabel}` : "Current Top Plan")}
+                      : hasPendingPayment
+                        ? "Complete Payment"
+                        : (nextUpgradeLabel ? `Upgrade to ${nextUpgradeLabel}` : "Current Top Plan")}
                   </Button>
                   <Button variant="outline" className="border-gray-300">
                     Change Plan
@@ -641,7 +682,11 @@ export function EmployerBillingPage() {
                         disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
                         className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
                       >
-                        {loadingSource === "sidebar" ? "Redirecting..." : "Upgrade Now"}
+                        {loadingSource === "sidebar"
+                          ? "Redirecting..."
+                          : hasPendingPayment
+                            ? "Complete Payment"
+                            : "Upgrade Now"}
                       </Button>
                     </div>
                   </div>

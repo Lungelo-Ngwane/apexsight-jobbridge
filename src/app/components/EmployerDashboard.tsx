@@ -198,6 +198,16 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const openJobs = jobs.filter((job) => job.status === 'open');
 
   const plan = profile?.plan ?? "free";
+  const selectedPlanRaw = String(
+    (profile as { selected_plan?: string | null } | null)?.selected_plan ?? "",
+  ).toLowerCase();
+  const selectedPendingPlan =
+    selectedPlanRaw === "starter" || selectedPlanRaw === "professional" || selectedPlanRaw === "enterprise"
+      ? selectedPlanRaw
+      : null;
+  const hasPendingPayment =
+    String((profile as { subscription_status?: string | null } | null)?.subscription_status ?? "").toLowerCase() === "pending_payment" &&
+    Boolean(selectedPendingPlan);
   const hasResolvedPlan = !profileLoading;
   const hasPaidAccess = hasEmployerPaidAccess(profile);
   const hasAnalytics = hasPaidAccess;
@@ -338,6 +348,26 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             Post New Job
           </Button>
         </div>
+
+        {hasPendingPayment && (
+          <Card className="p-5 mb-6 border-amber-200 bg-amber-50">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-amber-900">Plan activation pending payment</p>
+                <p className="text-sm text-amber-800">
+                  Complete checkout for the {selectedPendingPlan} plan to unlock premium features.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="border-amber-300 bg-white hover:bg-amber-100"
+                onClick={() => navigate("/employer/billing")}
+              >
+                Complete Payment
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Stats Overview */}
         <div

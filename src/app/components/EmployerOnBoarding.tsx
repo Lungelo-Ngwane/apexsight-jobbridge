@@ -27,7 +27,11 @@ export function EmployerOnboarding({
     const [companyName, setCompanyName] = useState("");
     const [industry, setIndustry] = useState("");
     const [companySize, setCompanySize] = useState("");
+    const [selectedPlanIntent, setSelectedPlanIntent] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const pendingPlan =
+        selectedPlanIntent ??
+        (String(profile?.selected_plan ?? "").toLowerCase() || null);
 
     async function completeProfile() {
         setSaving(true);
@@ -43,14 +47,24 @@ export function EmployerOnboarding({
     }
 
     async function selectPlan(plan: string) {
+        setSelectedPlanIntent(plan);
         const trialActive = isActiveEmployerTrial(profile);
         if (trialActive) {
             await updateEmployerProfile({
                 onboarding_step: 2,
             });
+        } else if (plan === "free") {
+            await updateEmployerProfile({
+                plan: "free",
+                selected_plan: null,
+                subscription_status: "inactive",
+                onboarding_step: 2,
+            });
         } else {
             await updateEmployerProfile({
-                plan,
+                plan: "free",
+                selected_plan: plan,
+                subscription_status: "pending_payment",
                 onboarding_step: 2,
             });
         }
@@ -249,7 +263,9 @@ export function EmployerOnboarding({
                                     You're All Set! 🚀
                                 </h1>
                                 <p className="text-lg text-gray-600 mb-8">
-                                    Your JobBridge™ account is ready. Start posting jobs and discover South Africa's best skill-verified talent.
+                                    {pendingPlan && pendingPlan !== "free" && !isActiveEmployerTrial(profile)
+                                        ? `Your account is ready. Complete payment for the ${pendingPlan} plan from your dashboard to unlock premium features.`
+                                        : "Your JobBridge™ account is ready. Start posting jobs and discover South Africa's best skill-verified talent."}
                                 </p>
 
                                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">

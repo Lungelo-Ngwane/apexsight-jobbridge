@@ -139,6 +139,29 @@ Deno.serve(async (req) => {
       payload.amount = amountInKobo;
     }
 
+    if (resolvedPlanSlug !== "free") {
+      const { error: pendingUpdateError } = await supabase
+        .from("employer_profiles")
+        .update({
+          selected_plan: resolvedPlanSlug,
+          subscription_status: "pending_payment",
+        })
+        .eq("id", employer.id)
+        .eq("user_id", user.id);
+
+      if (pendingUpdateError) {
+        return new Response(
+          JSON.stringify({
+            error: `Failed to prepare pending subscription: ${pendingUpdateError.message}`,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
     // Call Paystack API
     const response = await fetch(
       "https://api.paystack.co/transaction/initialize",
