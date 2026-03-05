@@ -133,10 +133,16 @@ export function CandidateJobsPage() {
     });
   }, [jobs, searchQuery, selectedTypes, selectedLevels, selectedLocations]);
 
-  const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / JOBS_PER_PAGE));
   const startIndex = (currentPage - 1) * JOBS_PER_PAGE;
   const endIndex = startIndex + JOBS_PER_PAGE;
   const currentJobs = filteredJobs.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const activeFiltersCount = selectedTypes.length + selectedLevels.length + selectedLocations.length;
 
@@ -404,7 +410,19 @@ export function CandidateJobsPage() {
 
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-sm text-gray-500">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="rounded-lg hidden sm:inline-flex"
+                >
+                  First
+                </Button>
               <Button variant="outline" onClick={() => setCurrentPage((prev) => prev - 1)} disabled={currentPage === 1} className="rounded-lg">
                 <ChevronLeft className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Previous</span>
@@ -427,6 +445,15 @@ export function CandidateJobsPage() {
                 <span className="hidden sm:inline mr-2">Next</span>
                 <ChevronLeft className="h-4 w-4 rotate-180" />
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="rounded-lg hidden sm:inline-flex"
+              >
+                Last
+              </Button>
+              </div>
             </div>
           </div>
         )}
