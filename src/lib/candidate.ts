@@ -1,6 +1,8 @@
 import { supabase } from "./supabase";
 
 const CANDIDATE_SAVED_JOBS_KEY_PREFIX = "candidate_saved_jobs_";
+const ENFORCE_JOB_EXPIRY =
+  String(import.meta.env.VITE_ENFORCE_JOB_EXPIRY ?? "false").toLowerCase() === "true";
 
 function getSavedJobsStorageKey(userId: string) {
   return `${CANDIDATE_SAVED_JOBS_KEY_PREFIX}${userId}`;
@@ -306,7 +308,7 @@ export async function uploadCandidateCV(file: File) {
 }
 
 export async function getOpenJobs() {
-  const { data: jobs, error: jobsError } = await supabase
+  const withVisibility = await supabase
     .from("jobs")
     .select(`
       id,
@@ -317,6 +319,7 @@ export async function getOpenJobs() {
       experience_level,
       is_featured,
       featured_until,
+      expires_at,
       created_at,
       employer_id
     `)
@@ -324,9 +327,54 @@ export async function getOpenJobs() {
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 
+  let jobs = withVisibility.data as any[] | null;
+  let jobsError = withVisibility.error;
+
+  if (jobsError) {
+    const visibilityError = String(jobsError.message ?? "").toLowerCase();
+    if (!visibilityError.includes("expires_at")) {
+      throw jobsError;
+    }
+
+    const legacy = await supabase
+      .from("jobs")
+      .select(`
+        id,
+        title,
+        description,
+        location,
+        employment_type,
+        experience_level,
+        is_featured,
+        featured_until,
+        created_at,
+        employer_id
+      `)
+      .eq("status", "open")
+      .order("is_featured", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    jobs = legacy.data as any[] | null;
+    jobsError = legacy.error;
+  }
+
   if (jobsError) throw jobsError;
   if (!jobs || jobs.length === 0) return [];
-  return attachEmployerDetailsToJobs(jobs);
+
+  let visibleJobs = jobs;
+  if (ENFORCE_JOB_EXPIRY) {
+    const now = Date.now();
+    visibleJobs = jobs.filter((job) => {
+      const raw = String((job as { expires_at?: unknown }).expires_at ?? "").trim();
+      if (!raw) return true;
+      const expiresMs = new Date(raw).getTime();
+      if (!Number.isFinite(expiresMs)) return true;
+      return expiresMs > now;
+    });
+  }
+
+  if (visibleJobs.length === 0) return [];
+  return attachEmployerDetailsToJobs(visibleJobs);
 }
 
 async function attachEmployerDetailsToJobs(jobs: any[]) {

@@ -16,7 +16,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { featureJob, generateAiReport, getEmployerJobs, runAutoMatch, updateJobStatus } from "@/lib/employer";
+import { featureJob, generateAiReport, getEmployerJobs, renewJobVisibility, runAutoMatch, updateJobStatus } from "@/lib/employer";
 import { PostJobModal } from "../PostJobModal";
 import { JobCandidatesModal } from "../JobCandidatesModal";
 import { AddonUpsellModal } from "./AddonUpsellModal";
@@ -53,6 +53,8 @@ type JobRow = {
   experience_level: string | null;
   is_featured?: boolean;
   featured_until?: string | null;
+  published_at?: string | null;
+  expires_at?: string | null;
   created_at: string;
   job_applications?: { id: string; status: string }[];
 };
@@ -79,6 +81,12 @@ function statusBadgeClass(status: JobRow["status"]) {
   if (status === "open") return "bg-emerald-100 text-emerald-700 border-emerald-200";
   if (status === "archived") return "bg-gray-100 text-gray-700 border-gray-200";
   return "bg-red-100 text-red-700 border-red-200";
+}
+
+function getDaysUntilExpiry(expiresAt?: string | null) {
+  if (!expiresAt) return null;
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
 export function EmployerJobsPage() {
@@ -349,6 +357,24 @@ export function EmployerJobsPage() {
     }
   }
 
+  async function handleRenewJob(job: JobRow) {
+    try {
+      setActionLoading(`renew-${job.id}`);
+      await renewJobVisibility(job.id);
+      showFeedback("Visibility extended", "This job is now visible for another 30 days.");
+      await loadJobs();
+      setActiveTab("active");
+    } catch (error) {
+      console.error("Failed to renew job visibility", error);
+      showFeedback(
+        "Renewal failed",
+        "We couldn't extend this job visibility right now. Please try again.",
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
@@ -478,6 +504,12 @@ export function EmployerJobsPage() {
                     job.job_applications?.filter((app) => app.status === "shortlisted").length ?? 0;
                   const interviewed =
                     job.job_applications?.filter((app) => app.status === "interview").length ?? 0;
+                  const expiresInDays = getDaysUntilExpiry(job.expires_at);
+                  const expiryWarning =
+                    typeof expiresInDays === "number" &&
+                    job.status === "open" &&
+                    expiresInDays <= 7 &&
+                    expiresInDays >= 0;
 
                   return (
                     <Card key={job.id} className="p-6 border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all duration-300 group">
@@ -504,6 +536,11 @@ export function EmployerJobsPage() {
                                   {new Date(job.created_at).toLocaleDateString()}
                                 </span>
                               </div>
+                              {job.expires_at && (
+                                <p className="text-xs mt-1 text-gray-500">
+                                  Visible until {new Date(job.expires_at).toLocaleDateString()} (30-day listing window)
+                                </p>
+                              )}
                             </div>
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">{job.description}</p>
@@ -518,6 +555,16 @@ export function EmployerJobsPage() {
                           <Badge className="bg-amber-100 text-amber-700 border-amber-200">
                             Featured
                             {job.featured_until ? ` until ${new Date(job.featured_until).toLocaleDateString()}` : ""}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {expiryWarning && (
+                        <div className="mb-3">
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                            {expiresInDays === 0
+                              ? "Expires today"
+                              : `Expires in ${expiresInDays} day${expiresInDays === 1 ? "" : "s"}`}
                           </Badge>
                         </div>
                       )}
@@ -599,13 +646,18 @@ export function EmployerJobsPage() {
                           </Button>
                         )}
                         {job.status === "closed" && (
-                          <Button variant="outline" className="border-gray-300" onClick={() => handleStatusChange(job.id, "open")}>
-                            Reopen
+                          <Button variant="outline" className="border-gray-300" onClick={() => handleRenewJob(job)}>
+                            {actionLoading === `renew-${job.id}` ? "Renewing..." : "Renew 30 Days"}
                           </Button>
                         )}
                         {job.status === "archived" && (
                           <Button variant="outline" className="border-gray-300" onClick={() => handleStatusChange(job.id, "open")}>
                             Publish
+                          </Button>
+                        )}
+                        {job.status === "open" && (
+                          <Button variant="outline" className="border-gray-300" onClick={() => handleRenewJob(job)}>
+                            {actionLoading === `renew-${job.id}` ? "Renewing..." : "Extend 30 Days"}
                           </Button>
                         )}
                       </div>

@@ -166,6 +166,9 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
           <h2 className="text-xl font-semibold mb-4">
             {isEditMode ? "Edit Job" : "Post New Job"}
           </h2>
+          <p className="text-xs text-gray-600 mb-4">
+            Published jobs are visible to candidates for 30 days. You can renew visibility anytime from Job Management.
+          </p>
 
           <div className="space-y-3">
             <Input placeholder="Job Title" value={title} onChange={(e) => setTitle(e.target.value)} />

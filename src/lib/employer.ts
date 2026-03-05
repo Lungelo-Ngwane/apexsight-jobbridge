@@ -2,6 +2,8 @@ import { PLAN_LIMITS } from "./plan";
 import { supabase } from "./supabase";
 import { hasEmployerPaidAccess } from "./subscriptionAccess";
 
+const JOB_VISIBILITY_DAYS = 30;
+
 export type BillingPlanName = "starter" | "professional" | "enterprise";
 
 export interface BillingPlan {
@@ -326,7 +328,38 @@ export async function getEmployerJobs() {
 
   if (!employer) throw new Error("Employer profile not found");
 
-  const { data, error } = await supabase
+  const withVisibility = await supabase
+    .from("jobs")
+    .select(
+      `
+      id,
+      title,
+      status,
+      location,
+      description,
+      employment_type,
+      experience_level,
+      is_featured,
+      featured_until,
+      published_at,
+      expires_at,
+      created_at,
+      job_applications ( id, status )
+    `,
+    )
+    .eq("employer_id", employer.id)
+    .order("created_at", { ascending: false });
+
+  if (!withVisibility.error) {
+    return withVisibility.data;
+  }
+
+  const visibilityError = String(withVisibility.error?.message ?? "").toLowerCase();
+  if (!visibilityError.includes("published_at") && !visibilityError.includes("expires_at")) {
+    throw withVisibility.error;
+  }
+
+  const legacy = await supabase
     .from("jobs")
     .select(
       `
@@ -346,8 +379,8 @@ export async function getEmployerJobs() {
     .eq("employer_id", employer.id)
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
-  return data;
+  if (legacy.error) throw legacy.error;
+  return legacy.data;
 }
 
 export async function updateJob(
@@ -466,6 +499,46 @@ export async function updateJobStatus(
     }
     throw error;
   }
+}
+
+export async function renewJobVisibility(jobId: string) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: employer } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  const expiresAt = new Date(Date.now() + JOB_VISIBILITY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const withVisibility = await supabase
+    .from("jobs")
+    .update({
+      status: "open",
+      published_at: new Date().toISOString(),
+      expires_at: expiresAt,
+    })
+    .eq("id", jobId)
+    .eq("employer_id", employer?.id);
+
+  if (!withVisibility.error) return;
+
+  const visibilityError = String(withVisibility.error?.message ?? "").toLowerCase();
+  if (!visibilityError.includes("published_at") && !visibilityError.includes("expires_at")) {
+    throw withVisibility.error;
+  }
+
+  const fallback = await supabase
+    .from("jobs")
+    .update({ status: "open" })
+    .eq("id", jobId)
+    .eq("employer_id", employer?.id);
+
+  if (fallback.error) throw fallback.error;
 }
 
 /* =========================
