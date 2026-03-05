@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { applyForJob, getAppliedJobIds, getCandidateDashboardData, getOpenJobs } from "@/lib/candidate";
+import {
+  applyForJob,
+  getAppliedJobIds,
+  getCandidateDashboardData,
+  getCandidateSavedJobIds,
+  getOpenJobs,
+  toggleCandidateSavedJob,
+} from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
@@ -88,10 +95,11 @@ export function CandidateJobsPage() {
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
-    Promise.all([getOpenJobs(), getAppliedJobIds(), getCandidateDashboardData()])
-      .then(([jobsData, appliedIds, profileData]) => {
+    Promise.all([getOpenJobs(), getAppliedJobIds(), getCandidateSavedJobIds(), getCandidateDashboardData()])
+      .then(([jobsData, appliedIds, savedIds, profileData]) => {
         setJobs((jobsData as Job[]) ?? []);
         setAppliedJobIds(appliedIds ?? []);
+        setSavedJobs(savedIds ?? []);
         setProfileCompletion(calculateProfileCompletion(profileData));
         setProfileReadyForApplication(isCandidateProfileReadyForApplication(profileData));
       })
@@ -155,8 +163,23 @@ export function CandidateJobsPage() {
     setCurrentPage(1);
   };
 
-  const toggleSaveJob = (jobId: string) => {
-    setSavedJobs((prev) => (prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]));
+  const toggleSaveJob = async (jobId: string) => {
+    const previous = [...savedJobs];
+    const optimistic = previous.includes(jobId)
+      ? previous.filter((id) => id !== jobId)
+      : [...previous, jobId];
+    setSavedJobs(optimistic);
+
+    try {
+      const persisted = await toggleCandidateSavedJob(jobId);
+      setSavedJobs(persisted);
+    } catch {
+      setSavedJobs(previous);
+      showFeedback(
+        "Could not update saved jobs",
+        "Please try again.",
+      );
+    }
   };
 
   async function handleApply(job: Job) {

@@ -1,8 +1,11 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle } from "lucide-react";
+import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { Badge } from "@/app/components/ui/badge";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/app/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +16,13 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import logo from "../assets/ApexSight_logo.png";
 import { useAuth } from "../context/AuthContext";
-import { getCandidateUnreadMessageCount, subscribeToMyMessageChanges } from "@/lib/messages";
+import {
+  type ConversationThread,
+  getCandidateUnreadMessageCount,
+  getConversationThreads,
+  markAllMyMessagesRead,
+  subscribeToMyMessageChanges,
+} from "@/lib/messages";
 
 interface HeaderProps {
   currentProduct: "skilllink" | "jobbridge" | "landing";
@@ -32,7 +41,11 @@ export function Header({
 }: HeaderProps) {
   const { user, role, loading, signOut } = useAuth();
   const navigate = useNavigate(); // <-- for redirect after logout
+  const location = useLocation();
   const [candidateUnreadCount, setCandidateUnreadCount] = useState(0);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const [threadsLoading, setThreadsLoading] = useState(false);
+  const [candidateThreads, setCandidateThreads] = useState<ConversationThread[]>([]);
 
   const isAuthenticated = !!user && !!role;
 
@@ -45,6 +58,32 @@ export function Header({
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const formatThreadTime = (value: string | null) => {
+    if (!value) return "New";
+    const date = new Date(value);
+    const now = new Date();
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    return date.toLocaleDateString();
+  };
+
+  const refreshCandidateInboxData = () => {
+    if (!user || role !== "candidate") return;
+
+    getCandidateUnreadMessageCount()
+      .then(setCandidateUnreadCount)
+      .catch((error) => console.error("Failed to load candidate unread messages", error));
+
+    if (inboxOpen) {
+      setThreadsLoading(true);
+      getConversationThreads()
+        .then((threads) => setCandidateThreads(threads.slice(0, 8)))
+        .catch((error) => console.error("Failed to load candidate inbox threads", error))
+        .finally(() => setThreadsLoading(false));
+    }
+  };
 
   // ✅ Logout handler
   const handleLogout = async () => {
@@ -59,16 +98,13 @@ export function Header({
   useEffect(() => {
     if (!user || role !== "candidate") {
       setCandidateUnreadCount(0);
+      setCandidateThreads([]);
       return;
     }
 
     let unsub: (() => void) | null = null;
 
-    const refresh = () => {
-      getCandidateUnreadMessageCount()
-        .then(setCandidateUnreadCount)
-        .catch((error) => console.error("Failed to load candidate unread messages", error));
-    };
+    const refresh = () => refreshCandidateInboxData();
 
     refresh();
     unsub = subscribeToMyMessageChanges(refresh);
@@ -80,7 +116,12 @@ export function Header({
       if (unsub) unsub();
       window.removeEventListener("focus", onFocus);
     };
-  }, [user, role]);
+  }, [user, role, inboxOpen]);
+
+  useEffect(() => {
+    if (!inboxOpen || role !== "candidate") return;
+    refreshCandidateInboxData();
+  }, [inboxOpen, role]);
 
   if (loading) return null;
 
@@ -141,16 +182,35 @@ export function Header({
               <>
                 {role === "candidate" && (
                   <button
-                    onClick={() => navigate("/candidate/messages")}
-                    className="relative inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition"
-                    aria-label="Open messages"
+                    onClick={() => setInboxOpen(true)}
+                    className={`relative inline-flex items-center gap-2 h-10 px-3 rounded-lg transition border ${
+                      location.pathname === "/candidate/messages"
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                    }`}
+                    aria-label="Open inbox"
                   >
-                    <MessageCircle className="w-5 h-5 text-gray-700" />
+                    <Inbox className="w-4 h-4" />
+                    <span className="hidden sm:inline text-sm font-medium">Inbox</span>
                     {candidateUnreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
                         {candidateUnreadCount > 99 ? "99+" : candidateUnreadCount}
                       </span>
                     )}
+                  </button>
+                )}
+                {role === "candidate" && (
+                  <button
+                    onClick={() => navigate("/candidate/my-jobs")}
+                    className={`inline-flex items-center gap-2 h-10 px-3 rounded-lg transition border ${
+                      location.pathname === "/candidate/my-jobs"
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                    }`}
+                    aria-label="Open my jobs"
+                  >
+                    <Briefcase className="w-4 h-4" />
+                    <span className="hidden sm:inline text-sm font-medium">My Jobs</span>
                   </button>
                 )}
                 <DropdownMenu>
@@ -203,6 +263,96 @@ export function Header({
           </div>
         </div>
       </div>
+      <Sheet open={inboxOpen} onOpenChange={setInboxOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md p-0">
+          <div className="h-full flex flex-col">
+            <SheetHeader className="p-5 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <SheetTitle className="text-lg">Inbox</SheetTitle>
+                  <SheetDescription className="text-xs mt-1">
+                    Recent conversations and updates
+                  </SheetDescription>
+                </div>
+                {candidateUnreadCount > 0 && (
+                  <Badge className="bg-red-100 text-red-700 border-red-200">
+                    {candidateUnreadCount} unread
+                  </Badge>
+                )}
+              </div>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {threadsLoading && (
+                <div className="py-8">
+                  <CircularLoader size="sm" label="Loading inbox..." />
+                </div>
+              )}
+
+              {!threadsLoading && candidateThreads.length === 0 && (
+                <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center">
+                  <MessageCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-gray-800">No conversations yet</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Employers will appear here when they message you.
+                  </p>
+                </div>
+              )}
+
+              {!threadsLoading &&
+                candidateThreads.map((thread) => (
+                  <button
+                    key={thread.id}
+                    onClick={() => {
+                      setInboxOpen(false);
+                      navigate("/candidate/messages");
+                    }}
+                    className="w-full text-left rounded-xl border border-gray-200 p-3 hover:bg-gray-50 transition"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{thread.counterpartName}</p>
+                        <p className="text-xs text-gray-600 truncate mt-1">
+                          {thread.lastMessagePreview ?? "Start the conversation"}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-gray-500 shrink-0">
+                        {formatThreadTime(thread.lastMessageAt ?? thread.createdAt)}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+            </div>
+
+            <div className="p-4 border-t border-gray-200 flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={async () => {
+                  try {
+                    await markAllMyMessagesRead();
+                    await refreshCandidateInboxData();
+                  } catch (error) {
+                    console.error("Failed to mark all messages as read", error);
+                  }
+                }}
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Mark all read
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => {
+                  setInboxOpen(false);
+                  navigate("/candidate/messages");
+                }}
+              >
+                Open messages
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }

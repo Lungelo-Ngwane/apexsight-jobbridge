@@ -1,5 +1,29 @@
 import { supabase } from "./supabase";
 
+const CANDIDATE_SAVED_JOBS_KEY_PREFIX = "candidate_saved_jobs_";
+
+function getSavedJobsStorageKey(userId: string) {
+  return `${CANDIDATE_SAVED_JOBS_KEY_PREFIX}${userId}`;
+}
+
+function parseSavedJobIds(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return Array.from(new Set(parsed.map((value) => String(value)).filter(Boolean)));
+  } catch {
+    return [];
+  }
+}
+
+async function resolveCurrentUserId() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
 async function getValidAccessToken(): Promise<string> {
   const {
     data: { session },
@@ -302,15 +326,29 @@ export async function getOpenJobs() {
 
   if (jobsError) throw jobsError;
   if (!jobs || jobs.length === 0) return [];
+  return attachEmployerDetailsToJobs(jobs);
+}
 
-  // Convert all employer_ids to strings
-const employerIds = [...new Set(jobs.map(job => String(job.employer_id)))]; // array of strings
+async function attachEmployerDetailsToJobs(jobs: any[]) {
+  if (!jobs || jobs.length === 0) return [];
 
-const { data: employers, error: empError } = await supabase
-  .from("employer_profiles")
-  .select("id, company_name, industry, logo_url")
-  .in("id", employerIds); // <-- must be an array
-if (empError) throw empError;
+  const employerIds = [...new Set(jobs.map((job) => String(job.employer_id)))];
+
+  const { data: employers, error: empError } = await supabase
+    .from("employer_profiles")
+    .select("id, company_name, industry, logo_url")
+    .in("id", employerIds);
+  if (empError) {
+    // Do not block job listing when employer metadata is restricted by RLS.
+    return jobs.map((job) => ({
+      ...job,
+      employer: {
+        company_name: "Company",
+        industry: null,
+        logo_url: null,
+      },
+    }));
+  }
 
   const resolveLogoUrl = (value: unknown): string | null => {
     const raw = String(value ?? "").trim();
@@ -322,7 +360,6 @@ if (empError) throw empError;
     return String(data?.publicUrl ?? "").trim() || null;
   };
 
-  // Map employer_id -> employer details
   const employerMap = (employers || []).reduce((acc, emp) => {
     acc[String(emp.id)] = {
       company_name: emp.company_name,
@@ -332,8 +369,7 @@ if (empError) throw empError;
     return acc;
   }, {} as Record<string, { company_name: string; industry: string | null; logo_url: string | null }>);
 
-  // Attach employer info to jobs
-  const jobsWithEmployer = jobs.map(job => ({
+  return jobs.map((job) => ({
     ...job,
     employer: {
       company_name: employerMap[String(job.employer_id)]?.company_name || "Unknown Company",
@@ -341,8 +377,57 @@ if (empError) throw empError;
       logo_url: employerMap[String(job.employer_id)]?.logo_url || null,
     }
   }));
+}
 
-  return jobsWithEmployer;
+export async function getJobsByIds(jobIds: string[]) {
+  const normalizedJobIds = Array.from(new Set((jobIds ?? []).map((id) => String(id)).filter(Boolean)));
+  if (normalizedJobIds.length === 0) return [];
+
+  const { data: jobs, error: jobsError } = await supabase
+    .from("jobs")
+    .select(`
+      id,
+      title,
+      description,
+      location,
+      employment_type,
+      experience_level,
+      is_featured,
+      featured_until,
+      created_at,
+      employer_id,
+      status
+    `)
+    .in("id", normalizedJobIds)
+    .order("created_at", { ascending: false });
+
+  if (jobsError) throw jobsError;
+  if (!jobs || jobs.length === 0) return [];
+  return attachEmployerDetailsToJobs(jobs);
+}
+
+export async function getCandidateSavedJobIds() {
+  const userId = await resolveCurrentUserId();
+  if (!userId || typeof window === "undefined") return [];
+  return parseSavedJobIds(window.localStorage.getItem(getSavedJobsStorageKey(userId)));
+}
+
+export async function setCandidateSavedJobIds(jobIds: string[]) {
+  const userId = await resolveCurrentUserId();
+  if (!userId || typeof window === "undefined") return [];
+  const normalizedJobIds = Array.from(new Set((jobIds ?? []).map((id) => String(id)).filter(Boolean)));
+  window.localStorage.setItem(getSavedJobsStorageKey(userId), JSON.stringify(normalizedJobIds));
+  return normalizedJobIds;
+}
+
+export async function toggleCandidateSavedJob(jobId: string) {
+  const normalizedId = String(jobId ?? "").trim();
+  if (!normalizedId) return [];
+  const current = await getCandidateSavedJobIds();
+  const next = current.includes(normalizedId)
+    ? current.filter((id) => id !== normalizedId)
+    : [...current, normalizedId];
+  return setCandidateSavedJobIds(next);
 }
 
 

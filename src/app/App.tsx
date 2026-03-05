@@ -11,6 +11,7 @@ import { CandidateProfile } from "@/app/components/CandidateProfile";
 import { EmployerProfile } from "@/app/components/EmployerProfile";
 import { useAuth } from './context/AuthContext';
 import CandidateJobsPage from "./components/CandidateJobsPage";
+import CandidateMyJobsPage from "./components/CandidateMyJobsPage";
 import { EmployerApp } from "./components/EmployerApp";
 import { EmployerJobsPage } from "./components/employer/EmployerJobsPage";
 import { EmployerCandidatesPage } from "./components/employer/EmployerCandidatesPage";
@@ -170,6 +171,7 @@ export default function App() {
           element={<CandidateDashboard onViewJobs={() => navigate("/candidate/jobs")} />}
         />
         <Route path="/candidate/jobs" element={<CandidateJobsPage />} />
+        <Route path="/candidate/my-jobs" element={<CandidateMyJobsPage />} />
         <Route path="/candidate/messages" element={<MessagesPage />} />
         <Route path="/candidate/profile" element={<CandidateProfile />} />
 

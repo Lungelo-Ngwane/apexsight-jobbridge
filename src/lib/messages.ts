@@ -439,3 +439,35 @@ export function subscribeToMyMessageChanges(onChanged: () => void): () => void {
     void supabase.removeChannel(channel);
   };
 }
+
+export async function markAllMyMessagesRead(): Promise<void> {
+  const actor = await getCurrentActor();
+
+  let conversationIds: string[] = [];
+  if (actor.role === "candidate" && actor.candidateProfileId) {
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("candidate_profile_id", actor.candidateProfileId);
+    if (error) throw error;
+    conversationIds = (data ?? []).map((row) => String(row.id));
+  } else if (actor.role === "employer" && actor.employerProfileId) {
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("employer_id", actor.employerProfileId);
+    if (error) throw error;
+    conversationIds = (data ?? []).map((row) => String(row.id));
+  }
+
+  if (conversationIds.length === 0) return;
+
+  const { error } = await supabase
+    .from("messages")
+    .update({ read_at: new Date().toISOString() })
+    .in("conversation_id", conversationIds)
+    .neq("sender_user_id", actor.userId)
+    .is("read_at", null);
+
+  if (error) throw error;
+}
