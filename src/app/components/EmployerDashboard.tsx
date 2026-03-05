@@ -43,7 +43,7 @@ import { UpgradeModal } from "./UpgradeModal";
 import { Skeleton } from "./ui/skeleton";
 import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { getCachedQuery, invalidateQueryCacheByPrefix } from "@/lib/queryCache";
-import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
+import { hasEmployerPaidAccess, isActiveEmployerTrial } from "@/lib/subscriptionAccess";
 
 // import { getEmployerOpenJobs } from "../../lib/employer";
 
@@ -198,6 +198,12 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const openJobs = jobs.filter((job) => job.status === 'open');
 
   const plan = profile?.plan ?? "free";
+  const trialActive = isActiveEmployerTrial(profile);
+  const trialEndsAtMs = profile?.trial_ends_at ? new Date(profile.trial_ends_at).getTime() : null;
+  const trialDaysLeft =
+    trialActive && trialEndsAtMs
+      ? Math.max(1, Math.ceil((trialEndsAtMs - Date.now()) / (1000 * 60 * 60 * 24)))
+      : null;
   const selectedPlanRaw = String(
     (profile as { selected_plan?: string | null } | null)?.selected_plan ?? "",
   ).toLowerCase();
@@ -333,9 +339,16 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Employer Dashboard</h1>
-            <p className="text-gray-600">
-              {profile?.company_name ?? "Your Company"} - Talent Acquisition
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-gray-600">
+                {profile?.company_name ?? "Your Company"} - Talent Acquisition
+              </p>
+              {trialActive && (
+                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                  Trial Active{trialDaysLeft ? ` - ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left` : ""}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <Button

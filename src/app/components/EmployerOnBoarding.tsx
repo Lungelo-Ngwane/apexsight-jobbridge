@@ -32,6 +32,14 @@ export function EmployerOnboarding({
     const pendingPlan =
         selectedPlanIntent ??
         (String(profile?.selected_plan ?? "").toLowerCase() || null);
+    const trialActive = isActiveEmployerTrial(profile);
+    const trialEndsLabel = profile?.trial_ends_at
+        ? new Date(profile.trial_ends_at).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        })
+        : null;
 
     async function completeProfile() {
         setSaving(true);
@@ -48,7 +56,6 @@ export function EmployerOnboarding({
 
     async function selectPlan(plan: string) {
         setSelectedPlanIntent(plan);
-        const trialActive = isActiveEmployerTrial(profile);
         if (trialActive) {
             await updateEmployerProfile({
                 onboarding_step: 2,
@@ -193,63 +200,87 @@ export function EmployerOnboarding({
                                     <Crown className="w-8 h-8 text-white" />
                                 </div>
                                 <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                                    Choose Your Plan
+                                    {trialActive ? "You Have a Free Trial" : "Choose Your Plan"}
                                 </h1>
                                 <p className="text-lg text-gray-600">
-                                    Start free, upgrade anytime. No credit card required.
+                                    {trialActive
+                                        ? `You have full premium access during your 15-day trial${trialEndsLabel ? ` until ${trialEndsLabel}` : ""}. No payment is needed now.`
+                                        : "Start free, upgrade anytime. No credit card required."}
                                 </p>
                             </div>
 
-                            <div className="flex flex-col md:flex-row gap-6">
-                                <PlanCard
-                                    title="Free"
-                                    price="R0"
-                                    period="forever"
-                                    description="Perfect to get started"
-                                    features={[
-                                        "1 active job posting",
-                                        "Up to 10 applicants per job",
-                                        "Basic candidate filtering",
-                                        "Email support"
-                                    ]}
-                                    icon={Briefcase}
-                                    onSelect={() => selectPlan("free")}
-                                />
+                            {trialActive ? (
+                                <Card className="border-emerald-200 bg-emerald-50 p-6">
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center">
+                                            <Sparkles className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-emerald-900">Trial benefits unlocked</h3>
+                                            <p className="text-sm text-emerald-800 mt-1">
+                                                Post jobs, browse candidates, message applicants, and use premium analytics.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        onClick={() => selectPlan("professional")}
+                                        className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    >
+                                        Continue with Free Trial
+                                    </Button>
+                                </Card>
+                            ) : (
+                                <div className="flex flex-col md:flex-row gap-6">
+                                    <PlanCard
+                                        title="Free"
+                                        price="R0"
+                                        period="forever"
+                                        description="Perfect to get started"
+                                        features={[
+                                            "1 active job posting",
+                                            "Up to 10 applicants per job",
+                                            "Basic candidate filtering",
+                                            "Email support"
+                                        ]}
+                                        icon={Briefcase}
+                                        onSelect={() => selectPlan("free")}
+                                    />
 
-                                <PlanCard
-                                    title="Starter"
-                                    price="R2,499"
-                                    period="per month"
-                                    description="For growing teams"
-                                    features={[
-                                        "5 active job postings",
-                                        "Unlimited applicants",
-                                        "Advanced skill matching",
-                                        "Priority support",
-                                        "Analytics dashboard"
-                                    ]}
-                                    icon={Zap}
-                                    highlight
-                                    badge="Most Popular"
-                                    onSelect={() => selectPlan("starter")}
-                                />
+                                    <PlanCard
+                                        title="Starter"
+                                        price="R2,499"
+                                        period="per month"
+                                        description="For growing teams"
+                                        features={[
+                                            "5 active job postings",
+                                            "Unlimited applicants",
+                                            "Advanced skill matching",
+                                            "Priority support",
+                                            "Analytics dashboard"
+                                        ]}
+                                        icon={Zap}
+                                        highlight
+                                        badge="Most Popular"
+                                        onSelect={() => selectPlan("starter")}
+                                    />
 
-                                <PlanCard
-                                    title="Enterprise"
-                                    price="Custom"
-                                    period="contact us"
-                                    description="For large organizations"
-                                    features={[
-                                        "Unlimited job postings",
-                                        "Dedicated account manager",
-                                        "Custom integrations",
-                                        "White-label options",
-                                        "SLA guarantee"
-                                    ]}
-                                    icon={Crown}
-                                    onSelect={() => selectPlan("enterprise")}
-                                />
-                            </div>
+                                    <PlanCard
+                                        title="Enterprise"
+                                        price="Custom"
+                                        period="contact us"
+                                        description="For large organizations"
+                                        features={[
+                                            "Unlimited job postings",
+                                            "Dedicated account manager",
+                                            "Custom integrations",
+                                            "White-label options",
+                                            "SLA guarantee"
+                                        ]}
+                                        icon={Crown}
+                                        onSelect={() => selectPlan("enterprise")}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 
