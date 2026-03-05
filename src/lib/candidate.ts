@@ -53,6 +53,81 @@ async function getValidAccessToken(): Promise<string> {
   return accessToken;
 }
 
+async function invokeAuthedFunction<T = unknown>(
+  functionName: string,
+  body?: Record<string, unknown>,
+): Promise<{ data: T | null; error: unknown | null }> {
+  const firstToken = await getValidAccessToken();
+  const functionsBaseUrl = `${String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "")}/functions/v1`;
+  const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "");
+
+  async function invokeWithToken(token: string) {
+    const response = await fetch(`${functionsBaseUrl}/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey,
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+
+    const payload = await response
+      .json()
+      .catch(() => null) as
+      | { code?: number; message?: string; error?: string; detail?: string }
+      | null;
+
+    if (response.ok) {
+      return { data: (payload as T) ?? null, error: null };
+    }
+
+    const message =
+      payload?.message ??
+      payload?.error ??
+      payload?.detail ??
+      `Function ${functionName} failed with status ${response.status}`;
+
+    return {
+      data: null,
+      error: {
+        status: response.status,
+        code: payload?.code ?? response.status,
+        message,
+        detail: payload?.detail ?? payload?.error ?? null,
+      },
+    };
+  }
+
+  let { data, error } = await invokeWithToken(firstToken);
+  if (!error) return { data, error: null };
+
+  const baseMessage = String((error as { message?: string } | null)?.message ?? "").toLowerCase();
+  const parsedMessage = String(
+    (error as { detail?: string | null } | null)?.detail ?? "",
+  ).toLowerCase();
+  const parsedCode = Number((error as { code?: number } | null)?.code ?? NaN);
+
+  const invalidJwt =
+    parsedCode === 401 ||
+    baseMessage.includes("invalid jwt") ||
+    parsedMessage.includes("invalid jwt");
+
+  if (!invalidJwt) {
+    return { data: null, error };
+  }
+
+  const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+  const retryToken = refreshed.session?.access_token;
+
+  if (refreshError || !retryToken) {
+    return { data: null, error };
+  }
+
+  ({ data, error } = await invokeWithToken(retryToken));
+  return { data, error };
+}
+
 export async function refreshCandidateMatchingProfile(profileId?: string) {
   if (!profileId) {
     throw new Error("Missing profile id for matching refresh.");
@@ -327,42 +402,16 @@ export async function applyForJob(jobId: string) {
   if (error) throw error;
 
   if (application?.id) {
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    let accessToken = session?.access_token;
-    const expiresAt = session?.expires_at ?? 0;
-
-    if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
-      const { data: refreshed, error: refreshError } =
-        await supabase.auth.refreshSession();
-
-      accessToken = refreshed.session?.access_token;
-
-      if (refreshError || !accessToken) {
-        throw new Error("Session expired. Please sign in again.");
-      }
-    }
-
-    if (sessionError || !accessToken) {
-      throw new Error("Not authenticated.");
-    }
-
-    const { error: invokeError } = await supabase.functions.invoke("send-notification-email", {
-      body: {
-        type: "APPLICATION_CREATED",
-        data: {
-          applicationId: application.id,
-        },
-      },
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+    const { error: notifyError } = await invokeAuthedFunction("send-notification-email", {
+      type: "APPLICATION_CREATED",
+      data: {
+        applicationId: application.id,
       },
     });
 
-    if (invokeError) throw invokeError;
+    if (notifyError) {
+      console.warn("Application created but notification email dispatch failed", notifyError);
+    }
   }
 }
 

@@ -31,6 +31,7 @@ import {
   updateApplicationStatus,
   getEmployerAnalytics,
   getEmployerPremiumDashboardInsights,
+  type EmployerRecentActivityItem,
   type EmployerCreditBalance,
   type EmployerPremiumDashboardInsights,
   type EmployerUsageSnapshot,
@@ -54,6 +55,27 @@ interface EmployerDashboardProps {
   onViewCandidates: () => void;
 }
 
+const RECENT_ACTIVITY_LIMIT = 4;
+
+function mergeRecentActivities(
+  latest: EmployerRecentActivityItem[],
+  existing: EmployerRecentActivityItem[],
+  limit = RECENT_ACTIVITY_LIMIT,
+) {
+  const combined = [...latest, ...existing];
+  const deduped = new Map<string, EmployerRecentActivityItem>();
+
+  for (const item of combined) {
+    if (!deduped.has(item.id)) {
+      deduped.set(item.id, item);
+    }
+  }
+
+  return Array.from(deduped.values())
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, limit);
+}
+
 export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashboardProps) {
   const navigate = useNavigate();
   const analyticsSectionRef = useRef<HTMLDivElement | null>(null);
@@ -74,6 +96,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const [premiumInsights, setPremiumInsights] = useState<EmployerPremiumDashboardInsights | null>(null);
   const [premiumInsightsLoading, setPremiumInsightsLoading] = useState(false);
   const showAnalyticsSkeleton = useDelayedLoading(analyticsLoading && !stats, 180);
+  const recentActivityStorageKey = user?.id ? `employer_recent_activity_${user.id}` : null;
 
   const cachePrefix = user?.id ? `employer-dashboard:${user.id}` : null;
   const keyFor = useCallback(
@@ -143,16 +166,52 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
           getEmployerPremiumDashboardInsights,
           { force },
         );
-        setPremiumInsights(data);
+        setPremiumInsights((prev) => {
+          const mergedRecentActivity = mergeRecentActivities(
+            data?.recentActivity ?? [],
+            prev?.recentActivity ?? [],
+          );
+          const nextInsights = {
+            ...data,
+            recentActivity: mergedRecentActivity,
+          };
+
+          if (recentActivityStorageKey && typeof window !== "undefined") {
+            window.localStorage.setItem(
+              recentActivityStorageKey,
+              JSON.stringify(mergedRecentActivity),
+            );
+          }
+
+          return nextInsights;
+        });
       } catch (error) {
-        setPremiumInsights(null);
         console.error("Failed to load premium dashboard insights", error);
       } finally {
         setPremiumInsightsLoading(false);
       }
     },
-    [keyFor, user],
+    [keyFor, recentActivityStorageKey, user],
   );
+
+  useEffect(() => {
+    if (!recentActivityStorageKey || typeof window === "undefined") return;
+
+    const cachedValue = window.localStorage.getItem(recentActivityStorageKey);
+    if (!cachedValue) return;
+
+    try {
+      const parsed = JSON.parse(cachedValue) as EmployerRecentActivityItem[];
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+
+      setPremiumInsights((prev) => ({
+        recentActivity: mergeRecentActivities(parsed, prev?.recentActivity ?? []),
+        talentPoolInsights: prev?.talentPoolInsights ?? [],
+      }));
+    } catch (error) {
+      console.error("Failed to parse cached employer recent activity", error);
+    }
+  }, [recentActivityStorageKey]);
 
   useEffect(() => {
     void loadDashboardMetrics();

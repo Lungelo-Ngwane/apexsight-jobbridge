@@ -27,6 +27,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         headline: "",
         bio: "",
         location: "",
+        years_experience: 0,
         experience_level: "",
         availability: "",
         preferred_job_type: "",
@@ -76,6 +77,11 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     headline: candidateProfile.headline || "",
                     bio: candidateProfile.bio || "",
                     location: candidateProfile.location || "",
+                    years_experience:
+                        candidateProfile.years_experience !== null &&
+                            candidateProfile.years_experience !== undefined
+                            ? Number(candidateProfile.years_experience)
+                            : 0,
                     experience_level: candidateProfile.experience_level || "",
                     availability: candidateProfile.availability || "",
                     preferred_job_type: candidateProfile.preferred_job_type || "",
@@ -262,6 +268,21 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         <div>
                             <Label>Experience Level</Label>
                             <Input value={profile.experience_level} onChange={(e) => setProfile({ ...profile, experience_level: e.target.value })} />
+                        </div>
+
+                        <div>
+                            <Label>Years of Experience</Label>
+                            <Input
+                                type="number"
+                                min={0}
+                                value={profile.years_experience}
+                                onChange={(e) =>
+                                    setProfile({
+                                        ...profile,
+                                        years_experience: Number(e.target.value || 0),
+                                    })
+                                }
+                            />
                         </div>
 
                         <div>

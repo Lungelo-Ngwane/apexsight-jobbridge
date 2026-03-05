@@ -155,23 +155,16 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
 
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Missing access token" }), {
-        status: 401,
-        headers,
-      });
-    }
+    let actor: { id: string } | null = null;
+    if (token) {
+      const {
+        data: { user },
+        error: actorError,
+      } = await supabase.auth.getUser(token);
 
-    const {
-      data: { user: actor },
-      error: actorError,
-    } = await supabase.auth.getUser(token);
-
-    if (actorError || !actor) {
-      return new Response(JSON.stringify({ error: "Invalid user session" }), {
-        status: 401,
-        headers,
-      });
+      if (!actorError && user) {
+        actor = { id: user.id };
+      }
     }
 
     const payload = await req.json();
@@ -227,14 +220,14 @@ serve(async (req) => {
     const candidateUserId = application.candidate_profiles?.user_id;
     const employerUserId = application.jobs?.employer_profiles?.user_id;
 
-    if (type === "APPLICATION_CREATED" && candidateUserId !== actor.id) {
+    if (type === "APPLICATION_CREATED" && actor && candidateUserId !== actor.id) {
       return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
         status: 403,
         headers,
       });
     }
 
-    if (type === "CANDIDATE_SHORTLISTED" && employerUserId !== actor.id) {
+    if (type === "CANDIDATE_SHORTLISTED" && actor && employerUserId !== actor.id) {
       return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
         status: 403,
         headers,

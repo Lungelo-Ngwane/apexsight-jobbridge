@@ -509,29 +509,6 @@ export async function updateApplicationStatus(
   applicationId: string,
   status: "shortlisted" | "interview" | "rejected" | "hired",
 ) {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  let accessToken = session?.access_token;
-  const expiresAt = session?.expires_at ?? 0;
-
-  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
-    const { data: refreshed, error: refreshError } =
-      await supabase.auth.refreshSession();
-
-    accessToken = refreshed.session?.access_token;
-
-    if (refreshError || !accessToken) {
-      throw new Error("Session expired. Please sign in again.");
-    }
-  }
-
-  if (sessionError || !accessToken) {
-    throw new Error("Not authenticated.");
-  }
-
   const { error } = await supabase
     .from("job_applications")
     .update({ status })
@@ -539,22 +516,23 @@ export async function updateApplicationStatus(
 
   if (error) throw error;
   if (status === "shortlisted") {
-    const { error: invokeError } = await supabase.functions.invoke(
+    const { error: invokeError } = await invokeAuthedFunction(
       "send-notification-email",
       {
-        body: {
-          type: "CANDIDATE_SHORTLISTED",
-          data: {
-            applicationId,
-          },
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+        type: "CANDIDATE_SHORTLISTED",
+        data: {
+          applicationId,
         },
       },
     );
 
-    if (invokeError) throw invokeError;
+    if (invokeError) {
+      const message =
+        (invokeError as { message?: string } | null)?.message ??
+        (invokeError as { detail?: string | null } | null)?.detail ??
+        "Failed to send shortlisted notification.";
+      throw new Error(String(message));
+    }
   }
 }
 
