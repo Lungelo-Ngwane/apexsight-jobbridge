@@ -556,7 +556,7 @@ function JobCard({
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+              <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
                 {job.employer.logo_url && !logoBroken ? (
                   <img
                     src={job.employer.logo_url}
@@ -565,7 +565,7 @@ function JobCard({
                     onError={() => setLogoBroken(true)}
                   />
                 ) : (
-                  <Building2 className="w-5 h-5 text-white" />
+                  <Building2 className="w-5 h-5 text-blue-600" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -801,7 +801,7 @@ function JobDetailsView({
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <Card className="p-6 sm:p-8 mb-6 border-gray-200 shadow-lg">
           <div className="flex items-center gap-4 mb-3">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm">
               {job.employer.logo_url && !logoBroken ? (
                 <img
                   src={job.employer.logo_url}
@@ -810,7 +810,7 @@ function JobDetailsView({
                   onError={() => setLogoBroken(true)}
                 />
               ) : (
-                <Building2 className="w-7 h-7 text-white" />
+                <Building2 className="w-7 h-7 text-blue-600" />
               )}
             </div>
             <div>
