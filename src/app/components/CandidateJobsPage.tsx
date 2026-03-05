@@ -9,6 +9,7 @@ import {
   SlidersHorizontal,
   MapPin,
   Briefcase,
+  Gauge,
   DollarSign,
   Clock,
   Building2,
@@ -607,6 +608,7 @@ function JobCard({
             {job.experience_level && (
               <>
                 <span className="text-gray-400">|</span>
+                <Gauge className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span>{job.experience_level}</span>
               </>
             )}
@@ -833,6 +835,12 @@ function JobDetailsView({
               <Briefcase className="w-4 h-4 text-gray-400" />
               {job.employment_type || "Not specified"}
             </div>
+            {job.experience_level && (
+              <div className="flex items-center gap-1.5">
+                <Gauge className="w-4 h-4 text-gray-400" />
+                {job.experience_level}
+              </div>
+            )}
           </div>
         </Card>
 
