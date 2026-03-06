@@ -147,9 +147,12 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "https://apexsight-jobbridge-3c9eb.ondigitalocean.app"
+site_url = "https://jobbridge.apexsight.co.za"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = [
+  "https://jobbridge.apexsight.co.za",
+  "https://jobbridge.apexsight.co.za/",
+  "https://jobbridge.apexsight.co.za/*",
   "https://apexsight-jobbridge-3c9eb.ondigitalocean.app",
   "http://127.0.0.1:3000",
   "https://127.0.0.1:3000",

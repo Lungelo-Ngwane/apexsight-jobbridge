@@ -11,7 +11,7 @@ const appBaseUrl =
   Deno.env.get("FRONTEND_URL") ??
   Deno.env.get("APP_URL") ??
   Deno.env.get("VITE_APP_URL") ??
-  "https://apexsight-jobbridge-3c9eb.ondigitalocean.app";
+  "https://jobbridge.apexsight.co.za";
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error(

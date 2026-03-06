@@ -2,7 +2,7 @@ import { supabase } from "./supabase";
 
 const APP_BASE_URL = (
   import.meta.env.VITE_APP_URL ??
-  "https://apexsight-jobbridge-3c9eb.ondigitalocean.app"
+  "https://jobbridge.apexsight.co.za"
 ).replace(/\/+$/, "");
 
 /**
