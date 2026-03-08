@@ -93,24 +93,13 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
+    let userId: string | null = null;
 
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Missing access token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid user session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (token) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser(token);
+      userId = user?.id ?? null;
     }
 
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
@@ -148,7 +137,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (String(profile.user_id) !== String(user.id)) {
+    if (userId && String(profile.user_id) !== String(userId)) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -410,7 +399,7 @@ ${resumeInput.slice(0, 50000)}
       .from("candidate_profiles")
       .update(updatePayload)
       .eq("id", profile.id)
-      .eq("user_id", user.id);
+      .eq("user_id", profile.user_id);
 
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), {

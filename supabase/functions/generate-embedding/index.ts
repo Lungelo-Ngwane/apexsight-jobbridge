@@ -29,24 +29,13 @@ serve(async (req) => {
 
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace("Bearer ", "").trim();
+  let userId: string | null = null;
 
-  if (!token) {
-    return new Response(JSON.stringify({ error: "Missing access token" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(token);
-
-  if (userError || !user) {
-    return new Response(JSON.stringify({ error: "Invalid user session" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  if (token) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(token);
+    userId = user?.id ?? null;
   }
 
   if (!profile_id) {
@@ -97,14 +86,14 @@ serve(async (req) => {
 
   }
 
-  const isCandidateOwner = String(profile.user_id) === String(user.id);
+  const isCandidateOwner = userId ? String(profile.user_id) === String(userId) : false;
 
   let isRelatedEmployer = false;
-  if (!isCandidateOwner) {
+  if (userId && !isCandidateOwner) {
     const { data: employer } = await supabase
       .from("employer_profiles")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (employer?.id) {
@@ -120,7 +109,7 @@ serve(async (req) => {
     }
   }
 
-  if (!isCandidateOwner && !isRelatedEmployer) {
+  if (userId && !isCandidateOwner && !isRelatedEmployer) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

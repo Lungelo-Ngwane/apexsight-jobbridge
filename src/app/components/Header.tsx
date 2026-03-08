@@ -5,6 +5,13 @@ import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, In
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/app/components/ui/sheet";
 import {
   DropdownMenu,
@@ -46,6 +53,7 @@ export function Header({
   const [inboxOpen, setInboxOpen] = useState(false);
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [candidateThreads, setCandidateThreads] = useState<ConversationThread[]>([]);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const isAuthenticated = !!user && !!role;
 
@@ -67,6 +75,20 @@ export function Header({
       return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
     return date.toLocaleDateString();
+  };
+
+  const handleBrandClick = () => {
+    if (role === "candidate") {
+      navigate("/candidate/dashboard");
+      return;
+    }
+
+    if (role === "employer") {
+      navigate("/employer/dashboard");
+      return;
+    }
+
+    navigate("/");
   };
 
   const refreshCandidateInboxData = () => {
@@ -131,13 +153,18 @@ export function Header({
         <div className="flex items-center justify-between gap-3 sm:gap-8">
           {/* Logo + Products */}
           <div className="flex items-center gap-3 sm:gap-6 min-w-0">
-            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={handleBrandClick}
+              className="flex items-center gap-2 sm:gap-2.5 min-w-0 rounded-lg px-1 py-1 text-left hover:bg-gray-50"
+              aria-label="Go to dashboard"
+            >
               <img src={logo} alt="ApexSight Logo" className="h-8 sm:h-10 w-auto shrink-0" />
               <div className="flex flex-col">
                 <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">ApexSight</h1>
                 <p className="hidden sm:block text-[10px] text-gray-500 leading-none">Talent Infrastructure</p>
               </div>
-            </div>
+            </button>
 
             {isAuthenticated && role && (
               <div className="hidden md:flex items-center bg-gray-100 rounded-lg p-1">
@@ -245,7 +272,7 @@ export function Header({
                       Profile Settings
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSupportOpen(true)}>
                       <HelpCircle className="w-4 h-4 mr-2" />
                       Help & Support
                     </DropdownMenuItem>
@@ -353,6 +380,57 @@ export function Header({
           </div>
         </SheetContent>
       </Sheet>
+      <Dialog open={supportOpen} onOpenChange={setSupportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Help & Support</DialogTitle>
+            <DialogDescription>
+              Quick answers and ways to contact the ApexSight support team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">Common questions</h3>
+              <div className="mt-3 space-y-3 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium text-gray-900">I forgot my password</p>
+                  <p>Use the Forgot Password link on the sign-in form to receive a reset email.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">How do I complete my profile?</p>
+                  <p>Open your profile from the top-right menu and fill in your details, skills, and CV.</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">How can I get my Overall Readiness Score to 100%?</p>
+                  <p>
+                    Complete your full profile, add your professional summary, location, experience, at least one skill,
+                    upload your CV, and add certifications or assessment activity. The score increases as more of these
+                    sections are completed.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">Contact support</h3>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => window.location.assign("mailto:support@apexsight.co.za")}
+                >
+                  Email Support
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.assign("mailto:support@apexsight.co.za?subject=ApexSight%20Support%20Request")}
+                >
+                  Report an Issue
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

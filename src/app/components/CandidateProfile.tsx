@@ -24,6 +24,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
     const [profile, setProfile] = useState({
         full_name: "",
+        surname: "",
         headline: "",
         bio: "",
         location: "",
@@ -32,6 +33,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         availability: "",
         preferred_job_type: "",
         work_mode: "",
+        date_of_birth: "",
+        id_number: "",
+        gender: "",
+        contact_number: "",
     });
 
     const [skills, setSkills] = useState<{ id?: string; skill_id?: string; skill: string; level?: string }[]>([]);
@@ -41,7 +46,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const [loading, setLoading] = useState(true);
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
-    const resolveCandidateProfileId = useCallback(async () => {
+    const resolveCandidateProfileId = useCallback(async (createIfMissing = false) => {
         if (!user) return null;
         if (candidateProfileId) return candidateProfileId;
 
@@ -52,9 +57,44 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             .maybeSingle();
 
         const id = candidateProfile?.id ? String(candidateProfile.id) : null;
-        if (id) setCandidateProfileId(id);
-        return id;
-    }, [candidateProfileId, user]);
+        if (id) {
+            setCandidateProfileId(id);
+            return id;
+        }
+
+        if (!createIfMissing) return null;
+
+        const { data: createdProfile, error: createError } = await supabase
+            .from("candidate_profiles")
+            .insert({
+                user_id: user.id,
+                full_name: String(profile.full_name ?? user.user_metadata?.full_name ?? user.email ?? "").trim(),
+                surname: profile.surname || null,
+                headline: profile.headline || null,
+                bio: profile.bio || null,
+                location: profile.location || null,
+                years_experience: Number(profile.years_experience ?? 0),
+                experience_level: profile.experience_level || null,
+                availability: profile.availability || null,
+                preferred_job_type: profile.preferred_job_type || null,
+                work_mode: profile.work_mode || null,
+                date_of_birth: profile.date_of_birth || null,
+                id_number: profile.id_number || null,
+                gender: profile.gender || null,
+                contact_number: profile.contact_number || null,
+            })
+            .select("id")
+            .single();
+
+        if (createError || !createdProfile?.id) {
+            console.error("Failed to create candidate profile", createError);
+            return null;
+        }
+
+        const createdId = String(createdProfile.id);
+        setCandidateProfileId(createdId);
+        return createdId;
+    }, [candidateProfileId, profile, user]);
 
     // Fetch profile and skills
     useEffect(() => {
@@ -74,6 +114,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 setCandidateProfileId(String(candidateProfile.id));
                 setProfile({
                     full_name: candidateProfile.full_name || "",
+                    surname: candidateProfile.surname || "",
                     headline: candidateProfile.headline || "",
                     bio: candidateProfile.bio || "",
                     location: candidateProfile.location || "",
@@ -86,6 +127,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     availability: candidateProfile.availability || "",
                     preferred_job_type: candidateProfile.preferred_job_type || "",
                     work_mode: candidateProfile.work_mode || "",
+                    date_of_birth: candidateProfile.date_of_birth || "",
+                    id_number: candidateProfile.id_number || "",
+                    gender: candidateProfile.gender || "",
+                    contact_number: candidateProfile.contact_number || "",
                 });
 
                 // Fetch candidate skills
@@ -127,7 +172,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         if (skills.some((s) => s.skill_id === skill.id)) return;
 
         // Get candidate_profile_id
-        const profileId = await resolveCandidateProfileId();
+        const profileId = await resolveCandidateProfileId(true);
         if (!profileId) {
             showFeedback(
                 "Profile not found",
@@ -196,8 +241,16 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const handleSaveProfile = async () => {
         if (!user) return;
 
-        const updateData = { ...profile, updated_at: new Date().toISOString() };
-        const profileId = await resolveCandidateProfileId();
+        const updateData = {
+            ...profile,
+            date_of_birth: profile.date_of_birth || null,
+            id_number: profile.id_number || null,
+            gender: profile.gender || null,
+            contact_number: profile.contact_number || null,
+            surname: profile.surname || null,
+            updated_at: new Date().toISOString(),
+        };
+        const profileId = await resolveCandidateProfileId(true);
         let finalProfileId = profileId;
 
         if (profileId) {
@@ -218,10 +271,28 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             );
         }
 
+        const normalizedFullName = String(profile.full_name ?? "").trim();
+        const normalizedSurname = String(profile.surname ?? "").trim();
+        const combinedDisplayName = [normalizedFullName, normalizedSurname].filter(Boolean).join(" ").trim();
+        if (combinedDisplayName) {
+            const { error: metadataError } = await supabase.auth.updateUser({
+                data: {
+                    full_name: combinedDisplayName,
+                },
+            });
+
+            if (metadataError) {
+                console.error("Failed to sync auth user metadata after saving profile", metadataError);
+            }
+        }
+
         showFeedback(
             "Profile saved",
             "Your profile updates were saved successfully.",
         );
+        window.setTimeout(() => {
+            navigate("/candidate/dashboard");
+        }, 300);
     };
 
     if (loading) {
@@ -238,36 +309,102 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
                 <Button variant="ghost" onClick={handleBack} className="mb-4">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Dashboard
                 </Button>
 
                 {/* Profile Info */}
                 <Card className="p-6 border-gray-200">
                     <h2 className="text-lg font-semibold mb-4">Profile Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                            <Label>Full Name</Label>
-                            <Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />
+                        <div>
+                            <Label>Full Names</Label>
+                            <Input
+                                placeholder="e.g. Thando Siphesihle"
+                                value={profile.full_name}
+                                onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Surname</Label>
+                            <Input
+                                placeholder="e.g. Mokoena"
+                                value={profile.surname}
+                                onChange={(e) => setProfile({ ...profile, surname: e.target.value })}
+                            />
                         </div>
 
                         <div className="md:col-span-2">
-                            <Label>Professional Headline</Label>
-                            <Input value={profile.headline} onChange={(e) => setProfile({ ...profile, headline: e.target.value })} />
+                            <Label>Professional Title</Label>
+                            <Input
+                                placeholder="e.g. Junior Data Analyst"
+                                value={profile.headline}
+                                onChange={(e) => setProfile({ ...profile, headline: e.target.value })}
+                            />
                         </div>
 
                         <div className="md:col-span-2">
-                            <Label>About Me</Label>
-                            <Textarea rows={5} value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} />
+                            <Label>Professional Summary</Label>
+                            <Textarea
+                                rows={5}
+                                placeholder="Tell employers about your background, strengths, and the kind of work you are looking for."
+                                value={profile.bio}
+                                onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Date of Birth</Label>
+                            <Input
+                                type="date"
+                                value={profile.date_of_birth}
+                                onChange={(e) => setProfile({ ...profile, date_of_birth: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <Label>ID Number</Label>
+                            <Input
+                                placeholder="e.g. 9901015800087"
+                                value={profile.id_number}
+                                onChange={(e) => setProfile({ ...profile, id_number: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Gender</Label>
+                            <Input
+                                placeholder="e.g. Female"
+                                value={profile.gender}
+                                onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Contact Number</Label>
+                            <Input
+                                placeholder="e.g. 071 234 5678"
+                                value={profile.contact_number}
+                                onChange={(e) => setProfile({ ...profile, contact_number: e.target.value })}
+                            />
                         </div>
 
                         <div>
                             <Label>Location</Label>
-                            <Input value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} />
+                            <Input
+                                placeholder="e.g. Johannesburg"
+                                value={profile.location}
+                                onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                            />
                         </div>
 
                         <div>
                             <Label>Experience Level</Label>
-                            <Input value={profile.experience_level} onChange={(e) => setProfile({ ...profile, experience_level: e.target.value })} />
+                            <Input
+                                placeholder="e.g. Entry level"
+                                value={profile.experience_level}
+                                onChange={(e) => setProfile({ ...profile, experience_level: e.target.value })}
+                            />
                         </div>
 
                         <div>
@@ -287,17 +424,29 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
                         <div>
                             <Label>Availability</Label>
-                            <Input value={profile.availability} onChange={(e) => setProfile({ ...profile, availability: e.target.value })} />
+                            <Input
+                                placeholder="e.g. Immediately available"
+                                value={profile.availability}
+                                onChange={(e) => setProfile({ ...profile, availability: e.target.value })}
+                            />
                         </div>
 
                         <div>
                             <Label>Preferred Job Type</Label>
-                            <Input value={profile.preferred_job_type} onChange={(e) => setProfile({ ...profile, preferred_job_type: e.target.value })} />
+                            <Input
+                                placeholder="e.g. Full-time"
+                                value={profile.preferred_job_type}
+                                onChange={(e) => setProfile({ ...profile, preferred_job_type: e.target.value })}
+                            />
                         </div>
 
                         <div>
                             <Label>Work Mode</Label>
-                            <Input value={profile.work_mode} onChange={(e) => setProfile({ ...profile, work_mode: e.target.value })} />
+                            <Input
+                                placeholder="e.g. Hybrid"
+                                value={profile.work_mode}
+                                onChange={(e) => setProfile({ ...profile, work_mode: e.target.value })}
+                            />
                         </div>
                     </div>
                 </Card>
@@ -309,7 +458,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         <h2 className="text-lg font-semibold">Skills</h2>
                         <div className="flex gap-2">
                             <Input
-                                placeholder="Search skill..."
+                                placeholder="Type a skill name"
                                 value={newSkill}
                                 onChange={(e) => setNewSkill(e.target.value)}
                             />
