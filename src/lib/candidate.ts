@@ -158,22 +158,35 @@ export async function refreshCandidateMatchingProfile(profileId?: string) {
   if (!profileId) {
     throw new Error("Missing profile id for matching refresh.");
   }
+  const analyzeResult = await invokeAuthedFunction<{
+    success?: boolean;
+    inserted_skills?: number;
+    extracted_skills?: number;
+  }>("analyze-candidate-profile", {
+    profile_id: profileId,
+  });
 
-  async function runWithCurrentSession() {
-    // 1) Parse/refresh structured candidate data from CV + profile text.
-    const { error: analyzeError } = await supabase.functions.invoke("analyze-candidate-profile", {
-      body: { profile_id: profileId },
-    });
-    if (analyzeError) throw analyzeError;
-
-    // 2) Regenerate candidate embedding with enriched fields.
-    const { error: embeddingError } = await supabase.functions.invoke("generate-embedding", {
-      body: { profile_id: profileId },
-    });
-    if (embeddingError) throw embeddingError;
+  if (analyzeResult.error) {
+    const message =
+      (analyzeResult.error as { message?: string } | null)?.message ??
+      (analyzeResult.error as { detail?: string | null } | null)?.detail ??
+      "Failed to analyze candidate profile.";
+    throw new Error(String(message));
   }
 
-  await runWithCurrentSession();
+  const embeddingResult = await invokeAuthedFunction("generate-embedding", {
+    profile_id: profileId,
+  });
+
+  if (embeddingResult.error) {
+    const message =
+      (embeddingResult.error as { message?: string } | null)?.message ??
+      (embeddingResult.error as { detail?: string | null } | null)?.detail ??
+      "Failed to generate candidate embedding.";
+    throw new Error(String(message));
+  }
+
+  return analyzeResult.data;
 }
 
 export async function getCandidateDashboardData() {
@@ -183,11 +196,18 @@ export async function getCandidateDashboardData() {
       `
       id,
       full_name,
+      surname,
       headline,
       bio,
       location,
       years_experience,
+      date_of_birth,
+      id_number,
+      gender,
+      contact_number,
       cv_url,
+      resume_analysis,
+      resume_last_analyzed_at,
       candidate_skills (
         skill,
         level

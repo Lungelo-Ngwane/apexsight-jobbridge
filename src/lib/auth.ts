@@ -121,3 +121,23 @@ export async function signInWithGoogle() {
     throw new Error(error.message);
   }
 }
+
+export async function requestPasswordReset(email: string) {
+  const normalizedEmail = String(email ?? "").trim();
+  if (!normalizedEmail) {
+    throw new Error("Enter your email address to reset your password.");
+  }
+
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/reset-password`
+      : `${APP_BASE_URL}/reset-password`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

@@ -14,6 +14,7 @@ import {
 } from "@/app/components/ui/dialog";
 import {
   Award,
+  AlertCircle,
   CheckCircle2,
   Clock,
   TrendingUp,
@@ -21,11 +22,15 @@ import {
   BookOpen,
   ArrowRight,
   Star,
-  Briefcase
+  Briefcase,
+  Circle,
+  FileText,
+  MapPin,
+  UserCircle2
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { applyForJob, uploadCandidateCV } from "../../lib/candidate";
-import { calculateProfileCompletion } from "@/lib/profileCompletion";
+import { calculateProfileCompletion, isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
 import { AddSkillModal } from "./AddSkillModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { useNavigate } from "react-router-dom";
@@ -108,6 +113,9 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const assessmentRows = Array.isArray(profile?.candidate_assessments)
     ? profile.candidate_assessments
     : [];
+  const resumeAnalysis = profile?.resume_analysis ?? null;
+  const cvSkillsAdded = Number(resumeAnalysis?.skills_added ?? 0);
+  const cvWasAnalyzed = Boolean(profile?.resume_last_analyzed_at);
 
   const scoreFromLevel = (level?: string | null) => {
     const normalized = String(level ?? "").toLowerCase();
@@ -120,6 +128,41 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const completion = profile
     ? calculateProfileCompletion(profile)
     : 0;
+  const profileReady = isCandidateProfileReadyForApplication(profile);
+  const candidateDisplayName = [profile?.full_name, profile?.surname]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+  const onboardingChecks = [
+    {
+      label: "Add your basic details",
+      done: Boolean(
+        String(profile?.full_name ?? "").trim() &&
+        String(profile?.headline ?? "").trim() &&
+        String(profile?.location ?? "").trim(),
+      ),
+      icon: UserCircle2,
+    },
+    {
+      label: "Add at least one skill",
+      done: Array.isArray(profile?.candidate_skills) && profile.candidate_skills.length > 0,
+      icon: Star,
+    },
+    {
+      label: "Upload your CV",
+      done: Boolean(String(profile?.cv_url ?? "").trim()),
+      icon: FileText,
+    },
+    {
+      label: "Add experience information",
+      done: Boolean(
+        String(profile?.experience_level ?? "").trim() ||
+        profile?.years_experience !== null && profile?.years_experience !== undefined,
+      ),
+      icon: Briefcase,
+    },
+  ];
+  const completedChecks = onboardingChecks.filter((item) => item.done).length;
 
   // const applicantCount = job.job_applications.length;
   // const shortlistedCount = job.job_applications.filter(
@@ -140,12 +183,79 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {profile?.full_name}
+            Welcome, {candidateDisplayName || profile?.full_name}
           </h1>
 
           <p className="text-gray-600">Your skills journey continues. Keep building your verified profile.</p>
 
         </div>
+
+        {!profileReady && (
+          <Card className="mb-8 overflow-hidden border-0 shadow-xl shadow-blue-200/40">
+            <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 p-6 text-white">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">
+                    Candidate Setup
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold">Complete Your Profile</h2>
+                  <p className="mt-2 text-sm text-blue-100">
+                    Finish your profile to unlock stronger job matches, improve your visibility to employers,
+                    and make your application-ready score count.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+                    <span className="rounded-full bg-white/15 px-3 py-1 font-medium">
+                      {completion}% complete
+                    </span>
+                    <span className="rounded-full bg-white/15 px-3 py-1 font-medium">
+                      {completedChecks} of {onboardingChecks.length} setup steps done
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 sm:min-w-[220px]">
+                  <Button
+                    className="bg-white text-blue-700 hover:bg-blue-50"
+                    onClick={() => navigate("/candidate/profile")}
+                  >
+                    Complete Profile
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                  <p className="text-xs text-blue-100">
+                    Add your details, skills, and CV before focusing on messages.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 bg-white p-6 md:grid-cols-2">
+              {onboardingChecks.map((item) => (
+                <div
+                  key={item.label}
+                  className={`flex items-center gap-3 rounded-xl border p-4 ${
+                    item.done
+                      ? "border-emerald-200 bg-emerald-50"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
+                >
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                      item.done ? "bg-emerald-600 text-white" : "bg-white text-gray-500"
+                    }`}
+                  >
+                    {item.done ? <CheckCircle2 className="w-5 h-5" /> : <item.icon className="w-5 h-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold ${item.done ? "text-emerald-900" : "text-gray-900"}`}>
+                      {item.label}
+                    </p>
+                    <p className={`text-xs ${item.done ? "text-emerald-700" : "text-gray-500"}`}>
+                      {item.done ? "Completed" : "Still needed"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Readiness Score Card */}
         <Card className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-8 mb-8 border-0">
@@ -362,8 +472,12 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                   </div>
                 ))}
 
-                <Button variant="ghost" className="w-full mt-4 text-blue-600">
-                  View All Certificates
+                <Button
+                  variant="ghost"
+                  className="w-full mt-4 text-blue-600"
+                  onClick={() => navigate("/candidate/profile")}
+                >
+                  Upload Certificate Details
                 </Button>
               </Card>
             </div>
@@ -388,10 +502,25 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 )}
 
                 {/* Upload */}
+                <label className="block cursor-pointer" htmlFor="candidate-cv-upload">
+                  <div className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-4 text-center transition hover:bg-blue-100">
+                    <p className="text-sm font-medium text-blue-700">
+                      {cvUploading ? "Uploading CV..." : "Upload CV"}
+                    </p>
+                    <p className="mt-1 text-xs text-blue-600">
+                      Select a file or click here to upload your CV
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Accepted: PDF, DOC, DOCX, TXT
+                    </p>
+                  </div>
+                </label>
                 <input
+                  id="candidate-cv-upload"
                   type="file"
                   accept=".pdf,.doc,.docx,.txt"
                   disabled={cvUploading}
+                  className="sr-only"
                   onChange={async (e) => {
                     if (!e.target.files?.[0]) return;
 
@@ -406,6 +535,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                       console.error("CV upload failed", err);
                     } finally {
                       setCvUploading(false);
+                      e.currentTarget.value = "";
                     }
                   }}
                 />
@@ -451,31 +581,39 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             </div>
 
             {/* Quick Actions */}
-            <Card className="bg-blue-50 border-blue-200 p-6">
+            <Card className={`${profileReady ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"} p-6`}>
               <div className="flex items-start gap-3 mb-4">
-                <Star className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                {profileReady ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <Circle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                )}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Boost Your Profile</h3>
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {profileReady ? "Your Profile Is Ready" : "Profile Progress"}
+                  </h3>
                   <p className="text-sm text-gray-600">
-                    Complete your profile to increase visibility to employers
+                    {profileReady
+                      ? "Your profile is application-ready. You can keep improving it while you apply for jobs."
+                      : `Complete your profile to increase visibility to employers. You're currently ${completion}% done.`}
                   </p>
                 </div>
               </div>
               <Button
-                className="w-full bg-blue-600"
+                className={`w-full ${profileReady ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"} text-white`}
                 onClick={() => navigate("/candidate/profile")}
               >
-                {completion < 100
-                  ? `Complete Profile (${completion}%)`
-                  : "View Profile"}
+                {profileReady ? "Improve Profile" : `Complete Profile (${completion}%)`}
               </Button>
-              <Button
-                variant="outline"
-                className="w-full mt-3"
-                onClick={() => navigate("/candidate/messages")}
-              >
-                Open Messages
-              </Button>
+              {profileReady && (
+                <Button
+                  variant="outline"
+                  className="w-full mt-3"
+                  onClick={() => navigate("/candidate/messages")}
+                >
+                  Open Messages
+                </Button>
+              )}
             </Card>
           </div>
         </div>

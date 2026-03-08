@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { Header } from '@/app/components/Header';
 import Login from '@/app/components/Login';
@@ -20,6 +20,16 @@ import { EmployerAddonsPage } from "./components/employer/EmployerAddonsPage";
 import { EmployerSettingsPage } from "./components/employer/EmployerSettingsPage";
 import { MessagesPage } from "./components/messages/MessagesPage";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 // import { useAuth } from '../context/AuthContext'; // adjust path
 
 type View = 'home' | 'candidate-dashboard' | 'employer-dashboard';
@@ -42,6 +52,11 @@ export default function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<"login" | "register">("login");
   const [authInitialRole, setAuthInitialRole] = useState<"candidate" | "employer">("candidate");
+  const [showPasswordRecoveryModal, setShowPasswordRecoveryModal] = useState(false);
+  const [recoveryPassword, setRecoveryPassword] = useState("");
+  const [recoveryPasswordConfirm, setRecoveryPasswordConfirm] = useState("");
+  const [recoverySaving, setRecoverySaving] = useState(false);
+  const location = useLocation();
 
   // useEffect(() => {
   //   if (loading) return;
@@ -59,8 +74,14 @@ export default function App() {
 
   useEffect(() => {
     if (loading) return;
-    const publicPaths = ["/", "/skilllink", "/jobbridge"];
+    const publicPaths = ["/", "/skilllink", "/jobbridge", "/reset-password"];
     const currentPath = window.location.pathname;
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const isRecoveryFlow = currentPath === "/reset-password" || hashParams.get("type") === "recovery";
+
+    if (isRecoveryFlow) {
+      return;
+    }
 
     // Only redirect on initial load, not every role change
     if (!user) {
@@ -102,6 +123,11 @@ export default function App() {
     setShowLoginModal(true);
   };
 
+  const openContextualRegisterModal = () => {
+    const path = window.location.pathname.toLowerCase();
+    openRegisterModal(path === "/jobbridge" ? "employer" : "candidate");
+  };
+
   const handleLoginSuccess = async (resolvedRole?: "candidate" | "employer" | null) => {
     setShowLoginModal(false);
 
@@ -133,6 +159,48 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (
+      location.pathname === "/reset-password" ||
+      hashParams.get("type") === "recovery"
+    ) {
+      setShowPasswordRecoveryModal(true);
+    }
+  }, [location.pathname]);
+
+  async function handlePasswordRecoverySubmit() {
+    if (!recoveryPassword || recoveryPassword.length < 8) {
+      window.alert("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (recoveryPassword !== recoveryPasswordConfirm) {
+      window.alert("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setRecoverySaving(true);
+      const { error } = await supabase.auth.updateUser({
+        password: recoveryPassword,
+      });
+
+      if (error) throw error;
+
+      setShowPasswordRecoveryModal(false);
+      setRecoveryPassword("");
+      setRecoveryPasswordConfirm("");
+      navigate("/", { replace: true });
+      window.alert("Your password has been updated. You can now sign in.");
+    } catch (error) {
+      console.error("Failed to update password", error);
+      window.alert("We couldn't update your password right now. Please try the reset link again.");
+    } finally {
+      setRecoverySaving(false);
+    }
+  }
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -140,7 +208,7 @@ export default function App() {
         currentProduct={getCurrentProduct()}
         userType={role}                      // ← now from context
         onSignInClick={openLoginModal}
-        onGetStartedClick={openLoginModal}
+        onGetStartedClick={openContextualRegisterModal}
         onProfileClick={handleProfileClick}
       />
 
@@ -158,12 +226,25 @@ export default function App() {
           }
         />
         <Route
+          path="/reset-password"
+          element={
+            <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4">
+              <div className="max-w-md text-center">
+                <h1 className="text-2xl font-bold text-gray-900">Reset your password</h1>
+                <p className="mt-2 text-sm text-gray-600">
+                  Use the password dialog to finish setting your new password.
+                </p>
+              </div>
+            </div>
+          }
+        />
+        <Route
           path="/skilllink"
-          element={<SkillLinkLanding onGetStarted={openLoginModal} />}
+          element={<SkillLinkLanding onGetStarted={() => openRegisterModal("candidate")} />}
         />
         <Route
           path="/jobbridge"
-          element={<JobBridgeLanding onGetStarted={openLoginModal} />}
+          element={<JobBridgeLanding onGetStarted={() => openRegisterModal("employer")} />}
         />
 
         <Route
@@ -212,6 +293,38 @@ export default function App() {
           </div>
         </div>
       )}
+      <Dialog open={showPasswordRecoveryModal} onOpenChange={setShowPasswordRecoveryModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set a new password</DialogTitle>
+            <DialogDescription>
+              Enter your new password to finish resetting your account access.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              type="password"
+              placeholder="New password"
+              value={recoveryPassword}
+              onChange={(e) => setRecoveryPassword(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="Confirm new password"
+              value={recoveryPasswordConfirm}
+              onChange={(e) => setRecoveryPasswordConfirm(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordRecoveryModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePasswordRecoverySubmit} disabled={recoverySaving}>
+              {recoverySaving ? "Saving..." : "Update Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

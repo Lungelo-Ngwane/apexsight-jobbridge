@@ -145,7 +145,7 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
 
                 {/* Header */}
                 <Button variant="ghost" onClick={handleBack} className="mb-4">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Dashboard
                 </Button>
 
                 <h1 className="text-3xl font-bold text-gray-900 mb-6">
