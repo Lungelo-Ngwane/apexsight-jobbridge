@@ -83,12 +83,17 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const [jobs, setJobs] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [showPostJob, setShowPostJob] = useState(false);
+  const [jobToEdit, setJobToEdit] = useState<any | null>(null);
+  const [activeJobMenuId, setActiveJobMenuId] = useState<string | null>(null);
   const [totalOpenJobs, setTotalOpenJobs] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const JOBS_PER_PAGE = 3;
   const [visibleCount, setVisibleCount] = useState(JOBS_PER_PAGE);
+  const [showJobFilters, setShowJobFilters] = useState(false);
+  const [jobSearchQuery, setJobSearchQuery] = useState("");
+  const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const { profile, loading: profileLoading } = useEmployerProfile();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
@@ -251,7 +256,41 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     void loadJobs();
   }, [loadJobs]);
 
+  useEffect(() => {
+    function handleWindowClick() {
+      setActiveJobMenuId(null);
+    }
+
+    if (!activeJobMenuId) return;
+
+    window.addEventListener("click", handleWindowClick);
+    return () => {
+      window.removeEventListener("click", handleWindowClick);
+    };
+  }, [activeJobMenuId]);
+
   const openJobs = jobs.filter((job) => job.status === 'open');
+  const employmentTypeOptions = Array.from(
+    new Set(
+      openJobs
+        .map((job) => String(job.employment_type ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
+  const filteredOpenJobs = openJobs.filter((job) => {
+    const normalizedSearch = jobSearchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !normalizedSearch ||
+      String(job.title ?? "").toLowerCase().includes(normalizedSearch) ||
+      String(job.location ?? "").toLowerCase().includes(normalizedSearch);
+    const normalizedType = String(job.employment_type ?? "").trim();
+    const matchesType =
+      jobTypeFilter === "all" || normalizedType.toLowerCase() === jobTypeFilter.toLowerCase();
+
+    return matchesSearch && matchesType;
+  });
+  const activeJobFilterCount =
+    (jobSearchQuery.trim() ? 1 : 0) + (jobTypeFilter !== "all" ? 1 : 0);
 
   const plan = profile?.plan ?? "free";
   const trialActive = isActiveEmployerTrial(profile);
@@ -550,12 +589,61 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">Active Job Postings</h2>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowJobFilters((prev) => !prev)}
+                >
                   <Filter className="w-4 h-4 mr-2" />
-                  Filter
+                  Filter{activeJobFilterCount > 0 ? ` (${activeJobFilterCount})` : ""}
                 </Button>
               </div>
             </div>
+
+            {showJobFilters && (
+              <Card className="border-gray-200 p-4">
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={jobSearchQuery}
+                      onChange={(e) => {
+                        setJobSearchQuery(e.target.value);
+                        setVisibleCount(JOBS_PER_PAGE);
+                      }}
+                      placeholder="Search active jobs by title or location"
+                      className="pl-9"
+                    />
+                  </div>
+                  <select
+                    className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm"
+                    value={jobTypeFilter}
+                    onChange={(e) => {
+                      setJobTypeFilter(e.target.value);
+                      setVisibleCount(JOBS_PER_PAGE);
+                    }}
+                  >
+                    <option value="all">All job types</option>
+                    {employmentTypeOptions.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setJobSearchQuery("");
+                      setJobTypeFilter("all");
+                      setVisibleCount(JOBS_PER_PAGE);
+                    }}
+                    disabled={activeJobFilterCount === 0}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </Card>
+            )}
 
             <div className="space-y-4">
               {jobsLoading && (
@@ -570,7 +658,13 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                 </Card>
               )}
 
-              {openJobs.slice(0, visibleCount).map((job) => (
+              {!jobsLoading && openJobs.length > 0 && filteredOpenJobs.length === 0 && (
+                <Card className="p-6 text-center text-gray-500">
+                  No active jobs match the current filters.
+                </Card>
+              )}
+
+              {filteredOpenJobs.slice(0, visibleCount).map((job) => (
                 <Card
                   key={job.id}
                   className="p-6 border-gray-200 hover:shadow-md transition-shadow"
@@ -602,9 +696,70 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                       </div> */}
                     </div>
 
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveJobMenuId((prev) => (prev === job.id ? null : job.id));
+                        }}
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                      {activeJobMenuId === job.id && (
+                        <div
+                          className="absolute right-0 top-12 z-20 w-48 rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Job Actions
+                          </p>
+                          <button
+                            type="button"
+                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => {
+                              setSelectedJobId(job.id);
+                              setActiveJobMenuId(null);
+                            }}
+                          >
+                            View candidates
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => {
+                              setJobToEdit(job);
+                              setShowPostJob(true);
+                              setActiveJobMenuId(null);
+                            }}
+                          >
+                            Edit job
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => {
+                              navigate("/employer/jobs");
+                              setActiveJobMenuId(null);
+                            }}
+                          >
+                            Open jobs page
+                          </button>
+                          <div className="my-1 h-px bg-gray-200" />
+                          <button
+                            type="button"
+                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              void handleCloseJob(job.id);
+                              setActiveJobMenuId(null);
+                            }}
+                          >
+                            Close job
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -681,7 +836,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
             </div>
 
-            {visibleCount < openJobs.length && (
+            {visibleCount < filteredOpenJobs.length && (
               <Button
                 variant="outline"
                 className="w-full"
@@ -855,8 +1010,12 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       </div>
       {showPostJob && (
         <PostJobModal
-          onClose={() => setShowPostJob(false)}
+          onClose={() => {
+            setShowPostJob(false);
+            setJobToEdit(null);
+          }}
           onSuccess={() => void refreshDashboardData()}
+          job={jobToEdit ?? undefined}
         />
       )}
       {selectedJobId && (

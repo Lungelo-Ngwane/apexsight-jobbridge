@@ -5,6 +5,7 @@ import {
   getCandidateDashboardData,
   getCandidateSavedJobIds,
   getOpenJobs,
+  recordJobView,
   toggleCandidateSavedJob,
 } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
@@ -151,6 +152,14 @@ export function CandidateJobsPage() {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (!selectedJob?.id) return;
+
+    recordJobView(selectedJob.id).catch((error) => {
+      console.warn("Failed to record job view", error);
+    });
+  }, [selectedJob?.id]);
 
   const activeFiltersCount = selectedTypes.length + selectedLevels.length + selectedLocations.length;
 
@@ -771,16 +780,22 @@ function JobDetailsView({
 }) {
   const navigate = useNavigate();
   const [logoBroken, setLogoBroken] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const featuredActive =
     Boolean(job.is_featured) &&
     (!job.featured_until || new Date(job.featured_until).getTime() > Date.now());
+  const descriptionText = String(job.description ?? "").trim();
+  const descriptionNeedsExpand = descriptionText.length > 520;
+  const visibleDescription = descriptionNeedsExpand && !showFullDescription
+    ? `${descriptionText.slice(0, 520).trimEnd()}...`
+    : descriptionText;
 
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return "Salary not disclosed";
     const format = (num: number) => `${(num / 1000).toFixed(0)}k`;
-    if (min && max) return `${format(min)} - ${format(max)} per year`;
-    if (min) return `From ${format(min)} per year`;
-    if (max) return `Up to ${format(max)} per year`;
+    if (min && max) return `${format(min)} - ${format(max)} per month`;
+    if (min) return `From ${format(min)} per month`;
+    if (max) return `Up to ${format(max)} per month`;
     return "Salary not disclosed";
   };
 
@@ -877,7 +892,16 @@ function JobDetailsView({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="p-6 border-gray-200 shadow-md lg:col-span-2">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Job Description</h2>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{job.description}</p>
+            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{visibleDescription}</p>
+            {descriptionNeedsExpand && (
+              <button
+                type="button"
+                className="mt-3 text-sm font-medium text-blue-600 transition hover:text-blue-700"
+                onClick={() => setShowFullDescription((prev) => !prev)}
+              >
+                {showFullDescription ? "Show less" : "Show more"}
+              </button>
+            )}
 
             {job.skills_required && job.skills_required.length > 0 && (
               <div className="mt-6">

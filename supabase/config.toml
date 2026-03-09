@@ -576,3 +576,8 @@ entrypoint = "./functions/analyze-candidate-profile/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/add-candidate-skill/index.ts"
+
+[functions.resolve-skill]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/resolve-skill/index.ts"

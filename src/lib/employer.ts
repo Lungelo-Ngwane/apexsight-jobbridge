@@ -81,6 +81,12 @@ export interface EmployerPremiumDashboardInsights {
   talentPoolInsights: EmployerTalentPoolInsightItem[];
 }
 
+export interface ResolvedSkillCatalogItem {
+  id: string;
+  name: string;
+  created_skill?: boolean;
+}
+
 async function getValidAccessToken(): Promise<string> {
   const {
     data: { session },
@@ -211,6 +217,42 @@ async function invokeAuthedFunction<T = unknown>(
   ({ data, error } = await invokeWithToken(retryToken));
 
   return { data, error };
+}
+
+export async function resolveOrCreateSkill(skillName: string): Promise<ResolvedSkillCatalogItem> {
+  const normalizedSkillName = String(skillName ?? "").replace(/\s+/g, " ").trim();
+  if (!normalizedSkillName) {
+    throw new Error("Enter a skill name.");
+  }
+
+  const { data, error } = await invokeAuthedFunction<{
+    success?: boolean;
+    skill?: { id?: string; name?: string };
+    created_skill?: boolean;
+  }>("resolve-skill", {
+    skill_name: normalizedSkillName,
+  });
+
+  if (error) {
+    const message =
+      (error as { message?: string } | null)?.message ??
+      (error as { detail?: string | null } | null)?.detail ??
+      "Failed to resolve skill.";
+    throw new Error(String(message));
+  }
+
+  const skillId = String(data?.skill?.id ?? "").trim();
+  const resolvedName = String(data?.skill?.name ?? normalizedSkillName).trim();
+
+  if (!skillId) {
+    throw new Error("Failed to resolve skill.");
+  }
+
+  return {
+    id: skillId,
+    name: resolvedName,
+    created_skill: Boolean(data?.created_skill),
+  };
 }
 
 function toPlanLabel(planName: BillingPlanName): string {
@@ -368,6 +410,7 @@ export async function getEmployerJobs() {
       salary_min,
       salary_max,
       benefits,
+      view_count,
       experience_level,
       job_skills (
         skill_id,
@@ -411,6 +454,7 @@ export async function getEmployerJobs() {
       salary_min,
       salary_max,
       benefits,
+      view_count,
       experience_level,
       job_skills (
         skill_id,

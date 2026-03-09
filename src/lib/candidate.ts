@@ -666,7 +666,41 @@ export async function getOpenJobs() {
 async function attachEmployerDetailsToJobs(jobs: any[]) {
   if (!jobs || jobs.length === 0) return [];
 
+  const jobIds = [...new Set(jobs.map((job) => String(job.id)).filter(Boolean))];
   const employerIds = [...new Set(jobs.map((job) => String(job.employer_id)))];
+
+  const { data: jobSkills, error: jobSkillsError } = await supabase
+    .from("job_skills")
+    .select(`
+      job_id,
+      required,
+      skills (
+        name
+      )
+    `)
+    .in("job_id", jobIds)
+    .eq("required", true);
+
+  const requiredSkillsMap = !jobSkillsError
+    ? (jobSkills ?? []).reduce((acc, row) => {
+        const jobId = String((row as { job_id?: unknown }).job_id ?? "").trim();
+        const skillName = String(
+          ((row as { skills?: { name?: unknown } | null }).skills?.name ?? ""),
+        ).trim();
+
+        if (!jobId || !skillName) return acc;
+
+        if (!acc[jobId]) {
+          acc[jobId] = [];
+        }
+
+        if (!acc[jobId].includes(skillName)) {
+          acc[jobId].push(skillName);
+        }
+
+        return acc;
+      }, {} as Record<string, string[]>)
+    : {};
 
   const { data: employers, error: empError } = await supabase
     .from("employer_profiles")
@@ -676,6 +710,7 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
     // Do not block job listing when employer metadata is restricted by RLS.
     return jobs.map((job) => ({
       ...job,
+      skills_required: requiredSkillsMap[String(job.id)] ?? [],
       employer: {
         company_name: "Company",
         industry: null,
@@ -705,6 +740,7 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
 
   return jobs.map((job) => ({
     ...job,
+    skills_required: requiredSkillsMap[String(job.id)] ?? [],
     employer: {
       company_name: employerMap[String(job.employer_id)]?.company_name || "Unknown Company",
       industry: employerMap[String(job.employer_id)]?.industry || null,
@@ -762,6 +798,21 @@ export async function toggleCandidateSavedJob(jobId: string) {
     ? current.filter((id) => id !== normalizedId)
     : [...current, normalizedId];
   return setCandidateSavedJobIds(next);
+}
+
+export async function recordJobView(jobId: string) {
+  const normalizedJobId = String(jobId ?? "").trim();
+  if (!normalizedJobId) return 0;
+
+  const { data, error } = await supabase.rpc("record_job_view", {
+    p_job_id: normalizedJobId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return Number(data ?? 0);
 }
 
 

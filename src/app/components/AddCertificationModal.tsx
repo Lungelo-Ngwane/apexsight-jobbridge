@@ -12,8 +12,6 @@ interface AddCertificationModalProps {
 
 export function AddCertificationModal({ onClose, onSuccess }: AddCertificationModalProps) {
   const [name, setName] = useState("");
-  const [issuer, setIssuer] = useState("");
-  const [issuedAt, setIssuedAt] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +27,6 @@ export function AddCertificationModal({ onClose, onSuccess }: AddCertificationMo
       setError(null);
       await addCandidateCertification({
         name: name.trim(),
-        issuer: issuer.trim(),
-        issuedAt,
         file,
       });
       await onSuccess();
@@ -56,16 +52,6 @@ export function AddCertificationModal({ onClose, onSuccess }: AddCertificationMo
                 setName(e.target.value);
                 setError(null);
               }}
-            />
-            <Input
-              placeholder="Issuing organisation"
-              value={issuer}
-              onChange={(e) => setIssuer(e.target.value)}
-            />
-            <Input
-              type="date"
-              value={issuedAt}
-              onChange={(e) => setIssuedAt(e.target.value)}
             />
             <label className="block cursor-pointer" htmlFor="candidate-certificate-upload">
               <div className="rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-4 text-center transition hover:bg-blue-100">

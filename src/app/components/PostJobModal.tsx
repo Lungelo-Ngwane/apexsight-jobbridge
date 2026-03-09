@@ -6,7 +6,7 @@ import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Badge } from "@/app/components/ui/badge";
-import { createJob, updateJob } from "@/lib/employer";
+import { createJob, resolveOrCreateSkill, updateJob } from "@/lib/employer";
 import { supabase } from "@/lib/supabase";
 import { UpgradeModal } from "./UpgradeModal";
 import { useEmployerProfile } from "../../hooks/useEmployerProfile";
@@ -44,6 +44,7 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
   const [skillSearch, setSkillSearch] = useState("");
   const [skillResults, setSkillResults] = useState<SkillOption[]>([]);
   const [skillSearchLoading, setSkillSearchLoading] = useState(false);
+  const [addingCustomSkill, setAddingCustomSkill] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { profile } = useEmployerProfile();
@@ -91,6 +92,38 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
     }
     setSkillSearch("");
     setSkillResults([]);
+  }
+
+  async function addCustomSkill() {
+    const normalizedSkillName = skillSearch.replace(/\s+/g, " ").trim();
+    if (!normalizedSkillName) return;
+
+    if (
+      skills.some((item) => item.name.toLowerCase() === normalizedSkillName.toLowerCase()) ||
+      skillResults.some((item) => item.name.toLowerCase() === normalizedSkillName.toLowerCase())
+    ) {
+      const matchingExistingSkill = skillResults.find(
+        (item) => item.name.toLowerCase() === normalizedSkillName.toLowerCase(),
+      );
+      if (matchingExistingSkill) {
+        addSkill(matchingExistingSkill);
+      }
+      return;
+    }
+
+    setAddingCustomSkill(true);
+    try {
+      const resolvedSkill = await resolveOrCreateSkill(normalizedSkillName);
+      addSkill({ id: resolvedSkill.id, name: resolvedSkill.name });
+      if (resolvedSkill.created_skill) {
+        showFeedback("Skill added", `"${resolvedSkill.name}" was added to the skill catalog.`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Please try again.";
+      showFeedback("Unable to add skill", message);
+    } finally {
+      setAddingCustomSkill(false);
+    }
   }
 
   function removeSkill(skillId: string) {
@@ -212,6 +245,22 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
                       </button>
                     ))}
                   </div>
+                )}
+                {skillSearch.trim() && !skillSearchLoading && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between"
+                    onClick={() => void addCustomSkill()}
+                    disabled={addingCustomSkill}
+                  >
+                    <span className="truncate">
+                      {addingCustomSkill
+                        ? "Adding skill..."
+                        : `Add "${skillSearch.replace(/\s+/g, " ").trim()}" if it doesn't exist`}
+                    </span>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 )}
                 <div className="space-y-3">
                   {skills.map((skill) => (

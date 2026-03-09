@@ -30,8 +30,10 @@ import { updateEmployerProfile, uploadEmployerLogo } from "@/lib/employer";
 import { useAuth } from "@/app/context/AuthContext";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { useNavigate } from "react-router-dom";
 
 export function EmployerSettingsPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("company");
   const { user } = useAuth();
   const { profile, loading } = useEmployerProfile();
@@ -50,6 +52,16 @@ export function EmployerSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
+
+  function handleFeedbackOpenChange(open: boolean) {
+    if (!open && feedback.open && feedback.title === "Settings saved") {
+      setFeedbackOpen(false);
+      navigate("/employer/dashboard");
+      return;
+    }
+
+    setFeedbackOpen(open);
+  }
 
   useEffect(() => {
     if (!profile) return;
@@ -623,7 +635,7 @@ export function EmployerSettingsPage() {
         open={feedback.open}
         title={feedback.title}
         description={feedback.description}
-        onOpenChange={setFeedbackOpen}
+        onOpenChange={handleFeedbackOpenChange}
       />
     </div>
   );

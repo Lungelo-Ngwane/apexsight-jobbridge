@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCandidateDashboardData, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
+import { getCandidateDashboardData, getOpenJobs, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
@@ -61,6 +61,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const [showAddCertification, setShowAddCertification] = useState(false);
   const [deletingCertificationId, setDeletingCertificationId] = useState<string | null>(null);
   const [showAllSkills, setShowAllSkills] = useState(false);
+  const [openJobsCount, setOpenJobsCount] = useState(0);
 
 
   useEffect(() => {
@@ -78,8 +79,12 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const data = await getCandidateDashboardData();
+        const [data, openJobs] = await Promise.all([
+          getCandidateDashboardData(),
+          getOpenJobs(),
+        ]);
         setProfile(data);
+        setOpenJobsCount(Array.isArray(openJobs) ? openJobs.length : 0);
       } catch (err) {
         console.error("Failed to load candidate dashboard", err);
       } finally {
@@ -331,27 +336,13 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
               </p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 flex flex-col justify-between">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 flex flex-col justify-between gap-6">
               <div>
-                <div className="text-sm text-blue-100 mb-2">Profile depth</div>
-                <div className="text-2xl font-bold mb-2">{skillsCount} Skills</div>
+                <div className="text-sm text-blue-100 mb-2">You are ready to apply for</div>
+                <div className="text-2xl font-bold mb-2">{openJobsCount} Open Jobs</div>
                 <div className="text-sm text-blue-100">
-                  {skillCategories.length > 0
-                    ? `${skillCategories.length} categories represented`
-                    : "Categories will appear as your skills are classified"}
+                  Explore currently open roles and see which ones align best with your profile.
                 </div>
-                {topSkillCategories.length > 0 ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {topSkillCategories.map((category) => (
-                      <span
-                        key={category}
-                        className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white"
-                      >
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
               </div>
               <Button
                 onClick={onViewJobs}
@@ -557,10 +548,6 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">Certifications</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowAddCertification(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add
-                </Button>
               </div>
               <Card className="p-6 border-gray-200">
                 {/* <div className="space-y-4">
@@ -599,7 +586,10 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 {profile?.candidate_certifications.map((cert: any, index: number) => (
                   <div key={cert.id ?? index} className="rounded-xl border border-gray-200 bg-white p-3">
                       <h3 className="font-medium">{cert.name}</h3>
-                      <p className="text-xs text-gray-600">
+                      {cert.issuer ? (
+                        <p className="text-xs text-gray-600">{cert.issuer}</p>
+                      ) : null}
+                      <p className="hidden text-xs text-gray-600">
                       {cert.issuer} · {cert.issued_at}
                     </p>
                   </div>

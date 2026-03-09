@@ -5,7 +5,7 @@ import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-import { ArrowLeft, Building2, CalendarDays, ChevronDown, ChevronUp, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { useState, useEffect, useCallback } from "react";
 // import { supabase } from "@/lib/supabaseClient";
@@ -44,7 +44,8 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const [allSkills, setAllSkills] = useState<{ id: string; name: string }[]>([]);
     const [candidateProfileId, setCandidateProfileId] = useState<string | null>(null);
     const [newSkill, setNewSkill] = useState("");
-    const [newCertification, setNewCertification] = useState({ name: "", issuer: "", issued_at: "" });
+    const [newCertification, setNewCertification] = useState({ name: "" });
+    const [newCertificationFile, setNewCertificationFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
     const [savingProfile, setSavingProfile] = useState(false);
     const [savingCertification, setSavingCertification] = useState(false);
@@ -352,11 +353,11 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             setSavingCertification(true);
             const createdCertification = await addCandidateCertification({
                 name: newCertification.name.trim(),
-                issuer: newCertification.issuer.trim(),
-                issuedAt: newCertification.issued_at,
+                file: newCertificationFile,
             });
             setCertifications((prev) => [createdCertification, ...prev]);
-            setNewCertification({ name: "", issuer: "", issued_at: "" });
+            setNewCertification({ name: "" });
+            setNewCertificationFile(null);
         } catch (error) {
             console.error("Failed to add certification", error);
             showFeedback(
@@ -719,23 +720,28 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         <Badge variant="secondary">{certifications.length} added</Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
                         <Input
                             placeholder="Certification name"
                             value={newCertification.name}
                             onChange={(e) => setNewCertification((prev) => ({ ...prev, name: e.target.value }))}
                         />
-                        <Input
-                            placeholder="Issuer"
-                            value={newCertification.issuer}
-                            onChange={(e) => setNewCertification((prev) => ({ ...prev, issuer: e.target.value }))}
+                        <label className="block cursor-pointer" htmlFor="candidate-profile-certification-upload">
+                            <div className="flex h-10 items-center justify-center rounded-md border border-dashed border-blue-300 bg-blue-50 px-3 text-sm font-medium text-blue-700 transition hover:bg-blue-100">
+                                <Upload className="mr-2 h-4 w-4" />
+                                {newCertificationFile ? "Replace PDF" : "Upload PDF"}
+                            </div>
+                        </label>
+                        <input
+                            id="candidate-profile-certification-upload"
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            className="sr-only"
+                            onChange={(e) => {
+                                setNewCertificationFile(e.target.files?.[0] ?? null);
+                            }}
                         />
                         <div className="flex gap-2">
-                            <Input
-                                type="date"
-                                value={newCertification.issued_at}
-                                onChange={(e) => setNewCertification((prev) => ({ ...prev, issued_at: e.target.value }))}
-                            />
                             <Button onClick={handleAddCertification} disabled={savingCertification}>
                                 {savingCertification ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -745,6 +751,12 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             </Button>
                         </div>
                     </div>
+                    {newCertificationFile ? (
+                        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                            <FileText className="h-3.5 w-3.5" />
+                            {newCertificationFile.name}
+                        </p>
+                    ) : null}
 
                     {certifications.length === 0 ? (
                         <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5 text-center">
@@ -762,16 +774,6 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                 >
                                     <div className="min-w-0">
                                         <p className="font-semibold text-gray-900">{cert.name}</p>
-                                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1">
-                                                <Building2 className="h-3.5 w-3.5" />
-                                                {String(cert.issuer ?? "").trim() || "Issuer not specified"}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1">
-                                                <CalendarDays className="h-3.5 w-3.5" />
-                                                {String(cert.issued_at ?? "").trim() || "Date not specified"}
-                                            </span>
-                                        </div>
                                     </div>
                                     <button
                                         type="button"
