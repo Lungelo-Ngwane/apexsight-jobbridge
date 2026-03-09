@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCandidateDashboardData } from "@/lib/candidate";
+import { getCandidateDashboardData, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
@@ -14,24 +14,27 @@ import {
 } from "@/app/components/ui/dialog";
 import {
   Award,
-  AlertCircle,
+  Building2,
   CheckCircle2,
   Clock,
   TrendingUp,
   Target,
   BookOpen,
   ArrowRight,
+  CalendarDays,
   Star,
   Briefcase,
   Circle,
   FileText,
-  MapPin,
+  Plus,
+  Trash2,
   UserCircle2
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { applyForJob, uploadCandidateCV } from "../../lib/candidate";
 import { calculateProfileCompletion, isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
 import { AddSkillModal } from "./AddSkillModal";
+import { AddCertificationModal } from "./AddCertificationModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { useNavigate } from "react-router-dom";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
@@ -52,6 +55,9 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const [cvUploading, setCvUploading] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showCvUploadSuccess, setShowCvUploadSuccess] = useState(false);
+  const [deletingSkillId, setDeletingSkillId] = useState<string | null>(null);
+  const [showAddCertification, setShowAddCertification] = useState(false);
+  const [deletingCertificationId, setDeletingCertificationId] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -175,6 +181,32 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
         <CircularLoader size="md" label="Loading..." />
       </div>
     );
+  }
+
+  async function handleDeleteSkill(candidateSkillId: string) {
+    try {
+      setDeletingSkillId(candidateSkillId);
+      await removeCandidateSkill(candidateSkillId);
+      const data = await getCandidateDashboardData();
+      setProfile(data);
+    } catch (err) {
+      console.error("Failed to delete candidate skill", err);
+    } finally {
+      setDeletingSkillId(null);
+    }
+  }
+
+  async function handleDeleteCertification(certificationId: string) {
+    try {
+      setDeletingCertificationId(certificationId);
+      await removeCandidateCertification(certificationId);
+      const data = await getCandidateDashboardData();
+      setProfile(data);
+    } catch (err) {
+      console.error("Failed to delete candidate certification", err);
+    } finally {
+      setDeletingCertificationId(null);
+    }
   }
 
   return (
@@ -312,8 +344,8 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profile?.candidate_skills?.map((item) => (
-                <Card key={item.skill} className="p-5 hover:shadow-md transition-shadow border-gray-200">
+              {profile?.candidate_skills?.map((item: any) => (
+                <Card key={item.id ?? item.skill} className="p-5 hover:shadow-md transition-shadow border-gray-200">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">{item.skill}</h3>
@@ -321,7 +353,19 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                         {item.level}
                       </Badge>
                     </div>
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      <button
+                        type="button"
+                        className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => handleDeleteSkill(String(item.id))}
+                        disabled={!item.id || deletingSkillId === item.id}
+                        aria-label={`Delete ${item.skill}`}
+                        title={`Delete ${item.skill}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
 
                   </div>
 
@@ -360,6 +404,19 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
             {/* <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Assessment Progress</h2>
               <Card className="p-6 border-gray-200">
+                <div className="mb-4 rounded-2xl bg-gradient-to-r from-amber-50 via-white to-blue-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                      <Award className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Add certifications from any source</p>
+                      <p className="mt-1 text-xs text-gray-600">
+                        Include certificates earned through ApexSight assessments or external providers.
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 {profile?.candidate_assessments.map((assessment, index) => (
                   <div key={index} className="flex items-center gap-4">
                     <span className="font-medium">{assessment.name}</span>
@@ -428,7 +485,13 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
           <div className="space-y-6">
             {/* Certifications */}
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Certifications Earned</h2>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Certifications</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowAddCertification(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add
+                </Button>
+              </div>
               <Card className="p-6 border-gray-200">
                 {/* <div className="space-y-4">
                   {[
@@ -463,10 +526,10 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                   <p className="text-sm text-gray-500">No assessments started yet</p>
                 )}
 
-                {profile?.candidate_certifications.map((cert, index) => (
-                  <div key={index}>
-                    <h3 className="font-medium">{cert.name}</h3>
-                    <p className="text-xs text-gray-600">
+                {profile?.candidate_certifications.map((cert: any, index: number) => (
+                  <div key={cert.id ?? index} className="rounded-xl border border-gray-200 bg-white p-3">
+                      <h3 className="font-medium">{cert.name}</h3>
+                      <p className="text-xs text-gray-600">
                       {cert.issuer} · {cert.issued_at}
                     </p>
                   </div>
@@ -475,9 +538,9 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 <Button
                   variant="ghost"
                   className="w-full mt-4 text-blue-600"
-                  onClick={() => navigate("/candidate/profile")}
+                  onClick={() => setShowAddCertification(true)}
                 >
-                  Upload Certificate Details
+                  Add Certificate
                 </Button>
               </Card>
             </div>
@@ -546,6 +609,8 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
               </Card>
             </div>
 
+            {false && (
+            <>
             {/* Recommended Learning */}
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Recommended for You</h2>
@@ -579,6 +644,8 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 </Button>
               </Card>
             </div>
+            </>
+            )}
 
             {/* Quick Actions */}
             <Card className={`${profileReady ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"} p-6`}>
@@ -620,6 +687,15 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
         {showAddSkill && (
           <AddSkillModal
             onClose={() => setShowAddSkill(false)}
+            onSuccess={async () => {
+              const data = await getCandidateDashboardData();
+              setProfile(data);
+            }}
+          />
+        )}
+        {showAddCertification && (
+          <AddCertificationModal
+            onClose={() => setShowAddCertification(false)}
             onSuccess={async () => {
               const data = await getCandidateDashboardData();
               setProfile(data);

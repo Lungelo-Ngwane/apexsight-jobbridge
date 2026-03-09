@@ -5,14 +5,14 @@ import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { useState, useEffect, useCallback } from "react";
 // import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { refreshCandidateMatchingProfile } from "@/lib/candidate";
+import { addCandidateCertification, addCandidateSkillByName, removeCandidateCertification, refreshCandidateEmbedding, uploadCandidateCV } from "@/lib/candidate";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 
@@ -40,10 +40,16 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     });
 
     const [skills, setSkills] = useState<{ id?: string; skill_id?: string; skill: string; level?: string }[]>([]);
+    const [certifications, setCertifications] = useState<{ id?: string; name: string; issuer?: string | null; issued_at?: string | null }[]>([]);
     const [allSkills, setAllSkills] = useState<{ id: string; name: string }[]>([]);
     const [candidateProfileId, setCandidateProfileId] = useState<string | null>(null);
     const [newSkill, setNewSkill] = useState("");
+    const [newCertification, setNewCertification] = useState({ name: "", issuer: "", issued_at: "" });
     const [loading, setLoading] = useState(true);
+    const [savingProfile, setSavingProfile] = useState(false);
+    const [savingCertification, setSavingCertification] = useState(false);
+    const [cvUploading, setCvUploading] = useState(false);
+    const [cvName, setCvName] = useState<string | null>(null);
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
     const resolveCandidateProfileId = useCallback(async (createIfMissing = false) => {
@@ -132,6 +138,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     gender: candidateProfile.gender || "",
                     contact_number: candidateProfile.contact_number || "",
                 });
+                setCvName(String(candidateProfile.cv_url ?? "").trim().split("/").pop() || null);
 
                 // Fetch candidate skills
                 const { data: candidateSkills } = await supabase
@@ -139,7 +146,14 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     .select("id, skill, skill_id, level")
                     .eq("candidate_profile_id", candidateProfile.id);
 
+                const { data: candidateCertifications } = await supabase
+                    .from("candidate_certifications")
+                    .select("id, name, issuer, issued_at")
+                    .eq("candidate_id", candidateProfile.id)
+                    .order("issued_at", { ascending: false });
+
                 setSkills(candidateSkills || []);
+                setCertifications(candidateCertifications || []);
             }
 
             setAllSkills(skillsData || []);
@@ -159,40 +173,30 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const handleAddSkill = async () => {
         if (!newSkill.trim() || !user) return;
 
-        const skill = allSkills.find((s) => s.name.toLowerCase() === newSkill.toLowerCase());
-        if (!skill) {
-            showFeedback(
-                "Skill not found",
-                "That skill isn't currently in our system. Try selecting a different skill name.",
-            );
-            return;
-        }
+        const normalizedNewSkill = newSkill.trim().toLowerCase();
+        if (skills.some((s) => s.skill.trim().toLowerCase() === normalizedNewSkill)) return;
 
-        // Check if already added
-        if (skills.some((s) => s.skill_id === skill.id)) return;
-
-        // Get candidate_profile_id
-        const profileId = await resolveCandidateProfileId(true);
-        if (!profileId) {
-            showFeedback(
-                "Profile not found",
-                "We couldn't find your candidate profile. Refresh the page and try again.",
-            );
-            return;
-        }
-
-        // Insert into candidate_skills
-        const { error } = await supabase.from("candidate_skills").insert({
-            candidate_profile_id: profileId,
-            skill: skill.name,
-            skill_id: skill.id,
-        });
-
-        if (!error) {
-            setSkills([...skills, { skill_id: skill.id, skill: skill.name }]);
+        try {
+            const createdSkill = await addCandidateSkillByName(newSkill.trim(), "beginner");
+            setSkills((prev) => [...prev, createdSkill]);
+            setAllSkills((prev) => {
+                const exists = prev.some((skill) => skill.name.trim().toLowerCase() === normalizedNewSkill);
+                if (exists) return prev;
+                const next = [
+                    ...prev,
+                    {
+                        id: String(createdSkill.skill_id ?? ""),
+                        name: createdSkill.skill,
+                    },
+                ].filter((skill) => String(skill.id).trim() && String(skill.name).trim());
+                return next.sort((a, b) => a.name.localeCompare(b.name));
+            });
             setNewSkill("");
-            await refreshCandidateMatchingProfile(profileId).catch((syncError) =>
-                console.error("Failed to refresh matching profile after adding skill", syncError),
+        } catch (error) {
+            console.error("Failed to add candidate skill", error);
+            showFeedback(
+                "Could not add skill",
+                "We couldn't save that skill right now. Please try again.",
             );
         }
     };
@@ -233,66 +237,150 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             }),
         );
 
-        await refreshCandidateMatchingProfile(profileId).catch((syncError) =>
-            console.error("Failed to refresh matching profile after removing skill", syncError),
+        void refreshCandidateEmbedding(profileId).catch((syncError) =>
+            console.error("Failed to refresh candidate embedding after removing skill", syncError),
         );
     };
 
     const handleSaveProfile = async () => {
         if (!user) return;
 
-        const updateData = {
-            ...profile,
-            date_of_birth: profile.date_of_birth || null,
-            id_number: profile.id_number || null,
-            gender: profile.gender || null,
-            contact_number: profile.contact_number || null,
-            surname: profile.surname || null,
-            updated_at: new Date().toISOString(),
-        };
-        const profileId = await resolveCandidateProfileId(true);
-        let finalProfileId = profileId;
+        try {
+            setSavingProfile(true);
 
-        if (profileId) {
-            await supabase.from("candidate_profiles").update(updateData).eq("id", profileId);
-        } else {
-            const { data: createdProfile } = await supabase
-                .from("candidate_profiles")
-                .insert({ ...updateData, user_id: user.id })
-                .select("id")
-                .single();
-            finalProfileId = createdProfile?.id ? String(createdProfile.id) : null;
-            if (finalProfileId) setCandidateProfileId(finalProfileId);
+            const updateData = {
+                ...profile,
+                date_of_birth: profile.date_of_birth || null,
+                id_number: profile.id_number || null,
+                gender: profile.gender || null,
+                contact_number: profile.contact_number || null,
+                surname: profile.surname || null,
+                updated_at: new Date().toISOString(),
+            };
+            const profileId = await resolveCandidateProfileId(true);
+            let finalProfileId = profileId;
+
+            if (profileId) {
+                const { error: updateError } = await supabase
+                    .from("candidate_profiles")
+                    .update(updateData)
+                    .eq("id", profileId);
+                if (updateError) throw updateError;
+            } else {
+                const { data: createdProfile, error: createProfileError } = await supabase
+                    .from("candidate_profiles")
+                    .insert({ ...updateData, user_id: user.id })
+                    .select("id")
+                    .single();
+                if (createProfileError) throw createProfileError;
+                finalProfileId = createdProfile?.id ? String(createdProfile.id) : null;
+                if (finalProfileId) setCandidateProfileId(finalProfileId);
+            }
+
+            if (finalProfileId) {
+                await refreshCandidateEmbedding(finalProfileId).catch((syncError) =>
+                    console.error("Failed to refresh candidate embedding after saving profile", syncError),
+                );
+            }
+
+            const normalizedFullName = String(profile.full_name ?? "").trim();
+            const normalizedSurname = String(profile.surname ?? "").trim();
+            const combinedDisplayName = [normalizedFullName, normalizedSurname].filter(Boolean).join(" ").trim();
+            if (combinedDisplayName) {
+                const { error: metadataError } = await supabase.auth.updateUser({
+                    data: {
+                        full_name: combinedDisplayName,
+                    },
+                });
+
+                if (metadataError) {
+                    console.error("Failed to sync auth user metadata after saving profile", metadataError);
+                }
+            }
+
+            showFeedback(
+                "Profile saved",
+                "Your profile updates were saved successfully.",
+            );
+            window.setTimeout(() => {
+                navigate("/candidate/dashboard");
+            }, 300);
+        } catch (error) {
+            console.error("Failed to save candidate profile", error);
+            showFeedback(
+                "Could not save profile",
+                "We couldn't save your profile right now. Please try again.",
+            );
+        } finally {
+            setSavingProfile(false);
+        }
+    };
+
+    const handleUploadCv = async (file: File | null) => {
+        if (!file) return;
+
+        try {
+            setCvUploading(true);
+            const path = await uploadCandidateCV(file);
+            setCvName(path.split("/").pop() ?? null);
+            showFeedback(
+                "CV uploaded",
+                "Your CV was uploaded successfully.",
+            );
+        } catch (error) {
+            console.error("Failed to upload CV", error);
+            showFeedback(
+                "Could not upload CV",
+                "We couldn't upload your CV right now. Please try again.",
+            );
+        } finally {
+            setCvUploading(false);
+        }
+    };
+
+    const handleAddCertification = async () => {
+        if (!newCertification.name.trim()) {
+            showFeedback(
+                "Missing certification name",
+                "Enter the certificate name before saving it.",
+            );
+            return;
         }
 
-        if (finalProfileId) {
-            await refreshCandidateMatchingProfile(finalProfileId).catch((syncError) =>
-                console.error("Failed to refresh matching profile after saving profile", syncError),
+        try {
+            setSavingCertification(true);
+            const createdCertification = await addCandidateCertification({
+                name: newCertification.name.trim(),
+                issuer: newCertification.issuer.trim(),
+                issuedAt: newCertification.issued_at,
+            });
+            setCertifications((prev) => [createdCertification, ...prev]);
+            setNewCertification({ name: "", issuer: "", issued_at: "" });
+        } catch (error) {
+            console.error("Failed to add certification", error);
+            showFeedback(
+                "Could not add certification",
+                "We couldn't save that certification right now. Please try again.",
+            );
+        } finally {
+            setSavingCertification(false);
+        }
+    };
+
+    const handleRemoveCertification = async (certificationId?: string) => {
+        const normalizedCertificationId = String(certificationId ?? "").trim();
+        if (!normalizedCertificationId) return;
+
+        try {
+            await removeCandidateCertification(normalizedCertificationId);
+            setCertifications((prev) => prev.filter((cert) => cert.id !== normalizedCertificationId));
+        } catch (error) {
+            console.error("Failed to remove certification", error);
+            showFeedback(
+                "Could not remove certification",
+                "We couldn't remove this certification right now. Please try again.",
             );
         }
-
-        const normalizedFullName = String(profile.full_name ?? "").trim();
-        const normalizedSurname = String(profile.surname ?? "").trim();
-        const combinedDisplayName = [normalizedFullName, normalizedSurname].filter(Boolean).join(" ").trim();
-        if (combinedDisplayName) {
-            const { error: metadataError } = await supabase.auth.updateUser({
-                data: {
-                    full_name: combinedDisplayName,
-                },
-            });
-
-            if (metadataError) {
-                console.error("Failed to sync auth user metadata after saving profile", metadataError);
-            }
-        }
-
-        showFeedback(
-            "Profile saved",
-            "Your profile updates were saved successfully.",
-        );
-        window.setTimeout(() => {
-            navigate("/candidate/dashboard");
-        }, 300);
     };
 
     if (loading) {
@@ -451,6 +539,55 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     </div>
                 </Card>
 
+                <Card className="mt-6 border-gray-200 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold">CV / Resume</h2>
+                            <p className="text-sm text-gray-500">
+                                Upload your latest CV so your profile and matching data stay current.
+                            </p>
+                        </div>
+                        {cvName && (
+                            <Badge variant="secondary" className="max-w-[220px] truncate">
+                                {cvName}
+                            </Badge>
+                        )}
+                    </div>
+
+                    <label className="block cursor-pointer" htmlFor="candidate-profile-cv-upload">
+                        <div className="rounded-xl border border-dashed border-blue-300 bg-blue-50 px-5 py-6 text-center transition hover:bg-blue-100">
+                            <p className="inline-flex items-center gap-2 text-sm font-medium text-blue-700">
+                                <Upload className="h-4 w-4" />
+                                {cvUploading ? "Uploading CV..." : cvName ? "Replace CV" : "Upload CV"}
+                            </p>
+                            <p className="mt-1 text-xs text-blue-600">
+                                Click to choose your CV file.
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">
+                                Accepted: PDF, DOC, DOCX, TXT
+                            </p>
+                            {cvName && (
+                                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700">
+                                    <FileText className="h-3.5 w-3.5" />
+                                    {cvName}
+                                </p>
+                            )}
+                        </div>
+                    </label>
+                    <input
+                        id="candidate-profile-cv-upload"
+                        type="file"
+                        accept=".pdf,.doc,.docx,.txt"
+                        className="sr-only"
+                        disabled={cvUploading}
+                        onChange={async (e) => {
+                            const file = e.target.files?.[0] ?? null;
+                            await handleUploadCv(file);
+                            e.currentTarget.value = "";
+                        }}
+                    />
+                </Card>
+
                 {/* Skills */}
                 {/* Skills */}
                 <Card className="p-6 border-gray-200 mt-6">
@@ -506,8 +643,8 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                                             }
 
                                             await updateQuery;
-                                            await refreshCandidateMatchingProfile(profileId).catch((syncError) =>
-                                                console.error("Failed to refresh matching profile after updating skill level", syncError),
+                                            void refreshCandidateEmbedding(profileId).catch((syncError) =>
+                                                console.error("Failed to refresh candidate embedding after updating skill level", syncError),
                                             );
                                         }
                                     }}
@@ -526,10 +663,101 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     </div>
                 </Card>
 
+                <Card className="mt-6 border-gray-200 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold">Certifications</h2>
+                            <p className="text-sm text-gray-500">
+                                Add certifications earned through assessments or external providers.
+                            </p>
+                        </div>
+                        <Badge variant="secondary">{certifications.length} added</Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <Input
+                            placeholder="Certification name"
+                            value={newCertification.name}
+                            onChange={(e) => setNewCertification((prev) => ({ ...prev, name: e.target.value }))}
+                        />
+                        <Input
+                            placeholder="Issuer"
+                            value={newCertification.issuer}
+                            onChange={(e) => setNewCertification((prev) => ({ ...prev, issuer: e.target.value }))}
+                        />
+                        <div className="flex gap-2">
+                            <Input
+                                type="date"
+                                value={newCertification.issued_at}
+                                onChange={(e) => setNewCertification((prev) => ({ ...prev, issued_at: e.target.value }))}
+                            />
+                            <Button onClick={handleAddCertification} disabled={savingCertification}>
+                                {savingCertification ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Plus className="h-4 w-4" />
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {certifications.length === 0 ? (
+                        <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5 text-center">
+                            <p className="text-sm font-medium text-gray-900">No certifications added yet</p>
+                            <p className="mt-1 text-xs text-gray-500">
+                                Add the certifications you already hold so employers can see them immediately.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mt-4 space-y-3">
+                            {certifications.map((cert) => (
+                                <div
+                                    key={cert.id ?? `${cert.name}-${cert.issued_at ?? ""}`}
+                                    className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-gray-900">{cert.name}</p>
+                                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1">
+                                                <Building2 className="h-3.5 w-3.5" />
+                                                {String(cert.issuer ?? "").trim() || "Issuer not specified"}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1">
+                                                <CalendarDays className="h-3.5 w-3.5" />
+                                                {String(cert.issued_at ?? "").trim() || "Date not specified"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                                        onClick={() => handleRemoveCertification(cert.id)}
+                                        aria-label={`Delete ${cert.name}`}
+                                        title={`Delete ${cert.name}`}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </Card>
+
                 <div className="flex justify-end gap-3 mt-6">
-                    <Button variant="outline" onClick={handleBack}>Cancel</Button>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSaveProfile}>
-                        Save Changes
+                    <Button variant="outline" onClick={handleBack} disabled={savingProfile}>Cancel</Button>
+                    <Button
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={handleSaveProfile}
+                        disabled={savingProfile}
+                    >
+                        {savingProfile ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Saving changes...
+                            </>
+                        ) : (
+                            "Save Changes"
+                        )}
                     </Button>
                 </div>
             </div>

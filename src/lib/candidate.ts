@@ -4,6 +4,33 @@ const CANDIDATE_SAVED_JOBS_KEY_PREFIX = "candidate_saved_jobs_";
 const ENFORCE_JOB_EXPIRY =
   String(import.meta.env.VITE_ENFORCE_JOB_EXPIRY ?? "false").toLowerCase() === "true";
 
+export interface SkillCatalogItem {
+  id: string;
+  name: string;
+}
+
+export interface CandidateSkillRow {
+  id?: string;
+  skill_id?: string;
+  skill: string;
+  level?: string | null;
+}
+
+export interface CandidateCertificationRow {
+  id?: string;
+  name: string;
+  issuer?: string | null;
+  issued_at?: string | null;
+  certificate_file_path?: string | null;
+}
+
+export interface CandidateSkillRow {
+  id?: string;
+  skill_id?: string;
+  skill: string;
+  level?: string | null;
+}
+
 function getSavedJobsStorageKey(userId: string) {
   return `${CANDIDATE_SAVED_JOBS_KEY_PREFIX}${userId}`;
 }
@@ -189,6 +216,24 @@ export async function refreshCandidateMatchingProfile(profileId?: string) {
   return analyzeResult.data;
 }
 
+export async function refreshCandidateEmbedding(profileId?: string) {
+  if (!profileId) {
+    throw new Error("Missing profile id for embedding refresh.");
+  }
+
+  const embeddingResult = await invokeAuthedFunction("generate-embedding", {
+    profile_id: profileId,
+  });
+
+  if (embeddingResult.error) {
+    const message =
+      (embeddingResult.error as { message?: string } | null)?.message ??
+      (embeddingResult.error as { detail?: string | null } | null)?.detail ??
+      "Failed to generate candidate embedding.";
+    throw new Error(String(message));
+  }
+}
+
 export async function getCandidateDashboardData() {
   const { data, error } = await supabase
     .from("candidate_profiles")
@@ -209,6 +254,8 @@ export async function getCandidateDashboardData() {
       resume_analysis,
       resume_last_analyzed_at,
       candidate_skills (
+        id,
+        skill_id,
         skill,
         level
       ),
@@ -218,9 +265,11 @@ export async function getCandidateDashboardData() {
         status
       ),
       candidate_certifications (
+        id,
         name,
         issuer,
-        issued_at
+        issued_at,
+        certificate_file_path
       )
     `,
     )
@@ -232,13 +281,18 @@ export async function getCandidateDashboardData() {
 }
 
 export async function addCandidateSkill(
-  skill: string,
+  skillName: string,
   level: "beginner" | "intermediate" | "advanced",
 ) {
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error("Not authenticated");
+  const normalizedSkillName = String(skillName ?? "").trim();
+  if (!normalizedSkillName) {
+    throw new Error("Enter a skill name.");
+  }
+
+  return addCandidateSkillByName(normalizedSkillName, level);
 
   // 1️⃣ Try get candidate profile
+  /*
   let { data: profile, error } = await supabase
     .from("candidate_profiles")
     .select("id")
@@ -264,16 +318,219 @@ export async function addCandidateSkill(
   // 3️⃣ Insert skill
   const { error: skillError } = await supabase.from("candidate_skills").insert({
     candidate_profile_id: profile.id,
-    skill,
+    skill_id: normalizedSkillId,
+    skill: normalizedSkillName,
     level,
   });
 
   if (skillError) throw skillError;
 
-  try {
-    await refreshCandidateMatchingProfile(String(profile.id));
-  } catch (error) {
-    console.error("Failed to refresh candidate matching profile", error);
+  void refreshCandidateEmbedding(String(profile.id)).catch((refreshError) => {
+    console.error("Failed to refresh candidate embedding after adding skill", refreshError);
+  });
+  */
+}
+
+export async function removeCandidateSkill(candidateSkillId: string) {
+  const normalizedCandidateSkillId = String(candidateSkillId ?? "").trim();
+  if (!normalizedCandidateSkillId) {
+    throw new Error("Missing skill id.");
+  }
+
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("candidate_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError) throw profileError;
+  if (!profile?.id) throw new Error("Candidate profile not found");
+
+  const { error: deleteError } = await supabase
+    .from("candidate_skills")
+    .delete()
+    .eq("id", normalizedCandidateSkillId)
+    .eq("candidate_profile_id", profile.id);
+
+  if (deleteError) throw deleteError;
+
+  void refreshCandidateEmbedding(String(profile.id)).catch((refreshError) => {
+    console.error("Failed to refresh candidate embedding after removing skill", refreshError);
+  });
+}
+
+export async function addCandidateSkillByName(
+  skillName: string,
+  level: "beginner" | "intermediate" | "advanced",
+) {
+  const normalizedSkillName = String(skillName ?? "").trim();
+  if (!normalizedSkillName) {
+    throw new Error("Enter a skill name.");
+  }
+
+  const { data, error } = await invokeAuthedFunction<{
+    candidate_skill?: CandidateSkillRow | null;
+    profile_id?: string | null;
+  }>("add-candidate-skill", {
+    skill_name: normalizedSkillName,
+    level,
+  });
+
+  if (error) {
+    const message =
+      (error as { message?: string } | null)?.message ??
+      (error as { detail?: string | null } | null)?.detail ??
+      "Failed to add skill.";
+    throw new Error(String(message));
+  }
+
+  const profileId = String(data?.profile_id ?? "").trim();
+  if (profileId) {
+    void refreshCandidateEmbedding(profileId).catch((refreshError) => {
+      console.error("Failed to refresh candidate embedding after adding skill", refreshError);
+    });
+  }
+
+  return data?.candidate_skill ?? {
+    skill: normalizedSkillName,
+    level,
+  };
+}
+
+export async function getSkillsCatalog() {
+  const { data, error } = await supabase
+    .from("skills")
+    .select("id, name")
+    .order("name", { ascending: true })
+    .limit(1000);
+
+  if (error) throw error;
+  return (data ?? []) as SkillCatalogItem[];
+}
+
+export async function addCandidateCertification(input: {
+  name: string;
+  issuer?: string;
+  issuedAt?: string;
+  file?: File | null;
+}) {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error("Not authenticated");
+
+  const name = String(input.name ?? "").trim();
+  const issuer = String(input.issuer ?? "").trim();
+  const issuedAt = String(input.issuedAt ?? "").trim();
+  const file = input.file ?? null;
+
+  if (!name) {
+    throw new Error("Certification name is required.");
+  }
+
+  if (file) {
+    const fileName = String(file.name ?? "").toLowerCase();
+    if (!fileName.endsWith(".pdf") || file.type && file.type !== "application/pdf") {
+      throw new Error("Only PDF certificates are supported.");
+    }
+  }
+
+  let { data: profile, error: profileError } = await supabase
+    .from("candidate_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+
+  if (!profile?.id) {
+    const { data: createdProfile, error: createProfileError } = await supabase
+      .from("candidate_profiles")
+      .insert({
+        user_id: user.id,
+        full_name: String(user.user_metadata?.full_name ?? user.email ?? "Candidate").trim(),
+      })
+      .select("id")
+      .single();
+
+    if (createProfileError) throw createProfileError;
+    profile = createdProfile;
+  }
+
+  let certificateFilePath: string | null = null;
+  if (file) {
+    const sanitizedBaseName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    certificateFilePath = `${user.id}/${Date.now()}-${sanitizedBaseName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("candidate-certifications")
+      .upload(certificateFilePath, file, { upsert: false });
+
+    if (uploadError) throw uploadError;
+  }
+
+  const { data, error } = await supabase
+    .from("candidate_certifications")
+    .insert({
+      candidate_id: profile.id,
+      name,
+      issuer: issuer || null,
+      issued_at: issuedAt || null,
+      certificate_file_path: certificateFilePath,
+    })
+    .select("id, name, issuer, issued_at, certificate_file_path")
+    .single();
+
+  if (error) throw error;
+
+  return data as CandidateCertificationRow;
+}
+
+export async function removeCandidateCertification(certificationId: string) {
+  const normalizedCertificationId = String(certificationId ?? "").trim();
+  if (!normalizedCertificationId) {
+    throw new Error("Missing certification id.");
+  }
+
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("candidate_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError) throw profileError;
+  if (!profile?.id) throw new Error("Candidate profile not found");
+
+  const { data: certification, error: certificationError } = await supabase
+    .from("candidate_certifications")
+    .select("id, certificate_file_path")
+    .eq("id", normalizedCertificationId)
+    .eq("candidate_id", profile.id)
+    .single();
+
+  if (certificationError) throw certificationError;
+
+  const { error: deleteError } = await supabase
+    .from("candidate_certifications")
+    .delete()
+    .eq("id", normalizedCertificationId)
+    .eq("candidate_id", profile.id);
+
+  if (deleteError) throw deleteError;
+
+  const certificateFilePath = String(certification?.certificate_file_path ?? "").trim();
+  if (certificateFilePath) {
+    const { error: storageDeleteError } = await supabase.storage
+      .from("candidate-certifications")
+      .remove([certificateFilePath]);
+
+    if (storageDeleteError) {
+      console.error("Failed to delete certification file", storageDeleteError);
+    }
   }
 }
 
