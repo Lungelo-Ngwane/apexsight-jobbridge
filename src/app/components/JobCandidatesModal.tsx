@@ -4,6 +4,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
     consumeCandidateViewAccess,
+    getJobSkillSummary,
     getEmployerUsageSnapshot,
     getJobApplicants,
     runAutoMatch,
@@ -40,6 +41,7 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     const [refreshingMatchId, setRefreshingMatchId] = useState<string | null>(null);
     const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
     const [showUpsellModal, setShowUpsellModal] = useState(false);
+    const [jobSkillSummary, setJobSkillSummary] = useState<{ totalCount: number; requiredCount: number; optionalCount: number } | null>(null);
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
 
@@ -48,6 +50,12 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
         getJobApplicants(jobId)
             .then(setCandidates)
             .finally(() => setLoading(false));
+    }, [jobId]);
+
+    useEffect(() => {
+        getJobSkillSummary(jobId)
+            .then(setJobSkillSummary)
+            .catch((error) => console.error("Failed to load job skill summary", error));
     }, [jobId]);
 
 async function changeStatus(
@@ -111,7 +119,7 @@ async function handleViewProfile(appId: string) {
 
     const filteredCandidates = candidates
         .filter((c) => c.status === activeStage)
-        .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+        .sort((a, b) => (Number(b.hybrid_score ?? b.score ?? 0)) - (Number(a.hybrid_score ?? a.score ?? 0)));
     const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
     const canShowScores = normalizedPlan === "professional" || normalizedPlan === "enterprise";
     function getMatchColor(score: number) {
@@ -119,6 +127,8 @@ async function handleViewProfile(appId: string) {
         if (score >= 60) return "bg-yellow-100 text-yellow-700";
         return "bg-red-100 text-red-700";
     }
+
+    console.log("Candidates for job", jobId, candidates);
 
 
 
@@ -131,6 +141,15 @@ async function handleViewProfile(appId: string) {
                         <h2 className="text-xl font-semibold">Applicants</h2>
                         <Button variant="ghost" onClick={onClose}>✕</Button>
                     </div>
+
+                    {jobSkillSummary && jobSkillSummary.totalCount === 0 ? (
+                        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-sm font-semibold text-amber-900">Job matching is only partially configured</p>
+                            <p className="mt-1 text-xs text-amber-800">
+                                This job has no structured skills yet. Scores will rely mostly on experience and AI similarity until job skills are added.
+                            </p>
+                        </div>
+                    ) : null}
 
                     <div className="flex gap-2">
                         {PIPELINE_STAGES.map((stage) => (
@@ -177,13 +196,13 @@ async function handleViewProfile(appId: string) {
                                     <Badge className="mt-1">{app.status}</Badge>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    {canShowScores && typeof app.score === "number" && (
+                                    {canShowScores && typeof (app.hybrid_score ?? app.score) === "number" && (
                                         <span
                                             className={`text-sm font-semibold px-2 py-1 rounded-full ${getMatchColor(
-                                                app.score
+                                                Number(app.hybrid_score ?? app.score ?? 0)
                                             )}`}
                                         >
-                                            {app.score}%
+                                            {Number(app.hybrid_score ?? app.score)}%
                                         </span>
                                     )}
                                 </div>

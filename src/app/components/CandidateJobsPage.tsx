@@ -17,7 +17,6 @@ import {
   MapPin,
   Briefcase,
   Gauge,
-  DollarSign,
   Clock,
   Building2,
   ChevronLeft,
@@ -554,7 +553,7 @@ function JobCard({
 
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
-    const format = (num: number) => `R${(num / 1000).toFixed(0)}k`;
+    const format = (num: number) => `${(num / 1000).toFixed(0)}k`;
     if (min && max) return `${format(min)} - ${format(max)}`;
     if (min) return `From ${format(min)}`;
     if (max) return `Up to ${format(max)}`;
@@ -638,7 +637,6 @@ function JobCard({
           </div>
           {salary && (
             <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
-              <DollarSign className="w-4 h-4 flex-shrink-0" />
               <span>{salary}</span>
             </div>
           )}
@@ -779,7 +777,7 @@ function JobDetailsView({
 
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return "Salary not disclosed";
-    const format = (num: number) => `R${(num / 1000).toFixed(0)}k`;
+    const format = (num: number) => `${(num / 1000).toFixed(0)}k`;
     if (min && max) return `${format(min)} - ${format(max)} per year`;
     if (min) return `From ${format(min)} per year`;
     if (max) return `Up to ${format(max)} per year`;
@@ -869,9 +867,6 @@ function JobDetailsView({
 
         <Card className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200 shadow-md mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-white" />
-            </div>
             <div>
               <p className="text-sm text-emerald-700 font-medium">Compensation</p>
               <p className="text-xl font-bold text-gray-900">{formatSalary(job.salary_min, job.salary_max)}</p>

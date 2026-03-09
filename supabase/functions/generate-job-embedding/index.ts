@@ -17,6 +17,185 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+type ExtractedJobSkill = {
+  skill: string;
+  required: boolean;
+  min_score: number | null;
+};
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeSkillKey(value: string): string {
+  return normalizeWhitespace(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9+#]/g, "");
+}
+
+async function extractJobSkillsFromText(input: {
+  title: string;
+  description: string;
+  experienceLevel: string;
+  workMode: string;
+  department: string;
+  minYearsExperience: number | null;
+}): Promise<ExtractedJobSkill[]> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content:
+          "Extract structured job skills for hiring. Return strict JSON only. Be conservative and include only skills clearly implied by the role. Prefer concrete skills, frameworks, databases, platforms, and tools over vague soft skills.",
+      },
+      {
+        role: "user",
+        content: `
+Extract job skills from this job post.
+Return JSON of the form:
+{
+  "skills": [
+    {
+      "skill": string,
+      "required": boolean,
+      "min_score": number | null
+    }
+  ]
+}
+
+Rules:
+- Use required=true only for core must-have skills.
+- Use required=false for good-to-have or secondary technologies.
+- min_score must be an integer from 0 to 100 when you can infer proficiency expectation, otherwise null.
+- Infer stronger proficiency expectations for senior roles.
+- Limit to the most relevant 12 skills.
+
+Job title: ${input.title}
+Experience level: ${input.experienceLevel}
+Work mode: ${input.workMode}
+Department: ${input.department}
+Minimum years experience: ${input.minYearsExperience ?? "Not specified"}
+Job description: ${input.description}
+`,
+      },
+    ],
+  });
+
+  const raw = String(response.choices?.[0]?.message?.content ?? "{}");
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  const json = start !== -1 && end !== -1 && end > start ? raw.slice(start, end + 1) : "{}";
+  const parsed = JSON.parse(json) as { skills?: ExtractedJobSkill[] };
+
+  return Array.isArray(parsed.skills)
+    ? parsed.skills
+        .map((item) => ({
+          skill: normalizeWhitespace(String(item?.skill ?? "")),
+          required: Boolean(item?.required),
+          min_score:
+            Number.isFinite(Number(item?.min_score)) && Number(item?.min_score) >= 0
+              ? Math.max(0, Math.min(100, Math.round(Number(item?.min_score))))
+              : null,
+        }))
+        .filter((item) => item.skill.length > 0)
+    : [];
+}
+
+async function ensureStructuredJobSkills(jobId: string, job: {
+  title?: string | null;
+  description?: string | null;
+  experience_level?: string | null;
+  work_mode?: string | null;
+  department?: string | null;
+  min_years_experience?: number | null;
+}) {
+  const { data: existingRows, error: existingError } = await supabase
+    .from("job_skills")
+    .select("skill_id, required, min_score")
+    .eq("job_id", jobId);
+
+  if (existingError) throw existingError;
+  if ((existingRows ?? []).length > 0) return;
+
+  const extractedSkills = await extractJobSkillsFromText({
+    title: String(job.title ?? ""),
+    description: String(job.description ?? ""),
+    experienceLevel: String(job.experience_level ?? ""),
+    workMode: String(job.work_mode ?? ""),
+    department: String(job.department ?? ""),
+    minYearsExperience:
+      typeof job.min_years_experience === "number" ? Number(job.min_years_experience) : null,
+  });
+
+  if (extractedSkills.length === 0) return;
+
+  const { data: knownSkills } = await supabase
+    .from("skills")
+    .select("id, name");
+
+  const skillRows = (knownSkills ?? []).map((row) => ({
+    id: String(row.id),
+    name: normalizeWhitespace(String(row.name ?? "")),
+    lower: normalizeWhitespace(String(row.name ?? "")).toLowerCase(),
+    key: normalizeSkillKey(String(row.name ?? "")),
+  }));
+
+  async function resolveOrCreateSkillId(skillName: string): Promise<string | null> {
+    const key = normalizeSkillKey(skillName);
+    const lower = normalizeWhitespace(skillName).toLowerCase();
+    const exact = skillRows.find((row) => row.lower === lower || row.key === key);
+    if (exact) return exact.id;
+
+    const loose = skillRows.find((row) => key.length >= 5 && (row.key.includes(key) || key.includes(row.key)));
+    if (loose) return loose.id;
+
+    const { data: created, error: createError } = await supabase
+      .from("skills")
+      .insert({
+        name: normalizeWhitespace(skillName),
+        category: "Other",
+      })
+      .select("id, name")
+      .single();
+
+    if (createError || !created?.id) {
+      console.error("Failed to create extracted job skill", { skillName, createError });
+      return null;
+    }
+
+    skillRows.push({
+      id: String(created.id),
+      name: normalizeWhitespace(String(created.name ?? skillName)),
+      lower: normalizeWhitespace(String(created.name ?? skillName)).toLowerCase(),
+      key: normalizeSkillKey(String(created.name ?? skillName)),
+    });
+
+    return String(created.id);
+  }
+
+  const seen = new Set<string>();
+  const rowsToInsert: Array<{ job_id: string; skill_id: string; required: boolean; min_score: number | null }> = [];
+
+  for (const extractedSkill of extractedSkills) {
+    const skillId = await resolveOrCreateSkillId(extractedSkill.skill);
+    if (!skillId || seen.has(skillId)) continue;
+    seen.add(skillId);
+    rowsToInsert.push({
+      job_id: jobId,
+      skill_id: skillId,
+      required: extractedSkill.required,
+      min_score: extractedSkill.min_score,
+    });
+  }
+
+  if (rowsToInsert.length > 0) {
+    const { error: insertError } = await supabase.from("job_skills").insert(rowsToInsert);
+    if (insertError) throw insertError;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -61,7 +240,7 @@ Deno.serve(async (req) => {
 
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, employer_id, title, description, location")
+      .select("id, employer_id, title, description, location, employment_type, work_mode, department, min_years_experience, salary_min, salary_max, benefits, experience_level")
       .eq("id", job_id)
       .maybeSingle();
 
@@ -71,6 +250,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    await ensureStructuredJobSkills(String(job.id), job);
 
     let current: number | null = null;
     if (!skip_credit) {
@@ -106,11 +287,47 @@ Deno.serve(async (req) => {
       }
     }
 
+    const { data: jobSkills } = await supabase
+      .from("job_skills")
+      .select(`
+        required,
+        min_score,
+        skills (
+          name
+        )
+      `)
+      .eq("job_id", job_id);
+
+    const requiredSkills = (jobSkills ?? [])
+      .filter((row) => Boolean(row.required))
+      .map((row) => {
+        const name = String((row as { skills?: { name?: string | null } | null }).skills?.name ?? "").trim();
+        const minScore = Number((row as { min_score?: number | null }).min_score ?? 0);
+        return name ? `${name}${minScore > 0 ? ` (${minScore}% proficiency)` : ""}` : "";
+      })
+      .filter((value) => value.length > 0)
+      .join(", ");
+
+    const optionalSkills = (jobSkills ?? [])
+      .filter((row) => !row.required)
+      .map((row) => String((row as { skills?: { name?: string | null } | null }).skills?.name ?? "").trim())
+      .filter((value) => value.length > 0)
+      .join(", ");
+
     const text = `
-    Title: ${job.title}
-    Description: ${job.description}
-    Location: ${job.location}
-    `;
+Job Title: ${job.title}
+Job Description: ${job.description}
+Location: ${job.location ?? ""}
+Employment Type: ${job.employment_type ?? ""}
+Work Mode: ${job.work_mode ?? ""}
+Department: ${job.department ?? ""}
+Experience Level: ${job.experience_level ?? ""}
+Minimum Years Experience: ${job.min_years_experience ?? ""}
+Salary Range: ${job.salary_min ?? ""} - ${job.salary_max ?? ""}
+Benefits: ${job.benefits ?? ""}
+Required Skills: ${requiredSkills}
+Optional Skills: ${optionalSkills}
+`;
 
     const embedding = await openai.embeddings.create({
       model: "text-embedding-3-small",

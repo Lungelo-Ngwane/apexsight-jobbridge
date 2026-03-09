@@ -75,7 +75,7 @@ export default function App() {
   useEffect(() => {
     if (loading) return;
     const publicPaths = ["/", "/skilllink", "/jobbridge", "/reset-password"];
-    const currentPath = window.location.pathname;
+    const currentPath = location.pathname;
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const isRecoveryFlow = currentPath === "/reset-password" || hashParams.get("type") === "recovery";
 
@@ -86,14 +86,14 @@ export default function App() {
     // Only redirect on initial load, not every role change
     if (!user) {
       if (!publicPaths.includes(currentPath)) {
-        navigate('/');
+        navigate("/", { replace: true });
       }
     } else if (role === 'candidate' && currentPath === '/') {
-      navigate(getCandidatePostLoginPath(user?.id));
+      navigate(getCandidatePostLoginPath(user?.id), { replace: true });
     } else if (role === 'employer' && currentPath === '/') {
-      navigate('/employer/dashboard');
+      navigate("/employer/dashboard", { replace: true });
     }
-  }, [user, role, loading, navigate]);
+  }, [user, role, loading, navigate, location.pathname]);
 
   const getCurrentProduct = (): 'skilllink' | 'jobbridge' | 'landing' => {
     if (currentView === 'home') return 'landing';

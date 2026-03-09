@@ -51,6 +51,19 @@ export default function Login({
 
 const handleSubmit = async () => {
   try {
+    if (!email.trim()) {
+      showFeedback("Missing email", "Enter your email address to continue.");
+      return;
+    }
+
+    if (!password.trim()) {
+      showFeedback(
+        isRegister ? "Missing password" : "Missing password",
+        "Enter your password to continue.",
+      );
+      return;
+    }
+
     if (isRegister) {
       await registerUser(email, password, fullName, role, company);
       if (role === "employer") {

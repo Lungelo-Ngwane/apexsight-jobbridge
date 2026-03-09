@@ -8,6 +8,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function buildCandidateEmbeddingText(profile: Record<string, unknown>): string {
+  const skills = Array.isArray(profile.candidate_skills)
+    ? profile.candidate_skills
+        .map((s) => {
+          const skill = String((s as { skill?: string }).skill ?? "").trim();
+          const level = String((s as { level?: string }).level ?? "").trim();
+          return skill ? `${skill}${level ? ` (${level})` : ""}` : "";
+        })
+        .filter((s) => s.length > 0)
+    : [];
+
+  const coreSkills = skills.slice(0, 80).join(", ");
+
+  return `
+Candidate Headline: ${String(profile.headline ?? "")}
+Professional Summary: ${String(profile.professional_bio_ai ?? "") || String(profile.bio ?? "")}
+Resume Summary: ${String(profile.resume_summary ?? "")}
+Years Experience: ${String(profile.years_experience ?? "")}
+Experience Level: ${String(profile.experience_level ?? "")}
+Location: ${String(profile.location ?? "")}
+Availability: ${String(profile.availability ?? "")}
+Preferred Job Type: ${String(profile.preferred_job_type ?? "")}
+Work Mode: ${String(profile.work_mode ?? "")}
+Core Skills: ${coreSkills}
+Resume Evidence: ${String(profile.resume_text ?? "").slice(0, 4000)}
+`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -116,29 +144,7 @@ serve(async (req) => {
     });
   }
 
-  const skills = Array.isArray(profile.candidate_skills)
-    ? profile.candidate_skills
-        .map((s) => `${String(s.skill ?? "").trim()}${s.level ? ` (${s.level})` : ""}`)
-        .filter((s) => s.length > 0)
-    : [];
-
-
-  const text = `
-Candidate Name: ${profile.full_name ?? ""}
-Headline: ${profile.headline ?? ""}
-Bio: ${profile.bio ?? ""}
-AI Professional Bio: ${profile.professional_bio_ai ?? ""}
-Location: ${profile.location ?? ""}
-Years Experience: ${profile.years_experience ?? ""}
-Experience Level: ${profile.experience_level ?? ""}
-Availability: ${profile.availability ?? ""}
-Preferred Job Type: ${profile.preferred_job_type ?? ""}
-Work Mode: ${profile.work_mode ?? ""}
-Resume Summary: ${profile.resume_summary ?? ""}
-Resume Text: ${String(profile.resume_text ?? "").slice(0, 12000)}
-CV Path: ${profile.cv_url ?? ""}
-Skills: ${skills.join(", ")}
-  `;
+  const text = buildCandidateEmbeddingText(profile as Record<string, unknown>);
 
 
   const embeddingResponse = await openai.embeddings.create({

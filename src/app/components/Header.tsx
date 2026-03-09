@@ -131,12 +131,8 @@ export function Header({
     refresh();
     unsub = subscribeToMyMessageChanges(refresh);
 
-    const onFocus = () => refresh();
-    window.addEventListener("focus", onFocus);
-
     return () => {
       if (unsub) unsub();
-      window.removeEventListener("focus", onFocus);
     };
   }, [user, role, inboxOpen]);
 

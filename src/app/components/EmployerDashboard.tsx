@@ -110,9 +110,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       const force = Boolean(options?.force);
 
       try {
-        if (!stats) {
-          setAnalyticsLoading(true);
-        }
+        setAnalyticsLoading(true);
 
         const [analytics, credits, usage] = await Promise.all([
           getCachedQuery(keyFor("analytics"), 60_000, getEmployerAnalytics, { force }),
@@ -129,7 +127,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         setAnalyticsLoading(false);
       }
     },
-    [keyFor, stats, user],
+    [keyFor, user],
   );
 
   const loadJobs = useCallback(
@@ -138,9 +136,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       const force = Boolean(options?.force);
 
       try {
-        if (jobs.length === 0) {
-          setJobsLoading(true);
-        }
+        setJobsLoading(true);
         const data = await getCachedQuery(keyFor("jobs"), 20_000, getEmployerJobs, { force });
         setJobs(data || []);
         setVisibleCount(JOBS_PER_PAGE);
@@ -150,7 +146,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         setJobsLoading(false);
       }
     },
-    [jobs.length, keyFor, user],
+    [keyFor, user],
   );
 
   const loadPremiumInsights = useCallback(

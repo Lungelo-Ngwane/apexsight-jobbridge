@@ -5,7 +5,7 @@ import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-import { ArrowLeft, Building2, CalendarDays, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, ChevronDown, ChevronUp, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { useState, useEffect, useCallback } from "react";
 // import { supabase } from "@/lib/supabaseClient";
@@ -50,6 +50,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const [savingCertification, setSavingCertification] = useState(false);
     const [cvUploading, setCvUploading] = useState(false);
     const [cvName, setCvName] = useState<string | null>(null);
+    const [showAllSkills, setShowAllSkills] = useState(false);
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
     const resolveCandidateProfileId = useCallback(async (createIfMissing = false) => {
@@ -393,6 +394,9 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         );
     }
 
+    const visibleSkills = showAllSkills ? skills : skills.slice(0, 12);
+    const hiddenSkillsCount = Math.max(0, skills.length - visibleSkills.length);
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -521,20 +525,32 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
                         <div>
                             <Label>Preferred Job Type</Label>
-                            <Input
-                                placeholder="e.g. Full-time"
+                            <select
+                                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={profile.preferred_job_type}
                                 onChange={(e) => setProfile({ ...profile, preferred_job_type: e.target.value })}
-                            />
+                            >
+                                <option value="">Any job type</option>
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Internship">Internship</option>
+                                <option value="Temporary">Temporary</option>
+                            </select>
                         </div>
 
                         <div>
                             <Label>Work Mode</Label>
-                            <Input
-                                placeholder="e.g. Hybrid"
+                            <select
+                                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={profile.work_mode}
                                 onChange={(e) => setProfile({ ...profile, work_mode: e.target.value })}
-                            />
+                            >
+                                <option value="">Any work mode</option>
+                                <option value="remote">Remote</option>
+                                <option value="hybrid">Hybrid</option>
+                                <option value="onsite">On-site</option>
+                            </select>
                         </div>
                     </div>
                 </Card>
@@ -592,7 +608,12 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 {/* Skills */}
                 <Card className="p-6 border-gray-200 mt-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold">Skills</h2>
+                        <div>
+                            <h2 className="text-lg font-semibold">Skills</h2>
+                            <p className="text-sm text-gray-500">
+                                {skills.length} skills on your profile
+                            </p>
+                        </div>
                         <div className="flex gap-2">
                             <Input
                                 placeholder="Type a skill name"
@@ -604,18 +625,32 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             </Button>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        {skills.map((s, index) => (
+                    {skills.length > 12 ? (
+                        <div className="mb-4 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                            <div>
+                                <p className="text-sm font-medium text-blue-900">Large skill library</p>
+                                <p className="text-xs text-blue-700">
+                                    Showing {visibleSkills.length} of {skills.length} skills.
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => setShowAllSkills((prev) => !prev)}>
+                                {showAllSkills ? "Collapse" : `Show All ${skills.length}`}
+                                {showAllSkills ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+                            </Button>
+                        </div>
+                    ) : null}
+                    <div className={`flex flex-wrap gap-2 ${showAllSkills ? "max-h-[420px] overflow-y-auto pr-1" : ""}`}>
+                        {visibleSkills.map((s, index) => (
                             <div
                                 key={`${s.id ?? s.skill_id ?? s.skill}-${index}`}
-                                className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1.5 rounded"
+                                className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900"
                             >
-                                <span>{s.skill}</span>
+                                <span className="max-w-[180px] truncate text-sm font-medium" title={s.skill}>{s.skill}</span>
 
                                 {/* Skill Level Dropdown */}
                                 <select
                                     value={s.level || "beginner"}
-                                    className="border rounded px-1 text-sm"
+                                    className="rounded border border-blue-200 bg-white px-2 py-1 text-sm"
                                     onChange={async (e) => {
                                         if (!user) return;
                                         const newLevel = e.target.value;
@@ -661,6 +696,16 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             </div>
                         ))}
                     </div>
+                    {!showAllSkills && hiddenSkillsCount > 0 ? (
+                        <button
+                            type="button"
+                            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-700 transition hover:text-blue-800"
+                            onClick={() => setShowAllSkills(true)}
+                        >
+                            Show {hiddenSkillsCount} more skills
+                            <ChevronDown className="h-4 w-4" />
+                        </button>
+                    ) : null}
                 </Card>
 
                 <Card className="mt-6 border-gray-200 p-6">

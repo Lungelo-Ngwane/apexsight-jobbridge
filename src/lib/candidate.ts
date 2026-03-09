@@ -257,7 +257,12 @@ export async function getCandidateDashboardData() {
         id,
         skill_id,
         skill,
-        level
+        level,
+        skills (
+          id,
+          name,
+          category
+        )
       ),
       candidate_assessments (
         name,
@@ -593,6 +598,8 @@ export async function getOpenJobs() {
       description,
       location,
       employment_type,
+      salary_min,
+      salary_max,
       experience_level,
       is_featured,
       featured_until,
@@ -621,6 +628,8 @@ export async function getOpenJobs() {
         description,
         location,
         employment_type,
+        salary_min,
+        salary_max,
         experience_level,
         is_featured,
         featured_until,

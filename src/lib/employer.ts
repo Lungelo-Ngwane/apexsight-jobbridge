@@ -238,9 +238,15 @@ export async function createJob(data: {
   description: string;
   location?: string;
   employment_type?: string;
+  work_mode?: string;
+  department?: string;
+  min_years_experience?: number | null;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  benefits?: string | null;
   status: string;
   experience_level: string;
-  skills?: { skill_id: string; is_required: boolean }[];
+  skills?: { skill_id: string; is_required: boolean; min_score?: number | null }[];
 }) {
   // 1️⃣ Get current user
   const {
@@ -270,6 +276,21 @@ export async function createJob(data: {
       description: data.description,
       location: data.location || null,
       employment_type: data.employment_type || null,
+      work_mode: data.work_mode || null,
+      department: data.department || null,
+      min_years_experience:
+        typeof data.min_years_experience === "number" && Number.isFinite(data.min_years_experience)
+          ? Math.max(0, Math.round(data.min_years_experience))
+          : null,
+      salary_min:
+        typeof data.salary_min === "number" && Number.isFinite(data.salary_min)
+          ? Math.max(0, Math.round(data.salary_min))
+          : null,
+      salary_max:
+        typeof data.salary_max === "number" && Number.isFinite(data.salary_max)
+          ? Math.max(0, Math.round(data.salary_max))
+          : null,
+      benefits: data.benefits?.trim() ? data.benefits.trim() : null,
       status: data.status,
       experience_level: data.experience_level,
     })
@@ -292,7 +313,10 @@ export async function createJob(data: {
         job_id: job.id,
         skill_id: s.skill_id,
         required: s.is_required,
-        min_score: null,
+        min_score:
+          typeof s.min_score === "number" && Number.isFinite(s.min_score)
+            ? Math.max(0, Math.min(100, Math.round(s.min_score)))
+            : null,
       })),
     );
 
@@ -338,7 +362,19 @@ export async function getEmployerJobs() {
       location,
       description,
       employment_type,
+      work_mode,
+      department,
+      min_years_experience,
+      salary_min,
+      salary_max,
+      benefits,
       experience_level,
+      job_skills (
+        skill_id,
+        required,
+        min_score,
+        skills ( name )
+      ),
       is_featured,
       featured_until,
       published_at,
@@ -369,7 +405,19 @@ export async function getEmployerJobs() {
       location,
       description,
       employment_type,
+      work_mode,
+      department,
+      min_years_experience,
+      salary_min,
+      salary_max,
+      benefits,
       experience_level,
+      job_skills (
+        skill_id,
+        required,
+        min_score,
+        skills ( name )
+      ),
       is_featured,
       featured_until,
       created_at,
@@ -390,8 +438,15 @@ export async function updateJob(
     description: string;
     location?: string;
     employment_type?: string;
+    work_mode?: string;
+    department?: string;
+    min_years_experience?: number | null;
+    salary_min?: number | null;
+    salary_max?: number | null;
+    benefits?: string | null;
     status: "open" | "closed" | "archived";
     experience_level: string;
+    skills?: { skill_id: string; is_required: boolean; min_score?: number | null }[];
   },
 ) {
   const {
@@ -418,6 +473,21 @@ export async function updateJob(
       description: data.description,
       location: data.location || null,
       employment_type: data.employment_type || null,
+      work_mode: data.work_mode || null,
+      department: data.department || null,
+      min_years_experience:
+        typeof data.min_years_experience === "number" && Number.isFinite(data.min_years_experience)
+          ? Math.max(0, Math.round(data.min_years_experience))
+          : null,
+      salary_min:
+        typeof data.salary_min === "number" && Number.isFinite(data.salary_min)
+          ? Math.max(0, Math.round(data.salary_min))
+          : null,
+      salary_max:
+        typeof data.salary_max === "number" && Number.isFinite(data.salary_max)
+          ? Math.max(0, Math.round(data.salary_max))
+          : null,
+      benefits: data.benefits?.trim() ? data.benefits.trim() : null,
       status: data.status,
       experience_level: data.experience_level,
     })
@@ -432,6 +502,39 @@ export async function updateJob(
     }
     throw error;
   }
+
+  if (Array.isArray(data.skills)) {
+    const { error: clearSkillsError } = await supabase
+      .from("job_skills")
+      .delete()
+      .eq("job_id", jobId);
+
+    if (clearSkillsError) throw clearSkillsError;
+
+    if (data.skills.length > 0) {
+      const { error: insertSkillsError } = await supabase.from("job_skills").insert(
+        data.skills.map((skill) => ({
+          job_id: jobId,
+          skill_id: skill.skill_id,
+          required: skill.is_required,
+          min_score:
+            typeof skill.min_score === "number" && Number.isFinite(skill.min_score)
+              ? Math.max(0, Math.min(100, Math.round(skill.min_score)))
+              : null,
+        })),
+      );
+
+      if (insertSkillsError) throw insertSkillsError;
+    }
+  }
+
+  await supabase.functions
+    .invoke("generate-job-embedding", {
+      body: { job_id: jobId, skip_credit: true },
+    })
+    .catch((invokeError) => {
+      console.warn("Failed to refresh job embedding after update", invokeError);
+    });
 }
 
 /* =========================
@@ -545,6 +648,23 @@ export async function renewJobVisibility(jobId: string) {
    GET JOB APPLICANTS
 ========================= */
 export async function getJobApplicants(jobId: string) {
+  const { data: jobRow, error: jobError } = await supabase
+    .from("jobs")
+    .select(`
+      id,
+      title,
+      location,
+      employment_type,
+      experience_level,
+      job_skills (
+        required
+      )
+    `)
+    .eq("id", jobId)
+    .maybeSingle();
+
+  if (jobError) throw jobError;
+
   const { data, error } = await supabase
     .from("job_applications")
     .select(
@@ -552,12 +672,16 @@ export async function getJobApplicants(jobId: string) {
       id,
       status,
       score,
+      score_breakdown,
       created_at,
       candidate:candidate_profiles (
         id,
         full_name,
         headline,
         location,
+        preferred_job_type,
+        cv_url,
+        resume_analysis,
         years_experience,
         bio,
         candidate_skills (
@@ -568,11 +692,249 @@ export async function getJobApplicants(jobId: string) {
     `,
     )
     .eq("job_id", jobId)
-    .order("score", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data;
+
+  const applications = data ?? [];
+  const candidateIds = applications
+    .map((row) => String((row as { candidate?: { id?: string | null } | null }).candidate?.id ?? "").trim())
+    .filter((id) => id.length > 0);
+
+  const { data: matchRows, error: matchError } = await supabase
+    .from("job_matches")
+    .select("candidate_id, similarity")
+    .eq("job_id", jobId)
+    .in("candidate_id", candidateIds.length > 0 ? candidateIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  if (matchError) throw matchError;
+
+  const similarityByCandidate = new Map<string, number>();
+  for (const row of matchRows ?? []) {
+    const candidateId = String(row.candidate_id ?? "").trim();
+    const similarity = Number(row.similarity ?? NaN);
+    if (!candidateId || !Number.isFinite(similarity)) continue;
+    similarityByCandidate.set(candidateId, Math.max(0, Math.min(100, Math.round(similarity * 100))));
+  }
+
+  return applications.map((row) => {
+    const candidateId = String((row as { candidate?: { id?: string | null } | null }).candidate?.id ?? "").trim();
+    const applicationScore = Number((row as { score?: number | null }).score ?? NaN);
+    const aiSimilarity = similarityByCandidate.get(candidateId) ?? null;
+    const intelligence = computeMatchIntelligence({
+      applicationScore,
+      aiSimilarity,
+      scoreBreakdown: (row as { score_breakdown?: { required?: number; optional?: number; experience?: number; skill_level?: number } | null }).score_breakdown ?? null,
+      job: {
+        title: (jobRow as { title?: string | null } | null)?.title ?? null,
+        location: (jobRow as { location?: string | null } | null)?.location ?? null,
+        employment_type: (jobRow as { employment_type?: string | null } | null)?.employment_type ?? null,
+        experience_level: (jobRow as { experience_level?: string | null } | null)?.experience_level ?? null,
+        job_skills: ((jobRow as { job_skills?: Array<{ required?: boolean | null }> } | null)?.job_skills) ?? [],
+      },
+      candidate: {
+        headline: (row as { candidate?: { headline?: string | null } | null }).candidate?.headline ?? null,
+        location: (row as { candidate?: { location?: string | null } | null }).candidate?.location ?? null,
+        preferred_job_type: (row as { candidate?: { preferred_job_type?: string | null } | null }).candidate?.preferred_job_type ?? null,
+        resume_analysis: (row as { candidate?: { resume_analysis?: unknown } | null }).candidate?.resume_analysis as {
+          work_experience?: Array<{ title?: string | null }>;
+          debug?: { extraction_method?: string | null };
+        } | null,
+        candidate_skills: ((row as { candidate?: { candidate_skills?: unknown[] } | null }).candidate?.candidate_skills) ?? [],
+        cv_url: (row as { candidate?: { cv_url?: string | null } | null }).candidate?.cv_url ?? null,
+      },
+    });
+
+    return {
+      ...row,
+      ai_similarity: aiSimilarity,
+      hybrid_score: intelligence.baseHybridScore,
+      final_match_score: intelligence.finalMatchScore,
+      confidence_score: intelligence.confidenceScore,
+    };
+  });
+}
+
+export async function getJobSkillSummary(jobId: string) {
+  const { data, error } = await supabase
+    .from("job_skills")
+    .select("required")
+    .eq("job_id", jobId);
+
+  if (error) throw error;
+
+  const requiredCount = (data ?? []).filter((row) => Boolean(row.required)).length;
+  const optionalCount = (data ?? []).filter((row) => !row.required).length;
+
+  return {
+    totalCount: (data ?? []).length,
+    requiredCount,
+    optionalCount,
+  };
+}
+
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function normalizeComparable(value: string): string {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function tokenizeComparable(value: string): string[] {
+  const stopWords = new Set(["senior", "junior", "mid", "developer", "engineer", "software", "full", "time"]);
+  return normalizeComparable(value)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && !stopWords.has(token));
+}
+
+function computeMatchIntelligence(input: {
+  applicationScore: number | null;
+  aiSimilarity: number | null;
+  scoreBreakdown?: { required?: number; optional?: number; experience?: number; skill_level?: number } | null;
+  job: {
+    title?: string | null;
+    location?: string | null;
+    employment_type?: string | null;
+    experience_level?: string | null;
+    job_skills?: Array<{ required?: boolean | null }> | null;
+  };
+  candidate: {
+    headline?: string | null;
+    location?: string | null;
+    preferred_job_type?: string | null;
+    resume_analysis?: {
+      work_experience?: Array<{ title?: string | null }>;
+      debug?: { extraction_method?: string | null };
+    } | null;
+    candidate_skills?: Array<unknown> | null;
+    cv_url?: string | null;
+  };
+}) {
+  const applicationScore = Number.isFinite(Number(input.applicationScore)) ? Number(input.applicationScore) : null;
+  const aiSimilarity = Number.isFinite(Number(input.aiSimilarity)) ? Number(input.aiSimilarity) : null;
+  const baseHybrid =
+    applicationScore === null || aiSimilarity === null
+      ? (applicationScore ?? aiSimilarity ?? null)
+      : clampScore((applicationScore * 0.7) + (aiSimilarity * 0.3));
+
+  const matchingConfig = {
+    total_job_skills: Array.isArray(input.job.job_skills) ? input.job.job_skills.length : 0,
+    required_job_skills: Array.isArray(input.job.job_skills)
+      ? input.job.job_skills.filter((row) => Boolean(row.required)).length
+      : 0,
+    optional_job_skills: Array.isArray(input.job.job_skills)
+      ? input.job.job_skills.filter((row) => !row.required).length
+      : 0,
+  };
+
+  const knockoutFilters: Array<{ label: string; status: "pass" | "warning" | "fail"; detail: string }> = [];
+  let penalty = 0;
+  let recencyBonus = 0;
+  const explanations: string[] = [];
+
+  const preferredJobType = normalizeComparable(String(input.candidate.preferred_job_type ?? ""));
+  const jobEmploymentType = normalizeComparable(String(input.job.employment_type ?? ""));
+  if (preferredJobType && jobEmploymentType) {
+    if (preferredJobType === jobEmploymentType) {
+      knockoutFilters.push({ label: "Job type", status: "pass", detail: "Candidate preference matches job type." });
+    } else {
+      knockoutFilters.push({ label: "Job type", status: "fail", detail: "Candidate preferred job type does not match this role." });
+      penalty += 12;
+    }
+  }
+
+  const candidateLocation = normalizeComparable(String(input.candidate.location ?? ""));
+  const jobLocation = normalizeComparable(String(input.job.location ?? ""));
+  const remoteLike = (value: string) => value.includes("remote");
+  if (candidateLocation && jobLocation && !remoteLike(candidateLocation) && !remoteLike(jobLocation)) {
+    const candidateTokens = new Set(tokenizeComparable(candidateLocation));
+    const jobTokens = tokenizeComparable(jobLocation);
+    const overlap = jobTokens.filter((token) => candidateTokens.has(token)).length;
+    if (overlap > 0) {
+      knockoutFilters.push({ label: "Location", status: "pass", detail: "Candidate location aligns with the job location." });
+    } else {
+      knockoutFilters.push({ label: "Location", status: "warning", detail: "Candidate location may not align with this job location." });
+      penalty += 6;
+    }
+  }
+
+  const requiredScore = Number(input.scoreBreakdown?.required ?? 0);
+  const experienceScore = Number(input.scoreBreakdown?.experience ?? 0);
+  if (matchingConfig.required_job_skills > 0 && requiredScore <= 0) {
+    knockoutFilters.push({ label: "Required skills", status: "fail", detail: "Candidate did not match any configured required skills." });
+    penalty += 20;
+  } else if (matchingConfig.required_job_skills > 0) {
+    explanations.push(`Matched ${requiredScore} of 50 available required-skill points.`);
+  }
+
+  if (normalizeComparable(String(input.job.experience_level ?? "")) && experienceScore <= 0) {
+    knockoutFilters.push({ label: "Experience", status: "fail", detail: "Candidate experience level is materially below the job expectation." });
+    penalty += 10;
+  } else if (experienceScore > 0) {
+    explanations.push(`Experience alignment contributed ${experienceScore}/15.`);
+  }
+
+  const recentRoleTitle = String(input.candidate.resume_analysis?.work_experience?.[0]?.title ?? "").trim();
+  const comparisonPool = `${input.candidate.headline ?? ""} ${recentRoleTitle}`.trim();
+  if (comparisonPool && input.job.title) {
+    const candidateTokens = new Set(tokenizeComparable(comparisonPool));
+    const jobTokens = tokenizeComparable(String(input.job.title));
+    const overlap = jobTokens.filter((token) => candidateTokens.has(token)).length;
+    if (overlap >= 2) {
+      recencyBonus += 8;
+      explanations.push("Recent role/title strongly aligns with the current job title.");
+    } else if (overlap >= 1) {
+      recencyBonus += 4;
+      explanations.push("Recent role/title shows partial alignment with this job.");
+    }
+  }
+
+  if (aiSimilarity !== null) {
+    explanations.push(`AI similarity is ${aiSimilarity}%, based on semantic overlap between the job and candidate profile.`);
+  }
+
+  const extractionMethod = String(input.candidate.resume_analysis?.debug?.extraction_method ?? "").trim();
+  let confidence = 0;
+  if (aiSimilarity !== null) confidence += 25;
+  if (matchingConfig.total_job_skills > 0) confidence += 25;
+  if (matchingConfig.required_job_skills > 0) confidence += 15;
+  if (String(input.candidate.cv_url ?? "").trim()) confidence += 15;
+  if (Array.isArray(input.candidate.candidate_skills) && input.candidate.candidate_skills.length >= 5) confidence += 10;
+  if (extractionMethod === "openai_pdf") confidence += 10;
+  confidence -= knockoutFilters.filter((item) => item.status === "fail").length * 8;
+  confidence = clampScore(confidence);
+
+  const finalMatchScore = baseHybrid === null ? null : clampScore(baseHybrid + recencyBonus - penalty);
+  const displayedMatchLevel =
+    (finalMatchScore ?? 0) >= 90 ? "Elite" :
+    (finalMatchScore ?? 0) >= 75 ? "Strong" :
+    (finalMatchScore ?? 0) >= 60 ? "Good" :
+    (finalMatchScore ?? 0) >= 40 ? "Potential" : "Weak";
+  const displayedRecommendation =
+    (finalMatchScore ?? 0) >= 75 ? "Interview Recommended" :
+    (finalMatchScore ?? 0) >= 50 ? "Consider" : "Not Recommended";
+
+  if (matchingConfig.total_job_skills === 0) {
+    explanations.push("This job has no structured skills configured, which lowers confidence in the rule-based match.");
+  }
+
+  return {
+    matchingConfig,
+    knockoutFilters,
+    explanations,
+    confidenceScore: confidence,
+    baseHybridScore: baseHybrid,
+    finalMatchScore,
+    displayedMatchLevel,
+    displayedRecommendation,
+    recencyBonus,
+    penalty,
+  };
 }
 
 /* =========================
@@ -743,6 +1105,10 @@ export async function getCandidateDeepView(applicationId: string) {
         full_name,
         location,
         bio,
+        professional_bio_ai,
+        resume_summary,
+        preferred_job_type,
+        resume_analysis,
         years_experience,
         headline,
         cv_url,
@@ -753,7 +1119,14 @@ export async function getCandidateDeepView(applicationId: string) {
         )
       ),
       jobs (
-        embedding
+        embedding,
+        title,
+        location,
+        employment_type,
+        experience_level,
+        job_skills (
+          required
+        )
       )
     `,
     )
@@ -837,18 +1210,43 @@ export async function getCandidateDeepView(applicationId: string) {
   }
 
   const applicationScore = Number((data as { score?: number | null })?.score ?? NaN);
-  const hybridScore =
-    aiSimilarityPercent === null || !Number.isFinite(applicationScore)
-      ? null
-      : Math.max(
-          0,
-          Math.min(100, Math.round((applicationScore * 0.7) + (aiSimilarityPercent * 0.3))),
-        );
+  const intelligence = computeMatchIntelligence({
+    applicationScore,
+    aiSimilarity: aiSimilarityPercent,
+    scoreBreakdown: (data as { score_breakdown?: { required?: number; optional?: number; experience?: number; skill_level?: number } | null }).score_breakdown ?? null,
+    job: {
+      title: (data as { jobs?: { title?: string | null } | null })?.jobs?.title ?? null,
+      location: (data as { jobs?: { location?: string | null } | null })?.jobs?.location ?? null,
+      employment_type: (data as { jobs?: { employment_type?: string | null } | null })?.jobs?.employment_type ?? null,
+      experience_level: (data as { jobs?: { experience_level?: string | null } | null })?.jobs?.experience_level ?? null,
+      job_skills: (((data as { jobs?: { job_skills?: Array<{ required?: boolean | null }> } | null })?.jobs?.job_skills) ?? []),
+    },
+    candidate: {
+      headline: (data as { candidate_profiles?: { headline?: string | null } | null })?.candidate_profiles?.headline ?? null,
+      location: (data as { candidate_profiles?: { location?: string | null } | null })?.candidate_profiles?.location ?? null,
+      preferred_job_type: (data as { candidate_profiles?: { preferred_job_type?: string | null } | null })?.candidate_profiles?.preferred_job_type ?? null,
+      resume_analysis: (data as { candidate_profiles?: { resume_analysis?: unknown } | null })?.candidate_profiles?.resume_analysis as {
+        work_experience?: Array<{ title?: string | null }>;
+        debug?: { extraction_method?: string | null };
+      } | null,
+      candidate_skills: (((data as { candidate_profiles?: { candidate_skills?: unknown[] } | null })?.candidate_profiles?.candidate_skills) ?? []),
+      cv_url: (data as { candidate_profiles?: { cv_url?: string | null } | null })?.candidate_profiles?.cv_url ?? null,
+    },
+  });
 
   return {
     ...data,
     ai_similarity: aiSimilarityPercent,
-    hybrid_score: hybridScore,
+    hybrid_score: intelligence.baseHybridScore,
+    final_match_score: intelligence.finalMatchScore,
+    confidence_score: intelligence.confidenceScore,
+    knockout_filters: intelligence.knockoutFilters,
+    match_explanations: intelligence.explanations,
+    matching_config: intelligence.matchingConfig,
+    recency_bonus: intelligence.recencyBonus,
+    knockout_penalty: intelligence.penalty,
+    displayed_match_level: intelligence.displayedMatchLevel,
+    displayed_recommendation: intelligence.displayedRecommendation,
   };
 }
 

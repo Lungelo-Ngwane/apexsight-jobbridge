@@ -41,12 +41,9 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
 
     refresh();
     const unsub = subscribeToMyMessageChanges(refresh);
-    const onFocus = () => refresh();
-    window.addEventListener("focus", onFocus);
 
     return () => {
       unsub();
-      window.removeEventListener("focus", onFocus);
     };
   }, [hasCandidateMessagingAccess, user, role]);
 

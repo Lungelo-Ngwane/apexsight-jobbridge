@@ -16,6 +16,8 @@ import {
   Award,
   Building2,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   TrendingUp,
   Target,
@@ -58,6 +60,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const [deletingSkillId, setDeletingSkillId] = useState<string | null>(null);
   const [showAddCertification, setShowAddCertification] = useState(false);
   const [deletingCertificationId, setDeletingCertificationId] = useState<string | null>(null);
+  const [showAllSkills, setShowAllSkills] = useState(false);
 
 
   useEffect(() => {
@@ -109,13 +112,23 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
     );
   }
   const skillsCount = profile?.candidate_skills?.length ?? 0;
+  const allSkills = Array.isArray(profile?.candidate_skills) ? profile.candidate_skills : [];
+  const featuredSkills = showAllSkills ? allSkills : allSkills.slice(0, 6);
+  const overflowSkills = showAllSkills ? [] : allSkills.slice(6);
   const certsCount = profile?.candidate_certifications?.length ?? 0;
+  const skillCategories = Array.from(
+    new Set(
+      allSkills
+        .map((item: any) => String(item?.skills?.category ?? "").trim())
+        .filter((category: string) => category.length > 0),
+    ),
+  );
+  const topSkillCategories = skillCategories.slice(0, 3);
   const readinessScore = Math.min(
     100,
     Math.round(skillsCount * 15 + certsCount * 10)
   );
   const remainingToNextMilestone = Math.max(0, 90 - readinessScore);
-  const matchingRoleEstimate = Math.max(1, skillsCount * 3 + certsCount * 2);
   const assessmentRows = Array.isArray(profile?.candidate_assessments)
     ? profile.candidate_assessments
     : [];
@@ -320,8 +333,25 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 flex flex-col justify-between">
               <div>
-                <div className="text-sm text-blue-100 mb-2">You are ready for</div>
-                <div className="text-2xl font-bold mb-4">~{matchingRoleEstimate} Job Roles</div>
+                <div className="text-sm text-blue-100 mb-2">Profile depth</div>
+                <div className="text-2xl font-bold mb-2">{skillsCount} Skills</div>
+                <div className="text-sm text-blue-100">
+                  {skillCategories.length > 0
+                    ? `${skillCategories.length} categories represented`
+                    : "Categories will appear as your skills are classified"}
+                </div>
+                {topSkillCategories.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {topSkillCategories.map((category) => (
+                      <span
+                        key={category}
+                        className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white"
+                      >
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <Button
                 onClick={onViewJobs}
@@ -339,12 +369,26 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
           {/* Skill Scorecards */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Your Skill Scorecards</h2>
-              <Button variant="ghost" className="text-blue-600">View All</Button>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Your Skill Scorecards</h2>
+                <p className="text-sm text-gray-500">
+                  {skillsCount} skills on your profile
+                </p>
+              </div>
+              {skillsCount > 6 ? (
+                <Button
+                  variant="ghost"
+                  className="text-blue-600"
+                  onClick={() => setShowAllSkills((prev) => !prev)}
+                >
+                  {showAllSkills ? "Show Less" : `Show All ${skillsCount}`}
+                  {showAllSkills ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+                </Button>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profile?.candidate_skills?.map((item: any) => (
+              {featuredSkills.map((item: any) => (
                 <Card key={item.id ?? item.skill} className="p-5 hover:shadow-md transition-shadow border-gray-200">
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -399,6 +443,32 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 + Add Skill
               </Button>
             </div>
+
+            {overflowSkills.length > 0 ? (
+              <Card className="border-gray-200 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">More skills</h3>
+                    <p className="text-xs text-gray-500">
+                      {overflowSkills.length} additional skills are hidden to keep this page easy to scan.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setShowAllSkills(true)}>
+                    View remaining {overflowSkills.length}
+                  </Button>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {overflowSkills.slice(0, 12).map((item: any) => (
+                    <Badge key={`overflow-${item.id ?? item.skill}`} variant="secondary" className="px-3 py-1">
+                      {item.skill}
+                    </Badge>
+                  ))}
+                  {overflowSkills.length > 12 ? (
+                    <Badge variant="outline">+{overflowSkills.length - 12} more</Badge>
+                  ) : null}
+                </div>
+              </Card>
+            ) : null}
 
             {/* Assessment Progress */}
             {/* <div>

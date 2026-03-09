@@ -17,6 +17,32 @@ const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
 });
 
+function buildCandidateEmbeddingText(candidate: Record<string, unknown>): string {
+  const skills = Array.isArray(candidate.candidate_skills)
+    ? candidate.candidate_skills
+        .map((s) => {
+          const skill = String((s as { skill?: string }).skill ?? "").trim();
+          const level = String((s as { level?: string }).level ?? "").trim();
+          return skill ? `${skill}${level ? ` (${level})` : ""}` : "";
+        })
+        .filter((s) => s.length > 0)
+    : [];
+
+  return `
+Candidate Headline: ${String(candidate.headline ?? "")}
+Professional Summary: ${String(candidate.professional_bio_ai ?? "") || String(candidate.bio ?? "")}
+Resume Summary: ${String(candidate.resume_summary ?? "")}
+Years Experience: ${String(candidate.years_experience ?? "")}
+Experience Level: ${String(candidate.experience_level ?? "")}
+Location: ${String(candidate.location ?? "")}
+Availability: ${String(candidate.availability ?? "")}
+Preferred Job Type: ${String(candidate.preferred_job_type ?? "")}
+Work Mode: ${String(candidate.work_mode ?? "")}
+Core Skills: ${skills.slice(0, 80).join(", ")}
+Resume Evidence: ${String(candidate.resume_text ?? "").slice(0, 4000)}
+`;
+}
+
 async function ensureCandidateEmbeddings(jobId: string) {
   const MAX_EMBEDDINGS_PER_RUN = 20;
   const CONCURRENCY = 3;
@@ -87,32 +113,7 @@ async function ensureCandidateEmbeddings(jobId: string) {
   async function processCandidate(candidate: Record<string, unknown>) {
     if (candidate.embedding) return;
 
-    const skills = Array.isArray(candidate.candidate_skills)
-      ? candidate.candidate_skills
-          .map((s) => {
-            const skill = String((s as { skill?: string }).skill ?? "").trim();
-            const level = String((s as { level?: string }).level ?? "").trim();
-            return skill ? `${skill}${level ? ` (${level})` : ""}` : "";
-          })
-          .filter((s) => s.length > 0)
-      : [];
-
-    const text = `
-Candidate Name: ${String(candidate.full_name ?? "")}
-Headline: ${String(candidate.headline ?? "")}
-Bio: ${String(candidate.bio ?? "")}
-AI Professional Bio: ${String(candidate.professional_bio_ai ?? "")}
-Location: ${String(candidate.location ?? "")}
-Years Experience: ${String(candidate.years_experience ?? "")}
-Experience Level: ${String(candidate.experience_level ?? "")}
-Availability: ${String(candidate.availability ?? "")}
-Preferred Job Type: ${String(candidate.preferred_job_type ?? "")}
-Work Mode: ${String(candidate.work_mode ?? "")}
-Resume Summary: ${String(candidate.resume_summary ?? "")}
-Resume Text: ${String(candidate.resume_text ?? "").slice(0, 12000)}
-CV Path: ${String(candidate.cv_url ?? "")}
-Skills: ${skills.join(", ")}
-`;
+    const text = buildCandidateEmbeddingText(candidate);
 
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",

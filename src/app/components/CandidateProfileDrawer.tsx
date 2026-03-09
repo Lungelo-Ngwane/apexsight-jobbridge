@@ -72,6 +72,8 @@ export function CandidateProfileDrawer({
   const applicationScore = Number(data.score ?? 0);
   const aiSimilarity = data.ai_similarity === null || data.ai_similarity === undefined ? null : Number(data.ai_similarity);
   const hybridScore = data.hybrid_score === null || data.hybrid_score === undefined ? null : Number(data.hybrid_score);
+  const finalMatchScore = data.final_match_score === null || data.final_match_score === undefined ? null : Number(data.final_match_score);
+  const confidenceScore = data.confidence_score === null || data.confidence_score === undefined ? null : Number(data.confidence_score);
   const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
   const hasPaidAccess = hasEmployerPaidAccess(profile);
   const isStarter = normalizedPlan === "starter";
@@ -81,6 +83,36 @@ export function CandidateProfileDrawer({
     credits.find((credit) => String(credit.creditType).toLowerCase() === "ai_credit")?.remaining ?? 0;
   const hideScoresForStarterNoCredits = isStarter && !loadingCredits && aiCreditRemaining <= 0;
   const showBreakdown = isEnterprise && Boolean(data.score_breakdown);
+  const matchingConfig = data.matching_config ?? {};
+  const requiredJobSkills = Number(matchingConfig.required_job_skills ?? 0);
+  const optionalJobSkills = Number(matchingConfig.optional_job_skills ?? 0);
+  const totalJobSkills = Number(matchingConfig.total_job_skills ?? 0);
+  const hasStructuredJobSkills = totalJobSkills > 0;
+  const hasRequiredJobSkills = requiredJobSkills > 0;
+  const hasOptionalJobSkills = optionalJobSkills > 0;
+
+  function renderBreakdownValue(value: unknown, max: number, configured: boolean) {
+    if (!configured) return "Not configured";
+    return `${Number(value ?? 0)} / ${max}`;
+  }
+
+  const displayedMatchScore = finalMatchScore ?? hybridScore ?? applicationScore;
+  const displayedMatchLevel = String(data.displayed_match_level ?? "").trim() || (
+    displayedMatchScore >= 90 ? "Elite" :
+    displayedMatchScore >= 75 ? "Strong" :
+    displayedMatchScore >= 60 ? "Good" :
+    displayedMatchScore >= 40 ? "Potential" : "Weak"
+  );
+  const displayedRecommendation = String(data.displayed_recommendation ?? "").trim() || (
+    displayedMatchScore >= 75 ? "Interview Recommended" :
+    displayedMatchScore >= 50 ? "Consider" : "Not Recommended"
+  );
+  const aboutText =
+    String(data.candidate_profiles.professional_bio_ai ?? "").trim() ||
+    String(data.candidate_profiles.resume_summary ?? "").trim() ||
+    String(data.candidate_profiles.bio ?? "").trim();
+  const knockoutFilters = Array.isArray(data.knockout_filters) ? data.knockout_filters : [];
+  const matchExplanations = Array.isArray(data.match_explanations) ? data.match_explanations : [];
 
 
   return (
@@ -128,7 +160,7 @@ export function CandidateProfileDrawer({
           ) : (
             <div className="mt-3 space-y-1">
               <div className="text-sm font-medium">
-                Application Score:
+                Rule-Based Score:
                 <span className="ml-2 font-bold text-blue-600">
                   {applicationScore}%
                 </span>
@@ -155,16 +187,23 @@ export function CandidateProfileDrawer({
               </div>
 
               <div className="text-sm">
+                Final Match Score:
+                <span className="ml-2 font-semibold text-violet-700">
+                  {finalMatchScore === null ? "Not available" : `${finalMatchScore}%`}
+                </span>
+              </div>
+
+              <div className="text-sm">
                 Match Level:
                 <span className="ml-2 font-semibold">
-                  {data.match_label}
+                  {displayedMatchLevel}
                 </span>
               </div>
 
               <div className="text-sm">
                 Recommendation:
                 <span className="ml-2 font-semibold text-green-600">
-                  {data.hiring_recommendation}
+                  {displayedRecommendation}
                 </span>
               </div>
 
@@ -172,6 +211,13 @@ export function CandidateProfileDrawer({
                 Rank:
                 <span className="ml-2 font-semibold">
                   #{data.rank}
+                </span>
+              </div>
+
+              <div className="text-sm">
+                Confidence:
+                <span className="ml-2 font-semibold">
+                  {confidenceScore === null ? "Not available" : `${confidenceScore}%`}
                 </span>
               </div>
             </div>
@@ -183,7 +229,7 @@ export function CandidateProfileDrawer({
         {/* Score Badge */}
         {!hideScoresForStarterNoCredits && (
           <Badge className="text-base px-3 py-1">
-            {hybridScore ?? applicationScore}%
+            {displayedMatchScore}%
           </Badge>
         )}
 
@@ -193,15 +239,24 @@ export function CandidateProfileDrawer({
         <section className="mt-6">
           <h4 className="font-semibold mb-2">Match Breakdown</h4>
 
+          {!hasStructuredJobSkills ? (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="text-sm font-semibold text-amber-900">Matching setup incomplete</p>
+              <p className="mt-1 text-xs text-amber-800">
+                This job has no structured skills configured, so required, optional, and proficiency scores are not reliable yet.
+              </p>
+            </div>
+          ) : null}
+
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span>Required skills</span>
-              <span>{data.score_breakdown.required} / 50</span>
+              <span>{renderBreakdownValue(data.score_breakdown.required, 50, hasRequiredJobSkills)}</span>
             </div>
 
             <div className="flex justify-between">
               <span>Optional skills</span>
-              <span>{data.score_breakdown.optional} / 20</span>
+              <span>{renderBreakdownValue(data.score_breakdown.optional, 20, hasOptionalJobSkills)}</span>
             </div>
 
             <div className="flex justify-between">
@@ -211,8 +266,38 @@ export function CandidateProfileDrawer({
 
             <div className="flex justify-between">
               <span>Skill proficiency</span>
-              <span>{data.score_breakdown.skill_level} / 15</span>
+              <span>{renderBreakdownValue(data.score_breakdown.skill_level, 15, hasStructuredJobSkills)}</span>
             </div>
+          </div>
+        </section>
+      )}
+
+      {knockoutFilters.length > 0 && (
+        <section className="mt-6">
+          <h4 className="font-semibold mb-2">Knockout Filters</h4>
+          <div className="space-y-2">
+            {knockoutFilters.map((item: any, index: number) => (
+              <div key={`${item.label}-${index}`} className="rounded-lg border border-gray-200 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-gray-900">{item.label}</span>
+                  <Badge variant={item.status === "fail" ? "destructive" : item.status === "warning" ? "secondary" : "default"}>
+                    {item.status}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-gray-600">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {matchExplanations.length > 0 && (
+        <section className="mt-6">
+          <h4 className="font-semibold mb-2">Why This Match</h4>
+          <div className="space-y-2 text-sm text-gray-700">
+            {matchExplanations.map((item: string, index: number) => (
+              <p key={`${item}-${index}`}>• {item}</p>
+            ))}
           </div>
         </section>
       )}
@@ -230,7 +315,7 @@ export function CandidateProfileDrawer({
       {/* About */}
       <section className="mt-6">
         <h4 className="font-semibold mb-2">About</h4>
-        <p className="text-sm text-gray-700">{data.candidate_profiles.bio}</p>
+        <p className="text-sm text-gray-700">{aboutText || "No profile summary available."}</p>
       </section>
 
       {/* Skills */}

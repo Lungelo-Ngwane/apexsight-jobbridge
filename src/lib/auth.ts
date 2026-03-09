@@ -55,20 +55,59 @@ export async function registerUser(
  * Log in a user with email and password
  */
 export async function loginUser(email: string, password: string) {
-  try {
+  const normalizedEmail = String(email ?? "").trim();
+  const normalizedPassword = String(password ?? "");
 
-    // Supabase signIn
+  if (!normalizedEmail || !normalizedPassword) {
+    throw new Error("Enter both your email address and password.");
+  }
+
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    throw new Error("You appear to be offline. Check your internet connection and try again.");
+  }
+
+  function isTransientFetchError(error: unknown): boolean {
+    const message = String(
+      (error as { message?: string } | null)?.message ??
+      (error as { error_description?: string } | null)?.error_description ??
+      "",
+    ).toLowerCase();
+    const name = String((error as { name?: string } | null)?.name ?? "").toLowerCase();
+
+    return (
+      message.includes("failed to fetch") ||
+      message.includes("networkerror") ||
+      message.includes("network request failed") ||
+      name.includes("retryablefetcherror")
+    );
+  }
+
+  async function attemptSignIn() {
     const { data: authData, error: authError } =
       await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: normalizedEmail,
+        password: normalizedPassword,
       });
 
     if (authError) throw authError;
+    return authData;
+  }
 
-    // Optional: check session
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.getSession();
+  try {
+    let authData;
+
+    try {
+      authData = await attemptSignIn();
+    } catch (error) {
+      if (!isTransientFetchError(error)) {
+        throw error;
+      }
+
+      await new Promise((resolve) => window.setTimeout(resolve, 600));
+      authData = await attemptSignIn();
+    }
+
+    const { error: sessionError } = await supabase.auth.getSession();
     if (sessionError) console.warn("Could not get session:", sessionError);
 
     const user = authData.user ?? null;
@@ -78,7 +117,7 @@ export async function loginUser(email: string, password: string) {
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       console.warn("Failed to fetch profile role after login:", profileError);
@@ -93,6 +132,13 @@ export async function loginUser(email: string, password: string) {
     return { user, role: resolvedRole };
   } catch (err: any) {
     console.error("loginUser error:", err);
+
+    if (isTransientFetchError(err)) {
+      throw new Error(
+        "We couldn't reach the sign-in service. Check your connection and try again.",
+      );
+    }
+
     throw err;
   }
 }

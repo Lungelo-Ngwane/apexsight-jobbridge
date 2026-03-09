@@ -50,7 +50,19 @@ type JobRow = {
   location: string | null;
   description: string;
   employment_type: string | null;
+  work_mode?: string | null;
+  department?: string | null;
+  min_years_experience?: number | null;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  benefits?: string | null;
   experience_level: string | null;
+  job_skills?: Array<{
+    skill_id: string;
+    required?: boolean | null;
+    min_score?: number | null;
+    skills?: { name?: string | null } | null;
+  }>;
   is_featured?: boolean;
   featured_until?: string | null;
   published_at?: string | null;
@@ -679,8 +691,15 @@ export function EmployerJobsPage() {
                   description: editingJob.description,
                   location: editingJob.location,
                   employment_type: editingJob.employment_type,
+                  work_mode: editingJob.work_mode,
+                  department: editingJob.department,
+                  min_years_experience: editingJob.min_years_experience,
+                  salary_min: editingJob.salary_min,
+                  salary_max: editingJob.salary_max,
+                  benefits: editingJob.benefits,
                   status: editingJob.status,
                   experience_level: editingJob.experience_level,
+                  job_skills: editingJob.job_skills,
                 }
               : undefined
           }
