@@ -28,6 +28,14 @@ function getAddonTypeAliases(type: string | null): string[] {
 }
 
 function prettifyAddonType(type: string) {
+  const normalized = String(type ?? "").trim().toLowerCase();
+  if (normalized === "ai_credit") return "AI Matching Credits";
+  if (normalized === "ai_report") return "AI Hiring Report";
+  if (normalized === "candidate_profile_view" || normalized === "candidate_unlock") {
+    return "Candidate Unlock Credits";
+  }
+  if (normalized === "featured_job") return "Featured Job Credits";
+  if (normalized === "job_slot") return "Extra Job Slot Credits";
   return type
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -41,10 +49,10 @@ function addonDescription(type: string) {
     return "Boost a listing to the top of candidate feeds for stronger visibility and faster applications.";
   }
   if (normalized === "ai_report") {
-    return "Generate an AI hiring report with role-fit insights and shortlist recommendations.";
+    return "Generate one recruiter-ready hiring report with role-fit insights, candidate comparisons, and shortlist recommendations.";
   }
   if (normalized === "ai_credit") {
-    return "Use AI matching credits to rank and identify top-fit candidates for your roles.";
+    return "Use AI matching credits to rank applicants, refresh AI match scores, and identify top-fit candidates for your roles.";
   }
   if (normalized === "candidate_profile_view") {
     return "Unlock extra full profile views after your monthly plan allocation is used.";

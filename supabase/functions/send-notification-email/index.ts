@@ -23,7 +23,10 @@ const supabase = createClient(supabaseUrl ?? "", supabaseServiceKey ?? "", {
   auth: { persistSession: false },
 });
 
-type SupportedEmailType = "APPLICATION_CREATED" | "CANDIDATE_SHORTLISTED";
+type SupportedEmailType =
+  | "APPLICATION_CREATED"
+  | "CANDIDATE_SHORTLISTED"
+  | "CANDIDATE_INTERVIEW_SCHEDULED";
 
 async function sendEmailOrThrow(args: {
   from: string;
@@ -171,6 +174,7 @@ serve(async (req) => {
     const type = String(payload?.type ?? "") as SupportedEmailType;
     const data = payload?.data;
     const applicationId = data?.applicationId as string | undefined;
+    const interviewId = data?.interviewId as string | undefined;
 
     if (!applicationId) {
       return new Response(JSON.stringify({ error: "Missing applicationId" }), {
@@ -234,6 +238,13 @@ serve(async (req) => {
       });
     }
 
+    if (type === "CANDIDATE_INTERVIEW_SCHEDULED" && actor && employerUserId !== actor.id) {
+      return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
+        status: 403,
+        headers,
+      });
+    }
+
     const candidateUser = candidateUserId
       ? await supabase.auth.admin.getUserById(candidateUserId)
       : null;
@@ -251,6 +262,59 @@ serve(async (req) => {
     const candidateEmail = candidateUser?.data?.user?.email ?? null;
     const employerEmail = employerUser?.data?.user?.email ?? null;
     const sent: { recipient: string; messageId: string | null }[] = [];
+    let interviewDetails: {
+      stage: string;
+      scheduledAt: string;
+      durationMinutes: number;
+      timezone: string;
+      mode: string;
+      locationOrMeetingLink: string | null;
+      notes: string | null;
+    } | null = null;
+
+    if (type === "CANDIDATE_INTERVIEW_SCHEDULED") {
+      if (!interviewId) {
+        return new Response(JSON.stringify({ error: "Missing interviewId" }), {
+          status: 400,
+          headers,
+        });
+      }
+
+      const { data: interviewRow, error: interviewError } = await supabase
+        .from("interviews")
+        .select(`
+          id,
+          stage,
+          scheduled_at,
+          duration_minutes,
+          timezone,
+          mode,
+          location_or_meeting_link,
+          notes
+        `)
+        .eq("id", interviewId)
+        .eq("job_application_id", applicationId)
+        .single();
+
+      if (interviewError || !interviewRow) {
+        return new Response(JSON.stringify({ error: "Interview not found" }), {
+          status: 404,
+          headers,
+        });
+      }
+
+      interviewDetails = {
+        stage: String(interviewRow.stage ?? "Interview"),
+        scheduledAt: String(interviewRow.scheduled_at ?? ""),
+        durationMinutes: Number(interviewRow.duration_minutes ?? 30),
+        timezone: String(interviewRow.timezone ?? "Africa/Johannesburg"),
+        mode: String(interviewRow.mode ?? "virtual"),
+        locationOrMeetingLink: interviewRow.location_or_meeting_link
+          ? String(interviewRow.location_or_meeting_link)
+          : null,
+        notes: interviewRow.notes ? String(interviewRow.notes) : null,
+      };
+    }
 
     if (type === "APPLICATION_CREATED") {
       if (candidateEmail) {
@@ -331,7 +395,96 @@ serve(async (req) => {
       }
     }
 
-    if (type !== "APPLICATION_CREATED" && type !== "CANDIDATE_SHORTLISTED") {
+    if (type === "CANDIDATE_INTERVIEW_SCHEDULED") {
+      const scheduledDate = interviewDetails?.scheduledAt
+        ? new Date(interviewDetails.scheduledAt)
+        : null;
+      const formattedDate =
+        scheduledDate && !Number.isNaN(scheduledDate.getTime())
+          ? scheduledDate.toLocaleString("en-ZA", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })
+          : "Scheduled soon";
+      const stageLabel = interviewDetails?.stage
+        ? `${interviewDetails.stage.charAt(0).toUpperCase()}${interviewDetails.stage.slice(1)} interview`
+        : "Interview";
+      const modeLabel = interviewDetails?.mode
+        ? `${interviewDetails.mode.charAt(0).toUpperCase()}${interviewDetails.mode.slice(1)}`
+        : "Virtual";
+
+      if (candidateEmail) {
+        const messageId = await sendEmailOrThrow({
+          from: "ApexSight JobBridge <notifications@apexsight.co.za>",
+          to: candidateEmail,
+          subject: `Interview Scheduled - ${jobTitle}`,
+          html: emailShell({
+            preheader: `Your ${stageLabel.toLowerCase()} for ${jobTitle} at ${companyName} has been scheduled.`,
+            statusLabel: "Interview Scheduled",
+            heading: "Your interview has been scheduled",
+            intro:
+              "An employer has scheduled the next interview stage for your application. Check the details below and prepare accordingly.",
+            details: [
+              { label: "Role", value: jobTitle },
+              { label: "Company", value: companyName },
+              { label: "Stage", value: stageLabel },
+              { label: "When", value: formattedDate },
+              { label: "Format", value: `${modeLabel} • ${interviewDetails?.durationMinutes ?? 30} minutes` },
+              ...(interviewDetails?.locationOrMeetingLink
+                ? [{ label: modeLabel === "Onsite" ? "Location" : "Joining Details", value: interviewDetails.locationOrMeetingLink }]
+                : []),
+            ],
+            ctaLabel: "Open Candidate Dashboard",
+            ctaUrl: `${appBaseUrl}/candidate/dashboard`,
+            secondaryCtaLabel: "Update Candidate Profile",
+            secondaryCtaUrl: `${appBaseUrl}/candidate/profile`,
+            supportNote:
+              interviewDetails?.notes?.trim()
+                ? `Interview notes: ${interviewDetails.notes.trim()}`
+                : "Keep your CV, profile, and messages current before the interview.",
+          }),
+        });
+        sent.push({ recipient: candidateEmail, messageId });
+      }
+
+      if (candidateUserId && employerUserId && application.jobs?.employer_profiles?.id && application.candidate_profiles?.id) {
+        const { data: conversationId, error: conversationError } = await supabase.rpc("create_or_get_conversation", {
+          p_candidate_profile_id: application.candidate_profiles.id,
+          p_employer_profile_id: application.jobs.employer_profiles.id,
+        });
+
+        if (!conversationError && conversationId) {
+          const interviewMessageParts = [
+            `${companyName} scheduled your ${stageLabel.toLowerCase()} for ${jobTitle}.`,
+            `When: ${formattedDate} (${interviewDetails?.timezone ?? "Africa/Johannesburg"})`,
+            `Format: ${modeLabel}${interviewDetails?.durationMinutes ? ` • ${interviewDetails.durationMinutes} min` : ""}`,
+            interviewDetails?.locationOrMeetingLink
+              ? `${modeLabel === "Onsite" ? "Location" : "Joining details"}: ${interviewDetails.locationOrMeetingLink}`
+              : null,
+            interviewDetails?.notes?.trim() ? `Notes: ${interviewDetails.notes.trim()}` : null,
+          ].filter(Boolean);
+
+          const { error: messageError } = await supabase.from("messages").insert({
+            conversation_id: conversationId,
+            sender_user_id: employerUserId,
+            sender_role: "employer",
+            body: interviewMessageParts.join("\n"),
+          });
+
+          if (messageError) {
+            console.error("Failed to create interview inbox notification", messageError);
+          }
+        } else if (conversationError) {
+          console.error("Failed to create interview conversation", conversationError);
+        }
+      }
+    }
+
+    if (
+      type !== "APPLICATION_CREATED" &&
+      type !== "CANDIDATE_SHORTLISTED" &&
+      type !== "CANDIDATE_INTERVIEW_SCHEDULED"
+    ) {
       return new Response(JSON.stringify({ error: "Unsupported notification type" }), {
         status: 400,
         headers,

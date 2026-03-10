@@ -22,12 +22,21 @@ export function EmployerAddonsPage() {
   const formatZarFromKobo = (amount: number) =>
     `R ${Math.round(amount / 100).toLocaleString()}`;
 
-  const addonTypeToLabel = (type: string) =>
-    String(type ?? "")
+  const addonTypeToLabel = (type: string) => {
+    const normalized = String(type ?? "").trim().toLowerCase();
+    if (normalized === "ai_credit") return "AI Matching Credits";
+    if (normalized === "ai_report") return "AI Hiring Report";
+    if (normalized === "candidate_profile_view" || normalized === "candidate_unlock") {
+      return "Candidate Unlock Credits";
+    }
+    if (normalized === "featured_job") return "Featured Job Credits";
+    if (normalized === "job_slot") return "Extra Job Slot Credits";
+    return String(type ?? "")
       .split("_")
       .filter(Boolean)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
+  };
 
   const getAddonDescription = (type: string) => {
     const normalized = String(type ?? "").trim().toLowerCase();
@@ -36,10 +45,10 @@ export function EmployerAddonsPage() {
       return "Boost a listing to the top of candidate feeds for stronger visibility and faster applications.";
     }
     if (normalized === "ai_report") {
-      return "Generate an AI hiring report with role-fit insights and shortlist recommendations.";
+      return "Generate one recruiter-ready hiring report with role-fit insights, candidate comparisons, and shortlist recommendations.";
     }
     if (normalized === "ai_credit") {
-      return "Use AI matching credits to rank and identify top-fit candidates for your roles.";
+      return "Use AI matching credits to rank applicants, refresh AI match scores, and identify top-fit candidates for your roles.";
     }
     if (normalized === "candidate_profile_view") {
       return "Unlock extra full profile views after your monthly plan allocation is used.";
@@ -157,6 +166,10 @@ export function EmployerAddonsPage() {
               )}
               {addons.map((addon) => {
                 const addonLabel = addonTypeToLabel(addon.type);
+                const displayName =
+                  String(addon.type ?? "").trim().toLowerCase() === "ai_credit"
+                    ? `${addon.credits} ${addonLabel}`
+                    : addon.name || addonLabel;
                 return (
                   <div
                     key={addon.id}
@@ -164,7 +177,7 @@ export function EmployerAddonsPage() {
                   >
                     <div>
                       <p className="text-sm font-semibold text-gray-900">
-                        {addon.name || addonLabel}
+                        {displayName}
                       </p>
                       <p className="text-xs text-gray-700 mt-1 max-w-xl">
                         {getAddonDescription(addon.type)}

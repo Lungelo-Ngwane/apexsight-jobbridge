@@ -24,6 +24,21 @@ export interface CandidateCertificationRow {
   certificate_file_path?: string | null;
 }
 
+export interface CandidateUpcomingInterviewRow {
+  id: string;
+  stage: "screening" | "technical" | "final";
+  scheduledAt: string;
+  durationMinutes: number;
+  timezone: string;
+  mode: "virtual" | "phone" | "onsite";
+  locationOrMeetingLink: string | null;
+  notes: string | null;
+  status: "scheduled" | "completed" | "cancelled" | "rescheduled";
+  jobTitle: string;
+  jobLocation: string | null;
+  companyName: string;
+}
+
 export interface CandidateSkillRow {
   id?: string;
   skill_id?: string;
@@ -283,6 +298,66 @@ export async function getCandidateDashboardData() {
 
   if (error) throw error;
   return data;
+}
+
+export async function getCandidateUpcomingInterviews(): Promise<CandidateUpcomingInterviewRow[]> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) throw new Error("Not authenticated");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("candidate_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError) throw profileError;
+  if (!profile?.id) return [];
+
+  const { data, error } = await supabase
+    .from("interviews")
+    .select(`
+      id,
+      stage,
+      scheduled_at,
+      duration_minutes,
+      timezone,
+      mode,
+      location_or_meeting_link,
+      notes,
+      status,
+      jobs (
+        title,
+        location
+      ),
+      employer_profiles (
+        company_name
+      )
+    `)
+    .eq("candidate_profile_id", profile.id)
+    .in("status", ["scheduled", "rescheduled"])
+    .gte("scheduled_at", new Date().toISOString())
+    .order("scheduled_at", { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: String(row.id),
+    stage: row.stage,
+    scheduledAt: String(row.scheduled_at),
+    durationMinutes: Number(row.duration_minutes ?? 30),
+    timezone: String(row.timezone ?? "Africa/Johannesburg"),
+    mode: row.mode,
+    locationOrMeetingLink: row.location_or_meeting_link ? String(row.location_or_meeting_link) : null,
+    notes: row.notes ? String(row.notes) : null,
+    status: row.status,
+    jobTitle: String(row.jobs?.title ?? "Interview"),
+    jobLocation: row.jobs?.location ? String(row.jobs.location) : null,
+    companyName: String(row.employer_profiles?.company_name ?? "Employer"),
+  }));
 }
 
 export async function addCandidateSkill(

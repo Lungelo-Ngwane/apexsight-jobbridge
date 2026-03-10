@@ -76,12 +76,11 @@ export function CandidateProfileDrawer({
   const confidenceScore = data.confidence_score === null || data.confidence_score === undefined ? null : Number(data.confidence_score);
   const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
   const hasPaidAccess = hasEmployerPaidAccess(profile);
-  const isStarter = normalizedPlan === "starter";
-  const isProfessional = normalizedPlan === "professional";
   const isEnterprise = normalizedPlan === "enterprise";
   const aiCreditRemaining =
     credits.find((credit) => String(credit.creditType).toLowerCase() === "ai_credit")?.remaining ?? 0;
-  const hideScoresForStarterNoCredits = isStarter && !loadingCredits && aiCreditRemaining <= 0;
+  const hasAiMatchingCredits = !loadingCredits && aiCreditRemaining > 0;
+  const canViewAdvancedMatching = hasPaidAccess || hasAiMatchingCredits;
   const showBreakdown = isEnterprise && Boolean(data.score_breakdown);
   const matchingConfig = data.matching_config ?? {};
   const requiredJobSkills = Number(matchingConfig.required_job_skills ?? 0);
@@ -142,11 +141,11 @@ export function CandidateProfileDrawer({
 
 
           {/* Score Visibility */}
-          {hideScoresForStarterNoCredits ? (
+          {!canViewAdvancedMatching ? (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p className="text-sm font-semibold text-amber-900">AI score preview locked</p>
+              <p className="text-sm font-semibold text-amber-900">Advanced match insights locked</p>
               <p className="text-xs text-amber-800 mt-1">
-                Starter plan with no AI credits. Buy AI add-on credits or upgrade to Professional.
+                Buy AI Matching Credits or upgrade your plan to view scoring, match explanations, and recommendation details for candidates.
               </p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" onClick={() => setShowAiCreditUpsell(true)}>
@@ -227,7 +226,7 @@ export function CandidateProfileDrawer({
 
 
         {/* Score Badge */}
-        {!hideScoresForStarterNoCredits && (
+        {canViewAdvancedMatching && (
           <Badge className="text-base px-3 py-1">
             {displayedMatchScore}%
           </Badge>
@@ -235,7 +234,7 @@ export function CandidateProfileDrawer({
 
       </div>
 
-      {showBreakdown && (
+      {canViewAdvancedMatching && showBreakdown && (
         <section className="mt-6">
           <h4 className="font-semibold mb-2">Match Breakdown</h4>
 
@@ -272,7 +271,7 @@ export function CandidateProfileDrawer({
         </section>
       )}
 
-      {knockoutFilters.length > 0 && (
+      {canViewAdvancedMatching && knockoutFilters.length > 0 && (
         <section className="mt-6">
           <h4 className="font-semibold mb-2">Knockout Filters</h4>
           <div className="space-y-2">
@@ -291,7 +290,7 @@ export function CandidateProfileDrawer({
         </section>
       )}
 
-      {matchExplanations.length > 0 && (
+      {canViewAdvancedMatching && matchExplanations.length > 0 && (
         <section className="mt-6">
           <h4 className="font-semibold mb-2">Why This Match</h4>
           <div className="space-y-2 text-sm text-gray-700">

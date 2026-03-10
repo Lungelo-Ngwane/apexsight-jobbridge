@@ -14,6 +14,7 @@ import CandidateJobsPage from "./components/CandidateJobsPage";
 import CandidateMyJobsPage from "./components/CandidateMyJobsPage";
 import { EmployerApp } from "./components/EmployerApp";
 import { EmployerJobsPage } from "./components/employer/EmployerJobsPage";
+import { EmployerJobReportPage } from "./components/employer/EmployerJobReportPage";
 import { EmployerCandidatesPage } from "./components/employer/EmployerCandidatesPage";
 import { EmployerBillingPage } from "./components/employer/EmployerBillingPage";
 import { EmployerAddonsPage } from "./components/employer/EmployerAddonsPage";
@@ -259,6 +260,7 @@ export default function App() {
         <Route path="/employer" element={<EmployerApp />}>
           <Route path="dashboard" element={<EmployerDashboard />} />
           <Route path="jobs" element={<EmployerJobsPage />} />
+          <Route path="jobs/:jobId/report" element={<EmployerJobReportPage />} />
           <Route path="candidates" element={<EmployerCandidatesPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="addons" element={<EmployerAddonsPage />} />

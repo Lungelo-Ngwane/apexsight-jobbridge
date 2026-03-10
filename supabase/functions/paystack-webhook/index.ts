@@ -437,38 +437,86 @@ Deno.serve(async (req) => {
       const customerObj = (data.customer ?? {}) as Record<string, unknown>;
       const subscriptionObj = (data.subscription ?? {}) as Record<string, unknown>;
       const metadata = (data.metadata ?? {}) as Record<string, unknown>;
+      const addonId = String(metadata.addonId ?? "").trim();
+      const isAddon = Boolean(addonId);
 
-      const resolvedPlan = await resolvePlanName(
-        String(planObj.plan_code ?? ""),
-        String(metadata.targetPlan ?? ""),
-      );
+      let resolvedPlan: string | null = null;
 
-      const update: Record<string, unknown> = {
-        subscription_status: "active",
-        selected_plan: null,
-        paystack_customer_code: String(customerObj.customer_code ?? "") || null,
-      };
+      if (isAddon) {
+        const { data: addon, error: addonError } = await supabase
+          .from("addons")
+          .select("id, type, credits")
+          .eq("id", addonId)
+          .maybeSingle();
 
-      const subscriptionCode =
-        String(subscriptionObj.subscription_code ?? "") ||
-        String(data.subscription_code ?? "");
-      if (subscriptionCode) {
-        update.paystack_subscription_code = subscriptionCode;
+        if (addonError || !addon) {
+          throw new Error(`Webhook could not resolve add-on ${addonId}`);
+        }
+
+        const creditsToAdd = Number(addon.credits ?? 0);
+        if (!Number.isFinite(creditsToAdd) || creditsToAdd <= 0) {
+          throw new Error(`Invalid credit quantity for add-on ${addonId}`);
+        }
+
+        const { data: grantRows, error: grantError } = await supabase.rpc(
+          "grant_addon_credits",
+          {
+            p_reference: reference,
+            p_employer_id: employerId,
+            p_addon_id: addon.id,
+            p_amount_paid: Number(data.amount ?? 0),
+            p_credit_type: String(addon.type ?? ""),
+            p_credits_to_add: creditsToAdd,
+          },
+        );
+
+        if (grantError) {
+          throw new Error(`Webhook credit grant failed: ${grantError.message}`);
+        }
+
+        const grantResult = Array.isArray(grantRows) ? grantRows[0] : grantRows;
+        logInfo("paystack_webhook.addon_credit_grant_applied", {
+          requestId,
+          eventKey: currentEventKey,
+          employerId,
+          reference,
+          addonId,
+          creditType: String(addon.type ?? ""),
+          creditsAdded: Number(grantResult?.credits_added ?? creditsToAdd),
+          alreadyProcessed: Boolean(grantResult?.already_processed),
+        });
+      } else {
+        resolvedPlan = await resolvePlanName(
+          String(planObj.plan_code ?? ""),
+          String(metadata.targetPlan ?? ""),
+        );
+
+        const update: Record<string, unknown> = {
+          subscription_status: "active",
+          selected_plan: null,
+          paystack_customer_code: String(customerObj.customer_code ?? "") || null,
+        };
+
+        const subscriptionCode =
+          String(subscriptionObj.subscription_code ?? "") ||
+          String(data.subscription_code ?? "");
+        if (subscriptionCode) {
+          update.paystack_subscription_code = subscriptionCode;
+        }
+
+        const emailToken = String(subscriptionObj.email_token ?? "");
+        if (emailToken) {
+          update.paystack_subscription_email_token = emailToken;
+        }
+
+        if (resolvedPlan) {
+          update.plan = resolvedPlan;
+        }
+
+        await applyEmployerUpdate(employerId, update);
       }
-
-      const emailToken = String(subscriptionObj.email_token ?? "");
-      if (emailToken) {
-        update.paystack_subscription_email_token = emailToken;
-      }
-
-      if (resolvedPlan) {
-        update.plan = resolvedPlan;
-      }
-
-      await applyEmployerUpdate(employerId, update);
 
       if (reference) {
-        const isAddon = Boolean(String(metadata.addonId ?? "").trim());
         await upsertBillingInvoice({
           employerId,
           reference,

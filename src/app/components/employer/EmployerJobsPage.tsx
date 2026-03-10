@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { useNavigate } from "react-router-dom";
 
 type JobStatusTab = "active" | "draft" | "closed";
 
@@ -102,6 +103,7 @@ function getDaysUntilExpiry(expiresAt?: string | null) {
 }
 
 export function EmployerJobsPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<JobStatusTab>("active");
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
@@ -125,6 +127,11 @@ export function EmployerJobsPage() {
     actionLabel: "perform this action",
   });
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
+
+  const reportArray = (value: unknown) => (Array.isArray(value) ? value.filter((item) => typeof item === "string") as string[] : []);
+  const reportCandidates = Array.isArray(latestReport?.top_candidates)
+    ? (latestReport?.top_candidates as Array<Record<string, unknown>>)
+    : [];
 
   async function loadJobs() {
     try {
@@ -315,29 +322,7 @@ export function EmployerJobsPage() {
   }
 
   async function handleGenerateAiReport(job: JobRow) {
-    try {
-      setActionLoading(`report-${job.id}`);
-      const data = await generateAiReport(job.id);
-      setLatestReport((data?.report ?? null) as Record<string, unknown> | null);
-      setReportModalOpen(true);
-    } catch (error: any) {
-      const message = String(error?.message ?? "").toLowerCase();
-      if (message.includes("insufficient")) {
-        setUpsell({
-          open: true,
-          addonType: "ai_report",
-          actionLabel: "generate this AI report",
-        });
-      } else {
-        console.error("Failed to generate AI report", error);
-        showFeedback(
-          "AI report failed",
-          "We couldn't generate this AI report right now. Please try again.",
-        );
-      }
-    } finally {
-      setActionLoading(null);
-    }
+    navigate(`/employer/jobs/${job.id}/report`);
   }
 
   async function handleRunAutoMatch(job: JobRow) {
@@ -746,16 +731,192 @@ export function EmployerJobsPage() {
       </AlertDialog>
 
       <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
-        <DialogContent>
+        <DialogContent className="w-[min(96vw,1100px)] max-w-none">
           <DialogHeader>
             <DialogTitle>AI Hiring Report</DialogTitle>
             <DialogDescription>
-              Generated from your current pipeline data and job context.
+              Generated from your current pipeline data, candidate match scores, and structured job requirements.
             </DialogDescription>
           </DialogHeader>
-          <pre className="max-h-[420px] overflow-auto rounded-md bg-gray-100 p-3 text-xs">
-            {JSON.stringify(latestReport ?? {}, null, 2)}
-          </pre>
+          <div className="max-h-[70vh] space-y-6 overflow-auto pr-1">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.9fr)]">
+              <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-5 text-white shadow-sm">
+                <div className="flex flex-wrap items-center gap-3">
+                  {typeof latestReport?.score_band === "string" ? (
+                    <Badge className="bg-white text-slate-900 hover:bg-white">{String(latestReport.score_band)}</Badge>
+                  ) : null}
+                  {typeof latestReport?.confidence === "string" ? (
+                    <Badge className="border-white/20 bg-white/10 text-white hover:bg-white/10">Confidence: {String(latestReport.confidence)}</Badge>
+                  ) : null}
+                </div>
+                {typeof latestReport?.summary === "string" ? (
+                  <p className="mt-4 break-words text-base leading-7 text-white/95">{String(latestReport.summary)}</p>
+                ) : null}
+                {typeof latestReport?.overall_hiring_outlook === "string" ? (
+                  <p className="mt-3 break-words text-sm leading-6 text-white/75">{String(latestReport.overall_hiring_outlook)}</p>
+                ) : null}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <Card className="border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Top candidates</p>
+                  <p className="mt-2 text-3xl font-semibold text-slate-900">{reportCandidates.length}</p>
+                  <p className="mt-1 text-sm text-slate-600">Ranked directly from current match data.</p>
+                </Card>
+                <Card className="border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Comparison notes</p>
+                  <p className="mt-2 text-3xl font-semibold text-slate-900">{reportArray(latestReport?.candidate_comparison).length}</p>
+                  <p className="mt-1 text-sm text-slate-600">Cross-candidate observations in this report.</p>
+                </Card>
+              </div>
+            </div>
+
+            {reportCandidates.length > 0 ? (
+              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="font-semibold text-gray-900">Top Candidates</h4>
+                  <p className="text-xs uppercase tracking-[0.16em] text-gray-500">Shortlist briefing</p>
+                </div>
+                <div className="space-y-3">
+                  {reportCandidates.map((candidate, index) => {
+                    const strengths = Array.isArray(candidate.strengths)
+                      ? candidate.strengths.filter((item) => typeof item === "string") as string[]
+                      : [];
+                    const risks = Array.isArray(candidate.risks)
+                      ? candidate.risks.filter((item) => typeof item === "string") as string[]
+                      : [];
+                    const matchedSkills = Array.isArray(candidate.matched_required_skills)
+                      ? candidate.matched_required_skills.filter((item) => typeof item === "string") as string[]
+                      : [];
+                    const missingSkills = Array.isArray(candidate.missing_required_skills)
+                      ? candidate.missing_required_skills.filter((item) => typeof item === "string") as string[]
+                      : [];
+
+                    return (
+                      <Card key={`${candidate.name ?? "candidate"}-${index}`} className="overflow-hidden border-slate-200 p-0">
+                        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="secondary">#{index + 1}</Badge>
+                              <p className="break-words text-base font-semibold text-gray-900">{String(candidate.name ?? "Candidate")}</p>
+                            </div>
+                            <p className="mt-2 break-words text-sm text-gray-600">{String(candidate.recommendation ?? "")}</p>
+                          </div>
+                          <div className="grid min-w-[210px] grid-cols-3 gap-2 text-center text-sm">
+                            <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
+                              <p className="text-[11px] uppercase tracking-wide text-slate-500">Hybrid</p>
+                              <p className="mt-1 font-semibold text-indigo-600">{Number(candidate.hybrid_score ?? 0)}%</p>
+                            </div>
+                            <p className="text-gray-600">Rule {Number(candidate.rule_based_score ?? 0)}% • AI {Number(candidate.ai_similarity ?? 0)}%</p>
+                          </div>
+                        </div>
+                        {matchedSkills.length > 0 ? (
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Matched required skills</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {matchedSkills.map((skill) => (
+                                <Badge key={`${candidate.name ?? "candidate"}-matched-${skill}`} variant="secondary">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {missingSkills.length > 0 ? (
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Missing required skills</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {missingSkills.map((skill) => (
+                                <Badge key={`${candidate.name ?? "candidate"}-missing-${skill}`} className="bg-red-100 text-red-700">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {strengths.length > 0 ? (
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Strengths</p>
+                            <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-700">
+                              {strengths.map((item) => (
+                                <li key={`${candidate.name ?? "candidate"}-strength-${item}`}>• {item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {risks.length > 0 ? (
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Risks</p>
+                            <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-700">
+                              {risks.map((item) => (
+                                <li key={`${candidate.name ?? "candidate"}-risk-${item}`}>• {item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </Card>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {reportArray(latestReport?.candidate_comparison).length > 0 ? (
+              <section>
+                <h4 className="mb-2 font-semibold text-gray-900">Candidate Comparison</h4>
+                <ul className="space-y-2 text-sm leading-6 text-gray-700">
+                  {reportArray(latestReport?.candidate_comparison).map((item) => (
+                    <li key={`comparison-${item}`}>• {item}</li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            <div className="space-y-4">
+              {[
+                { title: "Strengths", items: reportArray(latestReport?.strengths) },
+                { title: "Risks", items: reportArray(latestReport?.risks) },
+                { title: "Recommendations", items: reportArray(latestReport?.recommendations) },
+              ].map((section) => (
+                <Card
+                  key={section.title}
+                  className={`overflow-hidden p-5 ${
+                    section.title === "Strengths"
+                      ? "border-emerald-100 bg-emerald-50"
+                      : section.title === "Risks"
+                        ? "border-amber-100 bg-amber-50"
+                        : "border-blue-100 bg-blue-50"
+                  }`}
+                >
+                  <h4
+                    className={`font-semibold ${
+                      section.title === "Strengths"
+                        ? "text-emerald-900"
+                        : section.title === "Risks"
+                          ? "text-amber-900"
+                          : "text-blue-900"
+                    }`}
+                  >
+                    {section.title}
+                  </h4>
+                  <ul
+                    className={`mt-3 space-y-2 break-words text-sm leading-7 ${
+                      section.title === "Strengths"
+                        ? "text-emerald-950"
+                        : section.title === "Risks"
+                          ? "text-amber-950"
+                          : "text-blue-950"
+                    }`}
+                  >
+                    {section.items.length > 0 ? (
+                      section.items.map((item) => <li key={`${section.title}-${item}`}>• {item}</li>)
+                    ) : (
+                      <li className="text-gray-500">No {section.title.toLowerCase()} generated.</li>
+                    )}
+                  </ul>
+                </Card>
+              ))}
+            </div>
+          </div>
           <DialogFooter>
             <Button onClick={() => setReportModalOpen(false)}>Close</Button>
           </DialogFooter>

@@ -30,6 +30,28 @@ export interface EmployerCreditBalance {
   remaining: number;
 }
 
+export interface InterviewScheduleRecord {
+  id: string;
+  jobApplicationId: string;
+  jobId: string;
+  candidateProfileId: string;
+  stage: "screening" | "technical" | "final";
+  scheduledAt: string;
+  durationMinutes: number;
+  timezone: string;
+  mode: "virtual" | "phone" | "onsite";
+  locationOrMeetingLink: string | null;
+  notes: string | null;
+  status: "scheduled" | "completed" | "cancelled" | "rescheduled";
+}
+
+export interface EmployerJobReportPageData {
+  job: Record<string, unknown> | null;
+  latestReport: Record<string, unknown> | null;
+  latestReportCreatedAt: string | null;
+  applicants: Array<Record<string, unknown>>;
+}
+
 export interface EmployerUsageSnapshot {
   planName: string;
   activeJobs: number;
@@ -475,6 +497,98 @@ export async function getEmployerJobs() {
   return legacy.data;
 }
 
+export async function getEmployerJobReportPageData(jobId: string): Promise<EmployerJobReportPageData> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) throw new Error("Not authenticated");
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (employerError || !employer?.id) {
+    throw new Error("Employer profile not found");
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select(`
+      id,
+      title,
+      status,
+      location,
+      description,
+      employment_type,
+      work_mode,
+      department,
+      min_years_experience,
+      salary_min,
+      salary_max,
+      benefits,
+      experience_level,
+      published_at,
+      created_at,
+      job_skills (
+        required,
+        min_score,
+        skills ( name )
+      )
+    `)
+    .eq("id", jobId)
+    .eq("employer_id", employer.id)
+    .maybeSingle();
+
+  if (jobError) throw jobError;
+
+  const { data: latestReportRow, error: latestReportError } = await supabase
+    .from("job_ai_reports")
+    .select("report, created_at")
+    .eq("job_id", jobId)
+    .eq("employer_id", employer.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestReportError) throw latestReportError;
+
+  const { data: applicants, error: applicantsError } = await supabase
+    .from("job_applications")
+    .select(`
+      id,
+      status,
+      score,
+      created_at,
+      candidate_profile_id,
+      candidate:candidate_profiles (
+        id,
+        full_name,
+        headline,
+        location,
+        years_experience,
+        candidate_skills (
+          level,
+          skills ( name )
+        )
+      )
+    `)
+    .eq("job_id", jobId)
+    .order("created_at", { ascending: false });
+
+  if (applicantsError) throw applicantsError;
+
+  return {
+    job: (job as Record<string, unknown> | null) ?? null,
+    latestReport: (latestReportRow?.report as Record<string, unknown> | null) ?? null,
+    latestReportCreatedAt: latestReportRow?.created_at ? String(latestReportRow.created_at) : null,
+    applicants: ((applicants ?? []) as Array<Record<string, unknown>>),
+  };
+}
+
 export async function updateJob(
   jobId: string,
   data: {
@@ -797,6 +911,139 @@ export async function getJobApplicants(jobId: string) {
       confidence_score: intelligence.confidenceScore,
     };
   });
+}
+
+export async function scheduleInterview(input: {
+  applicationId: string;
+  stage: "screening" | "technical" | "final";
+  scheduledAt: string;
+  durationMinutes: number;
+  timezone: string;
+  mode: "virtual" | "phone" | "onsite";
+  locationOrMeetingLink?: string | null;
+  notes?: string | null;
+}): Promise<InterviewScheduleRecord> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) throw new Error("Not authenticated");
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (employerError || !employer?.id) {
+    throw new Error("Employer profile not found");
+  }
+
+  const applicationId = String(input.applicationId ?? "").trim();
+  if (!applicationId) throw new Error("Missing application id.");
+
+  const scheduledAt = String(input.scheduledAt ?? "").trim();
+  if (!scheduledAt) throw new Error("Choose an interview date and time.");
+
+  const durationMinutes = Math.max(15, Math.min(240, Math.round(Number(input.durationMinutes ?? 30) || 30)));
+  const timezone = String(input.timezone ?? "").trim() || "Africa/Johannesburg";
+  const stage = (String(input.stage ?? "screening").trim().toLowerCase() as InterviewScheduleRecord["stage"]);
+  const mode = (String(input.mode ?? "virtual").trim().toLowerCase() as InterviewScheduleRecord["mode"]);
+  const locationOrMeetingLink = String(input.locationOrMeetingLink ?? "").trim() || null;
+  const notes = String(input.notes ?? "").trim() || null;
+
+  const { data: application, error: applicationError } = await supabase
+    .from("job_applications")
+    .select(`
+      id,
+      job_id,
+      candidate_profile_id,
+      jobs!inner (
+        employer_id
+      )
+    `)
+    .eq("id", applicationId)
+    .eq("jobs.employer_id", employer.id)
+    .single();
+
+  if (applicationError || !application) {
+    throw new Error("Application not found for this employer.");
+  }
+
+  const { data: interview, error: interviewError } = await supabase
+    .from("interviews")
+    .insert({
+      job_application_id: applicationId,
+      job_id: application.job_id,
+      employer_id: employer.id,
+      candidate_profile_id: application.candidate_profile_id,
+      stage,
+      scheduled_at: scheduledAt,
+      duration_minutes: durationMinutes,
+      timezone,
+      mode,
+      location_or_meeting_link: locationOrMeetingLink,
+      notes,
+      status: "scheduled",
+      created_by: user.id,
+    })
+    .select(`
+      id,
+      job_application_id,
+      job_id,
+      candidate_profile_id,
+      stage,
+      scheduled_at,
+      duration_minutes,
+      timezone,
+      mode,
+      location_or_meeting_link,
+      notes,
+      status
+    `)
+    .single();
+
+  if (interviewError || !interview) {
+    throw interviewError ?? new Error("Failed to schedule interview.");
+  }
+
+  const { error: statusError } = await supabase
+    .from("job_applications")
+    .update({ status: "interview" })
+    .eq("id", applicationId);
+
+  if (statusError) throw statusError;
+
+  const { error: notifyError } = await invokeAuthedFunction(
+    "send-notification-email",
+    {
+      type: "CANDIDATE_INTERVIEW_SCHEDULED",
+      data: {
+        applicationId,
+        interviewId: interview.id,
+      },
+    },
+  );
+
+  if (notifyError) {
+    console.warn("Interview scheduled but notification dispatch failed", notifyError);
+  }
+
+  return {
+    id: String(interview.id),
+    jobApplicationId: String(interview.job_application_id),
+    jobId: String(interview.job_id),
+    candidateProfileId: String(interview.candidate_profile_id),
+    stage: interview.stage as InterviewScheduleRecord["stage"],
+    scheduledAt: String(interview.scheduled_at),
+    durationMinutes: Number(interview.duration_minutes ?? durationMinutes),
+    timezone: String(interview.timezone ?? timezone),
+    mode: interview.mode as InterviewScheduleRecord["mode"],
+    locationOrMeetingLink: interview.location_or_meeting_link ? String(interview.location_or_meeting_link) : null,
+    notes: interview.notes ? String(interview.notes) : null,
+    status: interview.status as InterviewScheduleRecord["status"],
+  };
 }
 
 export async function getJobSkillSummary(jobId: string) {
@@ -1944,6 +2191,9 @@ export async function startAddonCheckout(addonId: string) {
 
   const { data, error } = await supabase.functions.invoke("buy-addon", {
     body: { addonId },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (error) {
@@ -2000,6 +2250,9 @@ export async function confirmAddonCheckout(reference: string) {
 
   const { data, error } = await supabase.functions.invoke("confirm-addon", {
     body: { reference },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (error) {

@@ -15,6 +15,7 @@ import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { ScheduleInterviewModal } from "./ScheduleInterviewModal";
 
 
 interface Props {
@@ -42,6 +43,11 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     const [unlockedApplicationIds, setUnlockedApplicationIds] = useState<string[]>([]);
     const [showUpsellModal, setShowUpsellModal] = useState(false);
     const [jobSkillSummary, setJobSkillSummary] = useState<{ totalCount: number; requiredCount: number; optionalCount: number } | null>(null);
+    const [interviewModalState, setInterviewModalState] = useState<{ open: boolean; applicationId: string | null; candidateName: string }>({
+        open: false,
+        applicationId: null,
+        candidateName: "",
+    });
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
 
@@ -70,6 +76,17 @@ async function changeStatus(
         );
         return updated;
     });
+}
+
+async function handleInterviewScheduled() {
+    try {
+        const refreshedApplicants = await getJobApplicants(jobId);
+        setCandidates(refreshedApplicants ?? []);
+        showFeedback("Interview scheduled", "The interview has been added to the system and the candidate was moved to the interview stage.");
+    } catch (error) {
+        console.error("Failed to refresh applicants after interview scheduling", error);
+        showFeedback("Interview scheduled", "The interview was saved, but we could not refresh the applicant list immediately.");
+    }
 }
 
 async function handleViewProfile(appId: string) {
@@ -234,7 +251,13 @@ async function handleViewProfile(appId: string) {
                                         size="sm"
                                         variant="outline"
                                         disabled={app.status === "interview"}
-                                        onClick={() => changeStatus(app.id, "interview")}
+                                        onClick={() =>
+                                            setInterviewModalState({
+                                                open: true,
+                                                applicationId: app.id,
+                                                candidateName: String(app.candidate?.full_name ?? "Candidate"),
+                                            })
+                                        }
                                     >
                                         Interview
                                     </Button>
@@ -271,6 +294,20 @@ async function handleViewProfile(appId: string) {
                 title={feedback.title}
                 description={feedback.description}
                 onOpenChange={setFeedbackOpen}
+            />
+            <ScheduleInterviewModal
+                open={interviewModalState.open}
+                applicationId={interviewModalState.applicationId}
+                candidateName={interviewModalState.candidateName}
+                onOpenChange={(open) =>
+                    setInterviewModalState((prev) => ({
+                        ...prev,
+                        open,
+                        applicationId: open ? prev.applicationId : null,
+                        candidateName: open ? prev.candidateName : "",
+                    }))
+                }
+                onScheduled={handleInterviewScheduled}
             />
         </div>
     );

@@ -15,7 +15,8 @@ import {
   Filter,
   Search,
   MoreVertical,
-  Crown
+  Crown,
+  Bot
 } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -413,6 +414,26 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     }
   ];
 
+  const prettifyCreditType = (creditType: string) => {
+    const normalized = String(creditType ?? "").trim().toLowerCase();
+    if (normalized === "ai_credit") return "AI Matching Credits";
+    if (normalized === "ai_report") return "AI Hiring Report";
+    if (normalized === "candidate_profile_view" || normalized === "candidate_unlock") {
+      return "Candidate Unlock Credits";
+    }
+    if (normalized === "featured_job") return "Featured Job Credits";
+    if (normalized === "job_slot") return "Extra Job Slot Credits";
+    return String(creditType ?? "");
+  };
+
+  const getCreditIcon = (creditType: string) => {
+    const normalized = String(creditType ?? "").trim().toLowerCase();
+    if (normalized === "ai_credit") return Bot;
+    if (normalized === "featured_job") return Star;
+    if (normalized === "candidate_profile_view" || normalized === "candidate_unlock") return Eye;
+    return CheckCircle;
+  };
+
 
 
   if (loading) {
@@ -541,12 +562,27 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             {creditBalances.length === 0 && (
               <p className="text-sm text-gray-500">No add-on credits available yet.</p>
             )}
-            {creditBalances.map((credit) => (
-              <div key={credit.creditType} className="rounded-lg border border-gray-200 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">{credit.creditType}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{credit.remaining}</p>
-              </div>
-            ))}
+            {creditBalances.map((credit) => {
+              const CreditIcon = getCreditIcon(credit.creditType);
+              return (
+                <div
+                  key={credit.creditType}
+                  className="rounded-lg border border-gray-200 bg-gradient-to-br from-white to-slate-50 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-500">
+                        {prettifyCreditType(credit.creditType)}
+                      </p>
+                      <p className="mt-2 text-2xl font-bold text-gray-900">{credit.remaining}</p>
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+                      <CreditIcon className="h-5 w-5" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
 

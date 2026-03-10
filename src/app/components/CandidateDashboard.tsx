@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCandidateDashboardData, getOpenJobs, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
+import { getCandidateDashboardData, getCandidateUpcomingInterviews, getOpenJobs, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
@@ -62,6 +62,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const [deletingCertificationId, setDeletingCertificationId] = useState<string | null>(null);
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [openJobsCount, setOpenJobsCount] = useState(0);
+  const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
 
 
   useEffect(() => {
@@ -79,12 +80,14 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [data, openJobs] = await Promise.all([
+        const [data, openJobs, interviews] = await Promise.all([
           getCandidateDashboardData(),
           getOpenJobs(),
+          getCandidateUpcomingInterviews(),
         ]);
         setProfile(data);
         setOpenJobsCount(Array.isArray(openJobs) ? openJobs.length : 0);
+        setUpcomingInterviews(Array.isArray(interviews) ? interviews : []);
       } catch (err) {
         console.error("Failed to load candidate dashboard", err);
       } finally {
@@ -359,6 +362,83 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Skill Scorecards */}
           <div className="lg:col-span-2 space-y-6">
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Upcoming Interviews</h2>
+                  <p className="text-sm text-gray-500">
+                    Keep track of your scheduled interview sessions in one place
+                  </p>
+                </div>
+                <Badge variant="secondary" className="px-3 py-1">
+                  {upcomingInterviews.length}
+                </Badge>
+              </div>
+              <Card className="border-gray-200 p-6">
+                {upcomingInterviews.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    No interviews scheduled yet. Once an employer books one, it will appear here.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {upcomingInterviews.slice(0, 3).map((interview) => {
+                      const scheduledDate = new Date(interview.scheduledAt);
+                      const labelDate = Number.isNaN(scheduledDate.getTime())
+                        ? interview.scheduledAt
+                        : scheduledDate.toLocaleString([], {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          });
+                      return (
+                        <div
+                          key={interview.id}
+                          className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="font-semibold text-gray-900">{interview.jobTitle}</h3>
+                                <Badge variant="secondary" className="capitalize">
+                                  {interview.stage}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 text-sm text-gray-600">{interview.companyName}</p>
+                              <div className="mt-3 space-y-1 text-sm text-gray-600">
+                                <p className="flex items-center gap-2">
+                                  <CalendarDays className="h-4 w-4 text-blue-600" />
+                                  {labelDate} ({interview.timezone})
+                                </p>
+                                <p className="flex items-center gap-2 capitalize">
+                                  <Clock className="h-4 w-4 text-blue-600" />
+                                  {interview.durationMinutes} minutes • {interview.mode}
+                                </p>
+                                {interview.locationOrMeetingLink ? (
+                                  <p className="flex items-center gap-2 break-all">
+                                    <Building2 className="h-4 w-4 text-blue-600" />
+                                    {interview.locationOrMeetingLink}
+                                  </p>
+                                ) : interview.jobLocation ? (
+                                  <p className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-blue-600" />
+                                    {interview.jobLocation}
+                                  </p>
+                                ) : null}
+                              </div>
+                              {interview.notes ? (
+                                <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
+                                  {interview.notes}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Your Skill Scorecards</h2>
