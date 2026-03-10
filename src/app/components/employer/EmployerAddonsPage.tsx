@@ -45,7 +45,7 @@ export function EmployerAddonsPage() {
       return "Boost a listing to the top of candidate feeds for stronger visibility and faster applications.";
     }
     if (normalized === "ai_report") {
-      return "Generate one recruiter-ready hiring report with role-fit insights, candidate comparisons, and shortlist recommendations.";
+      return "Generate or refresh one recruiter-ready hiring report with role-fit insights, candidate comparisons, and shortlist recommendations. Saved reports remain viewable without spending another credit.";
     }
     if (normalized === "ai_credit") {
       return "Use AI matching credits to rank applicants, refresh AI match scores, and identify top-fit candidates for your roles.";
@@ -81,6 +81,7 @@ export function EmployerAddonsPage() {
       const params = new URLSearchParams(window.location.search);
       const addonSuccess = params.get("addon_success");
       const reference = params.get("reference");
+      const returnTo = params.get("return_to");
 
       if (addonSuccess !== "true" || !reference) return;
 
@@ -96,16 +97,28 @@ export function EmployerAddonsPage() {
             : "Credits";
 
         if (creditType === "featured_job") {
+          if (returnTo && returnTo !== "/employer/addons") {
+            window.location.replace(returnTo);
+            return;
+          }
           showFeedback(
             "Featured credits added",
             `${creditText} were added. Go to Jobs and click "Feature Job" on the job you want to promote.`,
           );
         } else if (creditType === "job_slot") {
+          if (returnTo && returnTo !== "/employer/addons") {
+            window.location.replace(returnTo);
+            return;
+          }
           showFeedback(
             "Job slot credits added",
             `${creditText} were added. You can now publish more open jobs.`,
           );
         } else {
+          if (returnTo && returnTo !== "/employer/addons") {
+            window.location.replace(returnTo);
+            return;
+          }
           showFeedback(
             "Purchase successful",
             `${creditText} were added to your account.`,
@@ -166,19 +179,32 @@ export function EmployerAddonsPage() {
               )}
               {addons.map((addon) => {
                 const addonLabel = addonTypeToLabel(addon.type);
+                const isAiCredit = String(addon.type ?? "").trim().toLowerCase() === "ai_credit";
+                const isRecommendedAiPack = isAiCredit && Number(addon.credits ?? 0) === 250;
                 const displayName =
-                  String(addon.type ?? "").trim().toLowerCase() === "ai_credit"
+                  isAiCredit
                     ? `${addon.credits} ${addonLabel}`
                     : addon.name || addonLabel;
                 return (
                   <div
                     key={addon.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    className={`flex items-center justify-between rounded-lg border p-4 ${
+                      isRecommendedAiPack
+                        ? "border-blue-300 bg-blue-50 shadow-sm"
+                        : "border-gray-200 bg-gray-50"
+                    }`}
                   >
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {displayName}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {displayName}
+                        </p>
+                        {isRecommendedAiPack ? (
+                          <Badge className="border-blue-200 bg-white text-blue-700">
+                            Best Value
+                          </Badge>
+                        ) : null}
+                      </div>
                       <p className="text-xs text-gray-700 mt-1 max-w-xl">
                         {getAddonDescription(addon.type)}
                       </p>

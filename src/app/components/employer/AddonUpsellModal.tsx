@@ -49,7 +49,7 @@ function addonDescription(type: string) {
     return "Boost a listing to the top of candidate feeds for stronger visibility and faster applications.";
   }
   if (normalized === "ai_report") {
-    return "Generate one recruiter-ready hiring report with role-fit insights, candidate comparisons, and shortlist recommendations.";
+    return "Generate or refresh one recruiter-ready hiring report with role-fit insights, candidate comparisons, and shortlist recommendations. Saved reports stay available to view without spending another credit.";
   }
   if (normalized === "ai_credit") {
     return "Use AI matching credits to rank applicants, refresh AI match scores, and identify top-fit candidates for your roles.";

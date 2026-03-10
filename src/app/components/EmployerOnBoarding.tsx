@@ -79,6 +79,14 @@ export function EmployerOnboarding({
         setStep(2);
     }
 
+    async function continueWithTrial() {
+        setSelectedPlanIntent(null);
+        await updateEmployerProfile({
+            onboarding_step: 2,
+        });
+        setStep(2);
+    }
+
     async function finishOnboarding() {
         await updateEmployerProfile({
             onboarding_step: 3,
@@ -95,7 +103,7 @@ export function EmployerOnboarding({
                 <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
             </div>
 
-            <div className="w-full max-w-4xl relative">
+            <div className="w-full max-w-7xl relative">
                 {/* Logo */}
                 <div className="text-center mb-4">
                     {/* <img
@@ -129,7 +137,7 @@ export function EmployerOnboarding({
                 </div>
 
                 {/* Main Content Card */}
-                <Card className="w-full mx-auto p-8 md:p-10 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+                <Card className="w-full mx-auto p-8 md:p-10 xl:p-12 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
                     {step === 0 && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
@@ -223,14 +231,14 @@ export function EmployerOnboarding({
                                         </div>
                                     </div>
                                     <Button
-                                        onClick={() => selectPlan("professional")}
+                                        onClick={continueWithTrial}
                                         className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
                                     >
                                         Continue with Free Trial
                                     </Button>
                                 </Card>
                             ) : (
-                                <div className="flex flex-col md:flex-row gap-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 2xl:gap-8">
                                     <PlanCard
                                         title="Free"
                                         price="R0"
@@ -248,26 +256,42 @@ export function EmployerOnboarding({
 
                                     <PlanCard
                                         title="Starter"
-                                        price="R2,499"
+                                        price="R999"
                                         period="per month"
-                                        description="For growing teams"
+                                        description="For small teams getting started"
                                         features={[
                                             "5 active job postings",
-                                            "Unlimited applicants",
-                                            "Advanced skill matching",
-                                            "Priority support",
-                                            "Analytics dashboard"
+                                            "50 candidate views per month",
+                                            "Basic analytics",
+                                            "Email support",
+                                            "2 team users"
                                         ]}
                                         icon={Zap}
-                                        highlight
-                                        badge="Most Popular"
                                         onSelect={() => selectPlan("starter")}
                                     />
 
                                     <PlanCard
+                                        title="Professional"
+                                        price="R2,999"
+                                        period="per month"
+                                        description="Best for growing hiring teams"
+                                        features={[
+                                            "20 active job postings",
+                                            "300 candidate views per month",
+                                            "Advanced skill matching",
+                                            "Priority support",
+                                            "5 team users"
+                                        ]}
+                                        icon={Sparkles}
+                                        highlight
+                                        badge="Most Popular"
+                                        onSelect={() => selectPlan("professional")}
+                                    />
+
+                                    <PlanCard
                                         title="Enterprise"
-                                        price="Custom"
-                                        period="contact us"
+                                        price="R9,999"
+                                        period="per month"
                                         description="For large organizations"
                                         features={[
                                             "Unlimited job postings",

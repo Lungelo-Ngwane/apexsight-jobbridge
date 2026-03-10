@@ -815,6 +815,8 @@ export async function getJobApplicants(jobId: string) {
       employment_type,
       experience_level,
       job_skills (
+        skill_id,
+        skills ( name ),
         required
       )
     `)
@@ -843,6 +845,8 @@ export async function getJobApplicants(jobId: string) {
         years_experience,
         bio,
         candidate_skills (
+          skill_id,
+          skill,
           skills ( name ),
           level
         )
@@ -888,7 +892,7 @@ export async function getJobApplicants(jobId: string) {
         location: (jobRow as { location?: string | null } | null)?.location ?? null,
         employment_type: (jobRow as { employment_type?: string | null } | null)?.employment_type ?? null,
         experience_level: (jobRow as { experience_level?: string | null } | null)?.experience_level ?? null,
-        job_skills: ((jobRow as { job_skills?: Array<{ required?: boolean | null }> } | null)?.job_skills) ?? [],
+        job_skills: ((jobRow as { job_skills?: Array<{ required?: boolean | null; skill_id?: string | null; skills?: { name?: string | null } | null }> } | null)?.job_skills) ?? [],
       },
       candidate: {
         headline: (row as { candidate?: { headline?: string | null } | null }).candidate?.headline ?? null,
@@ -898,7 +902,7 @@ export async function getJobApplicants(jobId: string) {
           work_experience?: Array<{ title?: string | null }>;
           debug?: { extraction_method?: string | null };
         } | null,
-        candidate_skills: ((row as { candidate?: { candidate_skills?: unknown[] } | null }).candidate?.candidate_skills) ?? [],
+        candidate_skills: ((row as { candidate?: { candidate_skills?: Array<{ skill_id?: string | null; skill?: string | null; skills?: { name?: string | null } | null }> } | null }).candidate?.candidate_skills) ?? [],
         cv_url: (row as { candidate?: { cv_url?: string | null } | null }).candidate?.cv_url ?? null,
       },
     });
@@ -1092,7 +1096,7 @@ function computeMatchIntelligence(input: {
     location?: string | null;
     employment_type?: string | null;
     experience_level?: string | null;
-    job_skills?: Array<{ required?: boolean | null }> | null;
+    job_skills?: Array<{ required?: boolean | null; skill_id?: string | null; skills?: { name?: string | null } | null }> | null;
   };
   candidate: {
     headline?: string | null;
@@ -1102,7 +1106,7 @@ function computeMatchIntelligence(input: {
       work_experience?: Array<{ title?: string | null }>;
       debug?: { extraction_method?: string | null };
     } | null;
-    candidate_skills?: Array<unknown> | null;
+    candidate_skills?: Array<{ skill_id?: string | null; skill?: string | null; skills?: { name?: string | null } | null }> | null;
     cv_url?: string | null;
   };
 }) {
@@ -1127,6 +1131,15 @@ function computeMatchIntelligence(input: {
   let penalty = 0;
   let recencyBonus = 0;
   const explanations: string[] = [];
+  const normalizeSkillKey = (skill: { skill_id?: string | null; skill?: string | null; skills?: { name?: string | null } | null }) =>
+    String(
+      skill.skill_id ??
+      skill.skills?.name ??
+      skill.skill ??
+      "",
+    )
+      .trim()
+      .toLowerCase();
 
   const preferredJobType = normalizeComparable(String(input.candidate.preferred_job_type ?? ""));
   const jobEmploymentType = normalizeComparable(String(input.job.employment_type ?? ""));
@@ -1134,8 +1147,8 @@ function computeMatchIntelligence(input: {
     if (preferredJobType === jobEmploymentType) {
       knockoutFilters.push({ label: "Job type", status: "pass", detail: "Candidate preference matches job type." });
     } else {
-      knockoutFilters.push({ label: "Job type", status: "fail", detail: "Candidate preferred job type does not match this role." });
-      penalty += 12;
+      knockoutFilters.push({ label: "Job type", status: "warning", detail: "Candidate usually prefers a different job type, but may still consider this role." });
+      penalty += 6;
     }
   }
 
@@ -1156,18 +1169,30 @@ function computeMatchIntelligence(input: {
 
   const requiredScore = Number(input.scoreBreakdown?.required ?? 0);
   const experienceScore = Number(input.scoreBreakdown?.experience ?? 0);
+  const requiredJobSkills = (input.job.job_skills ?? []).filter((row) => Boolean(row.required));
+  const candidateSkillKeys = new Set(
+    (input.candidate.candidate_skills ?? [])
+      .map((row) => normalizeSkillKey(row))
+      .filter((value) => value.length > 0),
+  );
+  const matchedRequiredSkills = requiredJobSkills.filter((row) => candidateSkillKeys.has(normalizeSkillKey(row))).length;
+
   if (matchingConfig.required_job_skills > 0 && requiredScore <= 0) {
     knockoutFilters.push({ label: "Required skills", status: "fail", detail: "Candidate did not match any configured required skills." });
     penalty += 20;
   } else if (matchingConfig.required_job_skills > 0) {
-    explanations.push(`Matched ${requiredScore} of 50 available required-skill points.`);
+    explanations.push(`Matched ${matchedRequiredSkills} of ${matchingConfig.required_job_skills} required skills for this role.`);
   }
 
   if (normalizeComparable(String(input.job.experience_level ?? "")) && experienceScore <= 0) {
     knockoutFilters.push({ label: "Experience", status: "fail", detail: "Candidate experience level is materially below the job expectation." });
     penalty += 10;
   } else if (experienceScore > 0) {
-    explanations.push(`Experience alignment contributed ${experienceScore}/15.`);
+    const experienceMessage =
+      experienceScore >= 13 ? "Candidate experience is strongly aligned with the level of this role." :
+      experienceScore >= 8 ? "Candidate experience is broadly aligned with the level of this role." :
+      "Candidate experience shows partial alignment with the level of this role.";
+    explanations.push(experienceMessage);
   }
 
   const recentRoleTitle = String(input.candidate.resume_analysis?.work_experience?.[0]?.title ?? "").trim();
@@ -1405,6 +1430,7 @@ export async function getCandidateDeepView(applicationId: string) {
         cv_url,
         embedding,
         candidate_skills (
+          skill_id,
           skill,
           level
         )
@@ -1416,6 +1442,8 @@ export async function getCandidateDeepView(applicationId: string) {
         employment_type,
         experience_level,
         job_skills (
+          skill_id,
+          skills ( name ),
           required
         )
       )
@@ -1510,7 +1538,7 @@ export async function getCandidateDeepView(applicationId: string) {
       location: (data as { jobs?: { location?: string | null } | null })?.jobs?.location ?? null,
       employment_type: (data as { jobs?: { employment_type?: string | null } | null })?.jobs?.employment_type ?? null,
       experience_level: (data as { jobs?: { experience_level?: string | null } | null })?.jobs?.experience_level ?? null,
-      job_skills: (((data as { jobs?: { job_skills?: Array<{ required?: boolean | null }> } | null })?.jobs?.job_skills) ?? []),
+      job_skills: (((data as { jobs?: { job_skills?: Array<{ required?: boolean | null; skill_id?: string | null; skills?: { name?: string | null } | null }> } | null })?.jobs?.job_skills) ?? []),
     },
     candidate: {
       headline: (data as { candidate_profiles?: { headline?: string | null } | null })?.candidate_profiles?.headline ?? null,
@@ -1520,7 +1548,7 @@ export async function getCandidateDeepView(applicationId: string) {
         work_experience?: Array<{ title?: string | null }>;
         debug?: { extraction_method?: string | null };
       } | null,
-      candidate_skills: (((data as { candidate_profiles?: { candidate_skills?: unknown[] } | null })?.candidate_profiles?.candidate_skills) ?? []),
+      candidate_skills: (((data as { candidate_profiles?: { candidate_skills?: Array<{ skill_id?: string | null; skill?: string | null }> } | null })?.candidate_profiles?.candidate_skills) ?? []),
       cv_url: (data as { candidate_profiles?: { cv_url?: string | null } | null })?.candidate_profiles?.cv_url ?? null,
     },
   });
@@ -2165,7 +2193,19 @@ export async function getEmployerCredits(): Promise<EmployerCreditBalance[]> {
   }));
 }
 
-export async function startAddonCheckout(addonId: string) {
+function normalizeAddonReturnTo(returnTo?: string | null) {
+  const fallback = "/employer/addons";
+  const raw = String(returnTo ?? "").trim();
+  if (!raw && typeof window !== "undefined") {
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    return current.startsWith("/") ? current : fallback;
+  }
+  if (!raw) return fallback;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return fallback;
+  return raw;
+}
+
+export async function startAddonCheckout(addonId: string, returnTo?: string) {
   const {
     data: { session },
     error: sessionError,
@@ -2190,7 +2230,10 @@ export async function startAddonCheckout(addonId: string) {
   }
 
   const { data, error } = await supabase.functions.invoke("buy-addon", {
-    body: { addonId },
+    body: {
+      addonId,
+      returnTo: normalizeAddonReturnTo(returnTo),
+    },
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

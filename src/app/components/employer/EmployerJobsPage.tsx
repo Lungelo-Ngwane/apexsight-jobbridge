@@ -16,7 +16,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { featureJob, generateAiReport, getEmployerJobs, renewJobVisibility, runAutoMatch, updateJobStatus } from "@/lib/employer";
+import { featureJob, generateAiReport, getEmployerJobs, renewJobVisibility, updateJobStatus } from "@/lib/employer";
 import { PostJobModal } from "../PostJobModal";
 import { JobCandidatesModal } from "../JobCandidatesModal";
 import { AddonUpsellModal } from "./AddonUpsellModal";
@@ -325,35 +325,6 @@ export function EmployerJobsPage() {
     navigate(`/employer/jobs/${job.id}/report`);
   }
 
-  async function handleRunAutoMatch(job: JobRow) {
-    try {
-      setActionLoading(`match-${job.id}`);
-      const data = await runAutoMatch(job.id);
-      const matchesFound = Number(data?.matches_found ?? 0);
-      showFeedback(
-        "AI match complete",
-        `${matchesFound} candidate${matchesFound === 1 ? "" : "s"} matched this job.`,
-      );
-    } catch (error: any) {
-      const message = String(error?.message ?? "").toLowerCase();
-      if (message.includes("insufficient")) {
-        setUpsell({
-          open: true,
-          addonType: "ai_credit",
-          actionLabel: "run AI matching for this job",
-        });
-      } else {
-        console.error("Failed to run AI match", error);
-        showFeedback(
-          "AI match failed",
-          "We couldn't run AI matching right now. Please try again.",
-        );
-      }
-    } finally {
-      setActionLoading(null);
-    }
-  }
-
   async function handleRenewJob(job: JobRow) {
     try {
       setActionLoading(`renew-${job.id}`);
@@ -613,15 +584,6 @@ export function EmployerJobsPage() {
                             : featuredActive
                               ? "Featured"
                               : "Feature Job"}
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          className="border-gray-300"
-                          onClick={() => handleRunAutoMatch(job)}
-                          disabled={actionLoading === `match-${job.id}`}
-                        >
-                          {actionLoading === `match-${job.id}` ? "Running..." : "AI Match"}
                         </Button>
 
                         <Button

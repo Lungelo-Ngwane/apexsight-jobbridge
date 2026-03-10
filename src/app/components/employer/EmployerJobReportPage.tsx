@@ -369,6 +369,11 @@ export function EmployerJobReportPage() {
                   Posted {formatDate(String(job.published_at ?? job.created_at ?? ""))}
                 </span>
               </div>
+              <p className="mt-3 max-w-3xl text-sm text-gray-600">
+                {latestReport
+                  ? "You are viewing the latest saved AI Hiring Report for this role. Opening this page does not use a credit."
+                  : "No saved AI Hiring Report exists yet for this role. Generate one when you are ready to spend a report credit."}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
@@ -377,7 +382,13 @@ export function EmployerJobReportPage() {
               </Button>
               <Button size="sm" onClick={() => void handleGenerateReport()} disabled={generating}>
                 <Download className="mr-2 h-4 w-4" />
-                {latestReport ? (generating ? "Refreshing..." : "Refresh Report") : generating ? "Generating..." : "Generate Report"}
+                {latestReport
+                  ? generating
+                    ? "Refreshing..."
+                    : "Refresh Report (1 credit)"
+                  : generating
+                    ? "Generating..."
+                    : "Generate Report (1 credit)"}
               </Button>
             </div>
           </div>
@@ -385,6 +396,20 @@ export function EmployerJobReportPage() {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
+        <Card className="border-blue-200 bg-blue-50/70 p-4 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-900">AI Hiring Report credits are generation-based</p>
+              <p className="text-sm text-blue-800">
+                Viewing a saved report is free. A credit is only used when you generate a new report or refresh this one.
+              </p>
+            </div>
+            <Badge className="border-blue-200 bg-white text-blue-700">
+              {latestReport ? "Saved report available" : "No saved report yet"}
+            </Badge>
+          </div>
+        </Card>
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {overviewStats.map((stat) => (
             <Card key={stat.label} className="border-gray-200 p-6 shadow-sm">

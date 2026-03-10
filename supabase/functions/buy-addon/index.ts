@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { addonId } = await req.json();
+    const { addonId, returnTo } = await req.json();
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
 
@@ -77,7 +77,12 @@ Deno.serve(async (req) => {
       req.headers.get("origin") ??
       Deno.env.get("APP_URL") ??
       "http://localhost:5173";
-    const callbackUrl = `${origin}/employer/addons?addon_success=true`;
+    const normalizedReturnTo =
+      typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//")
+        ? returnTo
+        : "/employer/addons";
+    const callbackUrl =
+      `${origin}/employer/addons?addon_success=true&return_to=${encodeURIComponent(normalizedReturnTo)}`;
 
     const paystackInitResponse = await fetch(
       "https://api.paystack.co/transaction/initialize",
