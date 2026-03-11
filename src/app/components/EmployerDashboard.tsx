@@ -319,7 +319,13 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const activeJobs = Number(usageSnapshot?.activeJobs ?? 0);
   const finiteJobLimit =
     typeof usageSnapshot?.jobLimit === "number" ? usageSnapshot.jobLimit : null;
+  const extraJobSlotCredits = Number(usageSnapshot?.extraJobSlotCredits ?? 0);
+  const creditedJobSlotBalance = Number(
+    creditBalances.find((credit) => String(credit.creditType ?? "").toLowerCase() === "job_slot")?.remaining ?? 0,
+  );
+  const availableJobSlotCredits = Math.max(extraJobSlotCredits, creditedJobSlotBalance);
   const isOverJobLimit = finiteJobLimit !== null && activeJobs >= finiteJobLimit;
+  const isPostingLocked = isOverJobLimit && availableJobSlotCredits <= 0;
 
   const refreshDashboardData = useCallback(async () => {
     if (!cachePrefix) return;
@@ -473,7 +479,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
           <Button
             onClick={() => setShowPostJob(true)}
-            disabled={isOverJobLimit}
+            disabled={isPostingLocked}
             className="bg-blue-600 hover:bg-blue-700 text-white"
             size="lg"
           >
@@ -894,10 +900,10 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   onClick={() => setShowPostJob(true)}
                   variant="outline"
                   className="w-full justify-start"
-                  disabled={isOverJobLimit}
+                  disabled={isPostingLocked}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  {isOverJobLimit ? "Job Limit Reached" : "Post New Job"}
+                  {isPostingLocked ? "Job Limit Reached" : "Post New Job"}
                 </Button>
 
                 {hasAnalytics ? (

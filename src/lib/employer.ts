@@ -56,6 +56,7 @@ export interface EmployerUsageSnapshot {
   planName: string;
   activeJobs: number;
   jobLimit: number | null;
+  extraJobSlotCredits: number;
   candidateViewsUsedThisMonth: number;
   candidateViewLimit: number | null;
 }
@@ -2480,13 +2481,31 @@ export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot>
 
   if (viewsError) throw viewsError;
 
+  const { data: extraJobSlotRow, error: extraJobSlotError } = await supabase
+    .from("employer_credits")
+    .select("remaining")
+    .eq("employer_id", employer.id)
+    .eq("credit_type", "job_slot")
+    .maybeSingle();
+
+  if (extraJobSlotError) throw extraJobSlotError;
+
+  const baseJobLimit =
+    planRow && planRow.job_limit === null
+      ? null
+      : (planRow?.job_limit ??
+        PLAN_LIMITS[normalizedPlan as keyof typeof PLAN_LIMITS]?.maxActiveJobs ??
+        null);
+  const extraJobSlotCredits = Number(extraJobSlotRow?.remaining ?? 0);
+
   return {
     planName: String(planRow?.name ?? normalizedPlan),
     activeJobs: Number(activeJobs ?? 0),
     jobLimit:
-      planRow && planRow.job_limit === null
+      baseJobLimit === null
         ? null
-        : (planRow?.job_limit ?? PLAN_LIMITS[normalizedPlan as keyof typeof PLAN_LIMITS]?.maxActiveJobs ?? null),
+        : baseJobLimit + extraJobSlotCredits,
+    extraJobSlotCredits,
     candidateViewsUsedThisMonth: Number(usedViewsThisMonth ?? 0),
     candidateViewLimit:
       planRow && planRow.candidate_view_limit === null

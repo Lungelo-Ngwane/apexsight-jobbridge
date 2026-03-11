@@ -14,9 +14,10 @@ import {
   MapPin,
   Clock,
   CheckCircle,
+  Lock,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { featureJob, generateAiReport, getEmployerJobs, renewJobVisibility, updateJobStatus } from "@/lib/employer";
+import { featureJob, generateAiReport, getEmployerCredits, getEmployerJobs, getEmployerUsageSnapshot, renewJobVisibility, updateJobStatus, type EmployerCreditBalance, type EmployerUsageSnapshot } from "@/lib/employer";
 import { PostJobModal } from "../PostJobModal";
 import { JobCandidatesModal } from "../JobCandidatesModal";
 import { AddonUpsellModal } from "./AddonUpsellModal";
@@ -115,6 +116,8 @@ export function EmployerJobsPage() {
   const [editingJob, setEditingJob] = useState<JobRow | null>(null);
   const [jobToClose, setJobToClose] = useState<JobRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [usageSnapshot, setUsageSnapshot] = useState<EmployerUsageSnapshot | null>(null);
+  const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [latestReport, setLatestReport] = useState<Record<string, unknown> | null>(null);
   const [upsell, setUpsell] = useState<{
@@ -132,12 +135,27 @@ export function EmployerJobsPage() {
   const reportCandidates = Array.isArray(latestReport?.top_candidates)
     ? (latestReport?.top_candidates as Array<Record<string, unknown>>)
     : [];
+  const activeJobsUsed = Number(usageSnapshot?.activeJobs ?? 0);
+  const finiteJobLimit = typeof usageSnapshot?.jobLimit === "number" ? usageSnapshot.jobLimit : null;
+  const extraJobSlotCredits = Number(usageSnapshot?.extraJobSlotCredits ?? 0);
+  const creditedJobSlotBalance = Number(
+    creditBalances.find((credit) => String(credit.creditType ?? "").toLowerCase() === "job_slot")?.remaining ?? 0,
+  );
+  const availableJobSlotCredits = Math.max(extraJobSlotCredits, creditedJobSlotBalance);
+  const isOverJobLimit = finiteJobLimit !== null && activeJobsUsed >= finiteJobLimit;
+  const isPostingLocked = isOverJobLimit && availableJobSlotCredits <= 0;
 
   async function loadJobs() {
     try {
       setLoadingJobs(true);
-      const data = await getEmployerJobs();
+      const [data, usage, credits] = await Promise.all([
+        getEmployerJobs(),
+        getEmployerUsageSnapshot(),
+        getEmployerCredits(),
+      ]);
       setJobs((data ?? []) as JobRow[]);
+      setUsageSnapshot(usage);
+      setCreditBalances(credits);
     } catch (error) {
       console.error("Failed to load employer jobs", error);
     } finally {
@@ -292,6 +310,14 @@ export function EmployerJobsPage() {
     setShowPostJobModal(true);
   }
 
+  function handleJobSlotUpsell() {
+    setUpsell({
+      open: true,
+      addonType: "job_slot",
+      actionLabel: "publish more open jobs",
+    });
+  }
+
   async function handleFeatureJob(job: JobRow) {
     try {
       setActionLoading(`feature-${job.id}`);
@@ -347,19 +373,37 @@ export function EmployerJobsPage() {
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Job Management</h1>
               <p className="text-sm text-gray-600">Manage all your job postings and track applications</p>
             </div>
-            <Button
-              onClick={handleNewJob}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
-              size="lg"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Post New Job
-            </Button>
+            <div className="flex flex-col items-start gap-2 lg:items-end">
+              <Button
+                onClick={handleNewJob}
+                disabled={isPostingLocked}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                size="lg"
+              >
+                {isPostingLocked ? <Lock className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                {isPostingLocked ? "Job Limit Reached" : "Post New Job"}
+              </Button>
+              {isPostingLocked ? (
+                <div className="flex flex-col items-start gap-2 text-sm text-gray-600 lg:items-end">
+                  <span>
+                    You are using {activeJobsUsed}
+                    {finiteJobLimit !== null ? ` / ${finiteJobLimit}` : ""} active job slots.
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleJobSlotUpsell}>
+                    Buy Job Slot Add-on
+                  </Button>
+                </div>
+              ) : availableJobSlotCredits > 0 ? (
+                <div className="text-sm text-gray-600">
+                  {availableJobSlotCredits} unused extra job slot credit{availableJobSlotCredits === 1 ? "" : "s"} available.
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

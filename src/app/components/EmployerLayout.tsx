@@ -5,6 +5,7 @@ import {
   Users,
   MessageSquare,
   CreditCard,
+  Crown,
   ShoppingBag,
   Settings,
   LogOut,
@@ -91,6 +92,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
             to={hasCandidateMessagingAccess ? "/employer/messages" : undefined}
             badgeCount={hasCandidateMessagingAccess ? unreadCount : 0}
           />
+          <SidebarItem icon={Crown} label="Plans" to="/employer/plans" />
           <SidebarItem icon={ShoppingBag} label="Add-ons" to="/employer/addons" />
           <SidebarItem icon={CreditCard} label="Billing" to="/employer/billing" />
           <SidebarItem icon={Settings} label="Settings" to="/employer/settings" />
@@ -144,6 +146,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
               to={hasCandidateMessagingAccess ? "/employer/messages" : ""}
               badgeCount={hasCandidateMessagingAccess ? unreadCount : 0}
             />
+            <MobileNavItem label="Plans" to="/employer/plans" />
             <MobileNavItem label="Add-ons" to="/employer/addons" />
             <MobileNavItem label="Billing" to="/employer/billing" />
             <MobileNavItem label="Settings" to="/employer/settings" />
