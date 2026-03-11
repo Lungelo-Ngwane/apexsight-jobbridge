@@ -88,7 +88,7 @@ export function EmployerPlansPage() {
         period: "per month",
         description: "For small teams hiring consistently with better visibility and structure.",
         features: [
-          `${starter?.jobLimit ?? 5} active job postings`,
+          `${starter?.jobLimit ?? 2} active job postings`,
           `${starter?.candidateViewLimit ?? 50} candidate views per month`,
           "Basic analytics",
           "Email support",
@@ -104,7 +104,7 @@ export function EmployerPlansPage() {
         period: "per month",
         description: "Best for growing hiring teams that need AI-assisted workflows and more capacity.",
         features: [
-          `${professional?.jobLimit ?? 20} active job postings`,
+          `${professional?.jobLimit ?? 3} active job postings`,
           `${professional?.candidateViewLimit ?? 300} candidate views per month`,
           "Advanced skill matching",
           "Priority support",
@@ -121,7 +121,7 @@ export function EmployerPlansPage() {
         period: "per month",
         description: "For larger organizations that need scale, control, and dedicated support.",
         features: [
-          "Unlimited job postings",
+          `${enterprise?.jobLimit ?? 4} active job postings`,
           "Dedicated account manager",
           "Custom integrations",
           "White-label options",

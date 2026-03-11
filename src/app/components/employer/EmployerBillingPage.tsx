@@ -322,7 +322,7 @@ export function EmployerBillingPage() {
       period: "per month",
       description: "Perfect for small businesses",
       features: [
-        `${plans.find((p) => p.name === "starter")?.jobLimit ?? 5} active job postings`,
+        `${plans.find((p) => p.name === "starter")?.jobLimit ?? 2} active job postings`,
         `${plans.find((p) => p.name === "starter")?.candidateViewLimit ?? 50} candidate views/month`,
         "Basic analytics",
         "Email support",
@@ -337,7 +337,7 @@ export function EmployerBillingPage() {
       period: "per month",
       description: "Most popular for growing teams",
       features: [
-        `${plans.find((p) => p.name === "professional")?.jobLimit ?? 20} active job postings`,
+        `${plans.find((p) => p.name === "professional")?.jobLimit ?? 3} active job postings`,
         `${plans.find((p) => p.name === "professional")?.candidateViewLimit ?? 300} candidate views/month`,
         "Advanced analytics",
         "Priority support",
@@ -354,7 +354,7 @@ export function EmployerBillingPage() {
       period: "per month",
       description: "For large organizations",
       features: [
-        `${plans.find((p) => p.name === "enterprise")?.jobLimit ?? 999} active job postings`,
+        `${plans.find((p) => p.name === "enterprise")?.jobLimit ?? 4} active job postings`,
         `${plans.find((p) => p.name === "enterprise")?.candidateViewLimit ?? 9999} candidate views/month`,
         "Custom analytics & reporting",
         "Dedicated account manager",

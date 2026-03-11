@@ -5,15 +5,15 @@ export const PLAN_LIMITS = {
     analytics: false,
   },
   starter: {
-    maxActiveJobs: 5,
+    maxActiveJobs: 2,
     analytics: true,
   },
   professional: {
-    maxActiveJobs: 20,
+    maxActiveJobs: 3,
     analytics: true,
   },
   enterprise: {
-    maxActiveJobs: Infinity,
+    maxActiveJobs: 4,
     analytics: true,
   },
 };

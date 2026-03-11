@@ -260,7 +260,7 @@ export function EmployerOnboarding({
                                         period="per month"
                                         description="For small teams getting started"
                                         features={[
-                                            "5 active job postings",
+                                            "2 active job postings",
                                             "50 candidate views per month",
                                             "Basic analytics",
                                             "Email support",
@@ -276,7 +276,7 @@ export function EmployerOnboarding({
                                         period="per month"
                                         description="Best for growing hiring teams"
                                         features={[
-                                            "20 active job postings",
+                                            "3 active job postings",
                                             "300 candidate views per month",
                                             "Advanced skill matching",
                                             "Priority support",
@@ -294,7 +294,7 @@ export function EmployerOnboarding({
                                         period="per month"
                                         description="For large organizations"
                                         features={[
-                                            "Unlimited job postings",
+                                            "4 active job postings",
                                             "Dedicated account manager",
                                             "Custom integrations",
                                             "White-label options",
