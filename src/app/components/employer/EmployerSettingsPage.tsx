@@ -25,6 +25,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Switch } from "@/app/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import {
   getEmployerTeamMembers,
@@ -64,6 +74,7 @@ export function EmployerSettingsPage() {
   const [teamLoading, setTeamLoading] = useState(false);
   const [teamRefreshing, setTeamRefreshing] = useState(false);
   const [teamBusyId, setTeamBusyId] = useState<string | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<EmployerTeamMember | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<EmployerMembershipRole>("recruiter");
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
@@ -203,6 +214,7 @@ export function EmployerSettingsPage() {
       showFeedback("Remove failed", message);
     } finally {
       setTeamBusyId(null);
+      setMemberToRemove(null);
     }
   }
 
@@ -525,28 +537,35 @@ export function EmployerSettingsPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right min-w-[140px]">
-                            <select
-                              value={member.role}
-                              onChange={(event) => void handleRoleChange(member.id, event.target.value as EmployerMembershipRole)}
-                              disabled={!canManageTeam || member.role === "owner" || teamBusyId === member.id}
-                              className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900"
-                            >
-                              <option value="owner">Owner</option>
-                              <option value="admin">Admin</option>
-                              <option value="recruiter">Recruiter</option>
-                            </select>
+                            {member.role === "owner" ? (
+                              <div className="h-9 rounded-md border border-gray-200 bg-gray-100 px-3 text-sm font-medium text-gray-700 flex items-center justify-center">
+                                Owner
+                              </div>
+                            ) : (
+                              <select
+                                value={member.role}
+                                onChange={(event) => void handleRoleChange(member.id, event.target.value as EmployerMembershipRole)}
+                                disabled={!canManageTeam || teamBusyId === member.id}
+                                className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900"
+                              >
+                                <option value="admin">Admin</option>
+                                <option value="recruiter">Recruiter</option>
+                              </select>
+                            )}
                             <p className={`mt-1 text-xs ${member.status === "active" ? "text-emerald-600" : member.status === "invited" ? "text-amber-600" : "text-gray-500"}`}>
                               {member.status === "invited" ? "Pending invite" : member.status === "revoked" ? "Revoked" : "Active"}
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={!canManageTeam || member.role === "owner" || teamBusyId === member.id}
-                            onClick={() => void handleRemoveMember(member.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </Button>
+                          {member.role === "owner" ? null : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={!canManageTeam || teamBusyId === member.id}
+                              onClick={() => setMemberToRemove(member)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          )}
                         </div>
                         </div>
                       ))}
@@ -604,7 +623,12 @@ export function EmployerSettingsPage() {
                   <p className="text-xs text-gray-700 mb-4">
                     Upgrade your plan to add more team members
                   </p>
-                  <Button variant="outline" size="sm" className="w-full border-gray-300 bg-white">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-gray-300 bg-white"
+                    onClick={() => navigate("/employer/plans")}
+                  >
                     View Plans
                   </Button>
                 </Card>
@@ -784,6 +808,34 @@ export function EmployerSettingsPage() {
         description={feedback.description}
         onOpenChange={handleFeedbackOpenChange}
       />
+      <AlertDialog open={Boolean(memberToRemove)} onOpenChange={(open) => !open && setMemberToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {memberToRemove
+                ? `This will remove ${memberToRemove.name} from your workspace and revoke their access immediately.`
+                : "This will remove the team member from your workspace and revoke their access immediately."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={Boolean(memberToRemove && teamBusyId === memberToRemove.id)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                if (!memberToRemove) return;
+                void handleRemoveMember(memberToRemove.id);
+              }}
+              disabled={Boolean(memberToRemove && teamBusyId === memberToRemove.id)}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {memberToRemove && teamBusyId === memberToRemove.id ? "Removing..." : "Remove member"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

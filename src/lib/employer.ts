@@ -1369,13 +1369,14 @@ function computeMatchIntelligence(input: {
   const explanations: string[] = [];
   const normalizeSkillKey = (skill: { skill_id?: string | null; skill?: string | null; skills?: { name?: string | null } | null }) =>
     String(
-      skill.skill_id ??
       skill.skills?.name ??
       skill.skill ??
+      skill.skill_id ??
       "",
     )
       .trim()
-      .toLowerCase();
+      .toLowerCase()
+      .replace(/[^a-z0-9+#]/g, "");
 
   const preferredJobType = normalizeComparable(String(input.candidate.preferred_job_type ?? ""));
   const jobEmploymentType = normalizeComparable(String(input.job.employment_type ?? ""));
@@ -1384,7 +1385,6 @@ function computeMatchIntelligence(input: {
       knockoutFilters.push({ label: "Job type", status: "pass", detail: "Candidate preference matches job type." });
     } else {
       knockoutFilters.push({ label: "Job type", status: "warning", detail: "Candidate usually prefers a different job type, but may still consider this role." });
-      penalty += 6;
     }
   }
 
@@ -1399,7 +1399,6 @@ function computeMatchIntelligence(input: {
       knockoutFilters.push({ label: "Location", status: "pass", detail: "Candidate location aligns with the job location." });
     } else {
       knockoutFilters.push({ label: "Location", status: "warning", detail: "Candidate location may not align with this job location." });
-      penalty += 6;
     }
   }
 

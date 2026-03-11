@@ -219,6 +219,7 @@ export function CandidateProfileDrawer({
                   {confidenceScore === null ? "Not available" : `${confidenceScore}%`}
                 </span>
               </div>
+
             </div>
           )}
 
