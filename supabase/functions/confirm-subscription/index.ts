@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError, logInfo, logWarn } from "../_shared/observability.ts";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,18 +124,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
+    let employerContext;
+    try {
+      employerContext = await resolveEmployerContext(supabase, token, {
+        requiredRoles: ["owner", "admin"],
+      });
+    } catch {
       logWarn("confirm_subscription.invalid_user_session", { requestId });
       return new Response(JSON.stringify({ error: "Invalid user session" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const user = employerContext.user;
 
     const paystackRes = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
@@ -223,7 +225,6 @@ Deno.serve(async (req) => {
         .from("employer_profiles")
         .select("id, user_id, plan")
         .eq("id", employerId)
-        .eq("user_id", user.id)
         .maybeSingle();
 
       employer = data;
@@ -233,7 +234,7 @@ Deno.serve(async (req) => {
       const { data } = await supabase
         .from("employer_profiles")
         .select("id, user_id, plan")
-        .eq("user_id", user.id)
+        .eq("id", employerContext.employerId)
         .maybeSingle();
 
       employer = data;
@@ -284,8 +285,7 @@ Deno.serve(async (req) => {
     const { error: updateError } = await supabase
       .from("employer_profiles")
       .update(updates)
-      .eq("id", employer.id)
-      .eq("user_id", user.id);
+      .eq("id", employer.id);
 
     if (updateError) {
       logError("confirm_subscription.plan_update_failed", {

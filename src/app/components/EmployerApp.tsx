@@ -8,7 +8,7 @@ import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 export function EmployerApp() {
   const location = useLocation();
-  const { profile, loading } = useEmployerProfile();
+  const { profile, membershipRole, loading } = useEmployerProfile();
   const [canShowMissingProfile, setCanShowMissingProfile] = useState(false);
 
   useEffect(() => {
@@ -60,10 +60,23 @@ export function EmployerApp() {
   }
 
   const hasCandidateMessagingAccess = hasEmployerPaidAccess(profile);
+  const canManageWorkspace = membershipRole === "owner" || membershipRole === "admin";
 
   if (!hasCandidateMessagingAccess) {
     const path = location.pathname.toLowerCase();
     if (path === "/employer/candidates" || path === "/employer/messages") {
+      return <Navigate to="/employer/dashboard" replace />;
+    }
+  }
+
+  if (!canManageWorkspace) {
+    const path = location.pathname.toLowerCase();
+    if (
+      path === "/employer/plans" ||
+      path === "/employer/addons" ||
+      path === "/employer/billing" ||
+      path === "/employer/settings"
+    ) {
       return <Navigate to="/employer/dashboard" replace />;
     }
   }

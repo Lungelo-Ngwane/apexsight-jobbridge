@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,20 +31,12 @@ Deno.serve(async (req) => {
     if (!token) return jsonResponse({ error: "Missing access token" }, 401);
     if (!invoiceId) return jsonResponse({ error: "Missing invoiceId" }, 400);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) return jsonResponse({ error: "Invalid user session" }, 401);
-
-    const { data: employer, error: employerError } = await supabase
-      .from("employer_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (employerError || !employer?.id) {
+    let employer;
+    try {
+      employer = await resolveEmployerContext(supabase, token, {
+        requiredRoles: ["owner", "admin"],
+      });
+    } catch {
       return jsonResponse({ error: "Employer profile not found" }, 404);
     }
 
@@ -51,7 +44,7 @@ Deno.serve(async (req) => {
       .from("billing_invoices")
       .select("id, invoice_number, storage_path")
       .eq("id", invoiceId)
-      .eq("employer_id", employer.id)
+      .eq("employer_id", employer.employerId)
       .maybeSingle();
 
     if (invoiceError || !invoice) return jsonResponse({ error: "Invoice not found" }, 404);

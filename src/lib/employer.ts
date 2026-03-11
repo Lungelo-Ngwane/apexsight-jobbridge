@@ -59,6 +59,8 @@ export interface EmployerUsageSnapshot {
   extraJobSlotCredits: number;
   candidateViewsUsedThisMonth: number;
   candidateViewLimit: number | null;
+  teamMembersUsed: number;
+  teamMemberLimit: number | null;
 }
 
 export interface BillingInvoice {
@@ -102,6 +104,34 @@ export interface EmployerTalentPoolInsightItem {
 export interface EmployerPremiumDashboardInsights {
   recentActivity: EmployerRecentActivityItem[];
   talentPoolInsights: EmployerTalentPoolInsightItem[];
+}
+
+export type EmployerMembershipRole = "owner" | "admin" | "recruiter";
+export type EmployerMembershipStatus = "invited" | "active" | "revoked";
+
+export interface EmployerContext {
+  employerId: string;
+  membershipId: string | null;
+  membershipRole: EmployerMembershipRole;
+  membershipStatus: EmployerMembershipStatus;
+  companyName: string | null;
+  plan: string | null;
+  user: {
+    id: string;
+    email: string | null;
+  };
+}
+
+export interface EmployerTeamMember {
+  id: string;
+  userId: string | null;
+  name: string;
+  email: string;
+  role: EmployerMembershipRole;
+  status: EmployerMembershipStatus;
+  acceptedAt: string | null;
+  createdAt: string;
+  isCurrentUser: boolean;
 }
 
 export interface ResolvedSkillCatalogItem {
@@ -295,6 +325,301 @@ function toPlanSlug(value: unknown): BillingPlanName | null {
   return null;
 }
 
+function normalizeEmail(value: unknown) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function normalizeMembershipRole(value: unknown): EmployerMembershipRole {
+  const role = String(value ?? "").trim().toLowerCase();
+  if (role === "owner" || role === "admin") return role;
+  return "recruiter";
+}
+
+function normalizeMembershipStatus(value: unknown): EmployerMembershipStatus {
+  const status = String(value ?? "").trim().toLowerCase();
+  if (status === "active" || status === "revoked") return status;
+  return "invited";
+}
+
+export async function getCurrentEmployerContext(
+  options?: { requiredRoles?: EmployerMembershipRole[] },
+): Promise<EmployerContext> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("Not authenticated");
+  }
+
+  try {
+    await supabase.rpc("claim_pending_employer_invites");
+  } catch {
+    // Older environments may not have the RPC yet; fall back to legacy owner resolution.
+  }
+
+  const { data: contextRows, error: contextError } = await supabase.rpc(
+    "get_current_employer_context",
+  );
+
+  const contextRow = Array.isArray(contextRows) ? contextRows[0] : null;
+  if (contextError) {
+    console.warn("Failed to resolve employer context from RPC", contextError);
+  }
+
+  let resolvedContext: EmployerContext | null = null;
+
+  if (contextRow?.employer_id) {
+    resolvedContext = {
+      employerId: String(contextRow.employer_id),
+      membershipId: contextRow.membership_id ? String(contextRow.membership_id) : null,
+      membershipRole: normalizeMembershipRole(contextRow.membership_role),
+      membershipStatus: normalizeMembershipStatus(contextRow.membership_status),
+      companyName: contextRow.company_name ? String(contextRow.company_name) : null,
+      plan: contextRow.plan ? String(contextRow.plan) : null,
+      user: {
+        id: String(user.id),
+        email: user.email ?? null,
+      },
+    };
+  }
+
+  if (!resolvedContext) {
+    const { data: memberships } = await supabase
+      .from("employer_memberships")
+      .select(`
+        id,
+        employer_id,
+        role,
+        status,
+        created_at,
+        employer_profiles!inner (
+          id,
+          user_id,
+          company_name,
+          plan
+        )
+      `)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: true });
+
+    const preferredMembership = (memberships ?? [])
+      .map((row) => {
+        const employerProfile = (row as {
+          employer_profiles?: {
+            id?: string | null;
+            user_id?: string | null;
+            company_name?: string | null;
+            plan?: string | null;
+          } | null;
+        }).employer_profiles;
+
+        return {
+          membershipId: String(row.id ?? ""),
+          employerId: String(employerProfile?.id ?? row.employer_id ?? ""),
+          employerOwnerUserId: String(employerProfile?.user_id ?? ""),
+          membershipRole: normalizeMembershipRole(row.role),
+          membershipStatus: normalizeMembershipStatus(row.status),
+          companyName: employerProfile?.company_name ? String(employerProfile.company_name) : null,
+          plan: employerProfile?.plan ? String(employerProfile.plan) : null,
+          createdAt: String(row.created_at ?? ""),
+        };
+      })
+      .filter((row) => row.employerId)
+      .sort((a, b) => {
+        const aOwned = a.employerOwnerUserId === user.id ? 1 : 0;
+        const bOwned = b.employerOwnerUserId === user.id ? 1 : 0;
+        if (aOwned !== bOwned) return aOwned - bOwned;
+        const roleWeight = { owner: 0, admin: 1, recruiter: 2 };
+        return roleWeight[a.membershipRole] - roleWeight[b.membershipRole];
+      })[0];
+
+    if (preferredMembership) {
+      resolvedContext = {
+        employerId: preferredMembership.employerId,
+        membershipId: preferredMembership.membershipId,
+        membershipRole: preferredMembership.membershipRole,
+        membershipStatus: preferredMembership.membershipStatus,
+        companyName: preferredMembership.companyName,
+        plan: preferredMembership.plan,
+        user: {
+          id: String(user.id),
+          email: user.email ?? null,
+        },
+      };
+    }
+  }
+
+  if (!resolvedContext) {
+    const { data: employer, error: employerError } = await supabase
+      .from("employer_profiles")
+      .select("id, company_name, plan")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (employerError || !employer?.id) {
+      throw new Error("Employer profile not found");
+    }
+
+    resolvedContext = {
+      employerId: String(employer.id),
+      membershipId: null,
+      membershipRole: "owner",
+      membershipStatus: "active",
+      companyName: employer.company_name ? String(employer.company_name) : null,
+      plan: employer.plan ? String(employer.plan) : null,
+      user: {
+        id: String(user.id),
+        email: user.email ?? null,
+      },
+    };
+  }
+
+  if (
+    options?.requiredRoles &&
+    options.requiredRoles.length > 0 &&
+    !options.requiredRoles.includes(resolvedContext.membershipRole)
+  ) {
+    throw new Error("You do not have permission to perform this action.");
+  }
+
+  return resolvedContext;
+}
+
+export async function getEmployerProfile() {
+  const context = await getCurrentEmployerContext();
+  const { data, error } = await supabase
+    .from("employer_profiles")
+    .select("*")
+    .eq("id", context.employerId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load employer profile", error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getEmployerTeamMembers(): Promise<EmployerTeamMember[]> {
+  const context = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin", "recruiter"] });
+
+  const { data, error } = await supabase
+    .from("employer_memberships")
+    .select("id, user_id, email, role, status, accepted_at, created_at")
+    .eq("employer_id", context.employerId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+
+  const rows = data ?? [];
+  const userIds = Array.from(
+    new Set(
+      rows
+        .map((row) => String(row.user_id ?? "").trim())
+        .filter(Boolean),
+    ),
+  );
+
+  const profileMap = new Map<string, string>();
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+
+    for (const profile of profiles ?? []) {
+      const id = String(profile.id ?? "").trim();
+      if (!id) continue;
+      profileMap.set(id, String((profile as { full_name?: string | null }).full_name ?? "").trim());
+    }
+  }
+
+  return rows.map((row) => {
+    const userId = row.user_id ? String(row.user_id) : null;
+    const email = String(row.email ?? "").trim();
+    const profileName = userId ? profileMap.get(userId) ?? "" : "";
+    const fallbackName = email.split("@")[0]?.replace(/[._-]+/g, " ").trim() ?? "Team member";
+
+    return {
+      id: String(row.id),
+      userId,
+      name: profileName || fallbackName || "Team member",
+      email,
+      role: normalizeMembershipRole(row.role),
+      status: normalizeMembershipStatus(row.status),
+      acceptedAt: row.accepted_at ? String(row.accepted_at) : null,
+      createdAt: String(row.created_at ?? new Date().toISOString()),
+      isCurrentUser: userId === context.user.id,
+    };
+  });
+}
+
+export async function inviteEmployerTeamMember(input: {
+  email: string;
+  role: EmployerMembershipRole;
+}) {
+  const context = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin"] });
+  const email = normalizeEmail(input.email);
+  const role = normalizeMembershipRole(input.role);
+
+  if (!email) {
+    throw new Error("Enter a team member email address.");
+  }
+
+  if (role === "owner") {
+    throw new Error("Invite team members as admin or recruiter.");
+  }
+
+  const { error } = await supabase.from("employer_memberships").upsert(
+    {
+      employer_id: context.employerId,
+      email,
+      role,
+      status: "invited",
+      invited_by: context.user.id,
+    },
+    {
+      onConflict: "employer_id,email_normalized",
+    },
+  );
+
+  if (error) {
+    const message = String(error.message ?? "");
+    if (message.toUpperCase().includes("TEAM_MEMBER_LIMIT_REACHED")) {
+      throw new Error("TEAM_MEMBER_LIMIT_REACHED");
+    }
+    throw error;
+  }
+}
+
+export async function updateEmployerTeamMember(
+  membershipId: string,
+  updates: Partial<Pick<EmployerTeamMember, "role" | "status">>,
+) {
+  await getCurrentEmployerContext({ requiredRoles: ["owner", "admin"] });
+
+  const payload: Record<string, unknown> = {};
+  if (updates.role) payload.role = normalizeMembershipRole(updates.role);
+  if (updates.status) payload.status = normalizeMembershipStatus(updates.status);
+
+  if (Object.keys(payload).length === 0) return;
+
+  const { error } = await supabase
+    .from("employer_memberships")
+    .update(payload)
+    .eq("id", membershipId);
+
+  if (error) throw error;
+}
+
+export async function revokeEmployerTeamMember(membershipId: string) {
+  await updateEmployerTeamMember(membershipId, { status: "revoked" });
+}
+
 /* =========================
    CREATE JOB
 ========================= */
@@ -313,30 +638,13 @@ export async function createJob(data: {
   experience_level: string;
   skills?: { skill_id: string; is_required: boolean; min_score?: number | null }[];
 }) {
-  // 1️⃣ Get current user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) throw new Error("User not authenticated");
-
-  // 2️⃣ Get employer profile (id + plan)
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select("id, plan")
-    .eq("user_id", user.id)
-    .single();
-
-  if (employerError || !employer) {
-    throw new Error("Employer profile not found");
-  }
+  const employer = await getCurrentEmployerContext();
 
   // 3) Insert the job
   const { data: job, error: jobError } = await supabase
     .from("jobs")
     .insert({
-      employer_id: employer.id,
+      employer_id: employer.employerId,
       title: data.title,
       description: data.description,
       location: data.location || null,
@@ -404,18 +712,7 @@ export async function createJob(data: {
    GET EMPLOYER JOBS
 ========================= */
 export async function getEmployerJobs() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: employer } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!employer) throw new Error("Employer profile not found");
+  const employer = await getCurrentEmployerContext();
 
   const withVisibility = await supabase
     .from("jobs")
@@ -449,7 +746,7 @@ export async function getEmployerJobs() {
       job_applications ( id, status )
     `,
     )
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .order("created_at", { ascending: false });
 
   if (!withVisibility.error) {
@@ -491,7 +788,7 @@ export async function getEmployerJobs() {
       job_applications ( id, status )
     `,
     )
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .order("created_at", { ascending: false });
 
   if (legacy.error) throw legacy.error;
@@ -499,22 +796,7 @@ export async function getEmployerJobs() {
 }
 
 export async function getEmployerJobReportPageData(jobId: string): Promise<EmployerJobReportPageData> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) throw new Error("Not authenticated");
-
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (employerError || !employer?.id) {
-    throw new Error("Employer profile not found");
-  }
+  const employer = await getCurrentEmployerContext();
 
   const { data: job, error: jobError } = await supabase
     .from("jobs")
@@ -541,7 +823,7 @@ export async function getEmployerJobReportPageData(jobId: string): Promise<Emplo
       )
     `)
     .eq("id", jobId)
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .maybeSingle();
 
   if (jobError) throw jobError;
@@ -550,7 +832,7 @@ export async function getEmployerJobReportPageData(jobId: string): Promise<Emplo
     .from("job_ai_reports")
     .select("report, created_at")
     .eq("job_id", jobId)
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -608,22 +890,7 @@ export async function updateJob(
     skills?: { skill_id: string; is_required: boolean; min_score?: number | null }[];
   },
 ) {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) throw new Error("User not authenticated");
-
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (employerError || !employer) {
-    throw new Error("Employer profile not found");
-  }
+  const employer = await getCurrentEmployerContext();
 
   const { error } = await supabase
     .from("jobs")
@@ -651,7 +918,7 @@ export async function updateJob(
       experience_level: data.experience_level,
     })
     .eq("id", jobId)
-    .eq("employer_id", employer.id);
+    .eq("employer_id", employer.employerId);
 
   if (error) {
     const message = String(error?.message ?? "").toUpperCase();
@@ -736,22 +1003,13 @@ export async function updateJobStatus(
   jobId: string,
   status: "open" | "closed" | "archived",
 ) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: employer } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
+  const employer = await getCurrentEmployerContext();
 
   const { error } = await supabase
     .from("jobs")
     .update({ status })
     .eq("id", jobId)
-    .eq("employer_id", employer?.id);
+    .eq("employer_id", employer.employerId);
 
   if (error) {
     const message = String(error?.message ?? "").toUpperCase();
@@ -764,16 +1022,7 @@ export async function updateJobStatus(
 }
 
 export async function renewJobVisibility(jobId: string) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: employer } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
+  const employer = await getCurrentEmployerContext();
 
   const expiresAt = new Date(Date.now() + JOB_VISIBILITY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
@@ -785,7 +1034,7 @@ export async function renewJobVisibility(jobId: string) {
       expires_at: expiresAt,
     })
     .eq("id", jobId)
-    .eq("employer_id", employer?.id);
+    .eq("employer_id", employer.employerId);
 
   if (!withVisibility.error) return;
 
@@ -798,7 +1047,7 @@ export async function renewJobVisibility(jobId: string) {
     .from("jobs")
     .update({ status: "open" })
     .eq("id", jobId)
-    .eq("employer_id", employer?.id);
+    .eq("employer_id", employer.employerId);
 
   if (fallback.error) throw fallback.error;
 }
@@ -928,22 +1177,8 @@ export async function scheduleInterview(input: {
   locationOrMeetingLink?: string | null;
   notes?: string | null;
 }): Promise<InterviewScheduleRecord> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) throw new Error("Not authenticated");
-
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (employerError || !employer?.id) {
-    throw new Error("Employer profile not found");
-  }
+  const employer = await getCurrentEmployerContext();
+  const userId = employer.user.id;
 
   const applicationId = String(input.applicationId ?? "").trim();
   if (!applicationId) throw new Error("Missing application id.");
@@ -969,7 +1204,7 @@ export async function scheduleInterview(input: {
       )
     `)
     .eq("id", applicationId)
-    .eq("jobs.employer_id", employer.id)
+    .eq("jobs.employer_id", employer.employerId)
     .single();
 
   if (applicationError || !application) {
@@ -981,7 +1216,7 @@ export async function scheduleInterview(input: {
     .insert({
       job_application_id: applicationId,
       job_id: application.job_id,
-      employer_id: employer.id,
+      employer_id: employer.employerId,
       candidate_profile_id: application.candidate_profile_id,
       stage,
       scheduled_at: scheduledAt,
@@ -991,7 +1226,7 @@ export async function scheduleInterview(input: {
       location_or_meeting_link: locationOrMeetingLink,
       notes,
       status: "scheduled",
-      created_by: user.id,
+      created_by: userId,
     })
     .select(`
       id,
@@ -1293,37 +1528,26 @@ export async function updateApplicationStatus(
 ========================= */
 
 export async function getEmployerAnalytics() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: employer } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!employer) throw new Error("Employer profile not found");
+  const employer = await getCurrentEmployerContext();
 
   // Active jobs
   const { count: activeJobs } = await supabase
     .from("jobs")
     .select("*", { count: "exact", head: true })
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .eq("status", "open");
 
   // Total applicants
   const { count: totalApplicants } = await supabase
     .from("job_applications")
     .select("id, jobs!inner(employer_id)", { count: "exact", head: true })
-    .eq("jobs.employer_id", employer.id);
+    .eq("jobs.employer_id", employer.employerId);
 
   // Shortlisted
   const { count: shortlisted } = await supabase
     .from("job_applications")
     .select("id, jobs!inner(employer_id)", { count: "exact", head: true })
-    .eq("jobs.employer_id", employer.id)
+    .eq("jobs.employer_id", employer.employerId)
     .eq("status", "shortlisted");
 
   return {
@@ -1341,27 +1565,16 @@ export async function getEmployerAnalytics() {
 export async function getCandidateDeepView(applicationId: string) {
   let canRunPaidAutoMatch = true;
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user?.id) {
-      const { data: employer } = await supabase
-        .from("employer_profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (employer?.id) {
+    const employer = await getCurrentEmployerContext();
+    if (employer?.employerId) {
         const { data: aiCredit } = await supabase
           .from("employer_credits")
           .select("remaining")
-          .eq("employer_id", employer.id)
+          .eq("employer_id", employer.employerId)
           .eq("credit_type", "ai_credit")
           .maybeSingle();
 
         canRunPaidAutoMatch = Number(aiCredit?.remaining ?? 0) > 0;
-      }
     }
   } catch {
     canRunPaidAutoMatch = false;
@@ -1571,21 +1784,14 @@ export async function getCandidateDeepView(applicationId: string) {
 }
 
 export async function getEmployerPremiumDashboardInsights(): Promise<EmployerPremiumDashboardInsights> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("Not authenticated");
-
+  const employerContext = await getCurrentEmployerContext();
   const { data: employer, error: employerError } = await supabase
     .from("employer_profiles")
     .select("id, plan, subscription_status, trial_granted, trial_started_at, trial_ends_at")
-    .eq("user_id", user.id)
+    .eq("id", employerContext.employerId)
     .single();
 
-  if (employerError || !employer?.id) {
-    throw new Error("Employer profile not found");
-  }
+  if (employerError || !employer?.id) throw new Error("Employer profile not found");
 
   if (!hasEmployerPaidAccess(employer)) {
     throw new Error("PREMIUM_REQUIRED");
@@ -1608,7 +1814,7 @@ export async function getEmployerPremiumDashboardInsights(): Promise<EmployerPre
       )
     `,
     )
-    .eq("jobs.employer_id", employer.id)
+    .eq("jobs.employer_id", employerContext.employerId)
     .order("created_at", { ascending: false })
     .limit(30);
 
@@ -1806,24 +2012,8 @@ export async function startSubscriptionCheckout(
   planName: BillingPlanName,
   planId?: string,
 ) {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    throw new Error("Not authenticated");
-  }
-
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (employerError || !employer?.id) {
-    throw new Error("Employer profile not found");
-  }
+  const employer = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin"] });
+  const user = employer.user;
 
   const {
     data: { session },
@@ -1852,7 +2042,7 @@ export async function startSubscriptionCheckout(
     "initialize-subscription",
     {
       body: {
-        employerId: employer.id,
+        employerId: employer.employerId,
         planId,
         planName: toPlanLabel(planName),
         email: user.email,
@@ -2164,27 +2354,12 @@ export async function getAddons(): Promise<EmployerAddon[]> {
 }
 
 export async function getEmployerCredits(): Promise<EmployerCreditBalance[]> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) throw new Error("Not authenticated");
-
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (employerError || !employer?.id) {
-    throw new Error("Employer profile not found");
-  }
+  const employer = await getCurrentEmployerContext();
 
   const { data, error } = await supabase
     .from("employer_credits")
     .select("credit_type, remaining")
-    .eq("employer_id", employer.id);
+    .eq("employer_id", employer.employerId);
 
   if (error) throw error;
 
@@ -2429,22 +2604,7 @@ export async function consumeCandidateViewAccess(applicationId: string) {
 }
 
 export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) throw new Error("Not authenticated");
-
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select("id, plan")
-    .eq("user_id", user.id)
-    .single();
-
-  if (employerError || !employer?.id) {
-    throw new Error("Employer profile not found");
-  }
+  const employer = await getCurrentEmployerContext();
 
   const normalizedPlan = String(employer.plan ?? "free").toLowerCase();
   const fallbackCandidateViewLimits: Record<string, number | null> = {
@@ -2456,14 +2616,14 @@ export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot>
 
   const { data: planRow } = await supabase
     .from("plans")
-    .select("name, job_limit, candidate_view_limit")
+    .select("name, job_limit, user_limit, candidate_view_limit")
     .ilike("name", normalizedPlan)
     .maybeSingle();
 
   const { count: activeJobs, error: activeJobsError } = await supabase
     .from("jobs")
     .select("*", { count: "exact", head: true })
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .eq("status", "open");
 
   if (activeJobsError) throw activeJobsError;
@@ -2475,7 +2635,7 @@ export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot>
   const { count: usedViewsThisMonth, error: viewsError } = await supabase
     .from("employer_credit_usage")
     .select("id", { count: "exact", head: true })
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .eq("context_type", "candidate_profile_view")
     .gte("created_at", startOfMonth.toISOString());
 
@@ -2484,11 +2644,19 @@ export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot>
   const { data: extraJobSlotRow, error: extraJobSlotError } = await supabase
     .from("employer_credits")
     .select("remaining")
-    .eq("employer_id", employer.id)
+    .eq("employer_id", employer.employerId)
     .eq("credit_type", "job_slot")
     .maybeSingle();
 
   if (extraJobSlotError) throw extraJobSlotError;
+
+  const { count: teamMembersUsed, error: teamMembersError } = await supabase
+    .from("employer_memberships")
+    .select("id", { count: "exact", head: true })
+    .eq("employer_id", employer.employerId)
+    .in("status", ["active", "invited"]);
+
+  if (teamMembersError) throw teamMembersError;
 
   const baseJobLimit =
     planRow && planRow.job_limit === null
@@ -2511,6 +2679,8 @@ export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot>
       planRow && planRow.candidate_view_limit === null
         ? null
         : (planRow?.candidate_view_limit ?? fallbackCandidateViewLimits[normalizedPlan] ?? 0),
+    teamMembersUsed: Number(teamMembersUsed ?? 0),
+    teamMemberLimit: planRow?.user_limit ?? (normalizedPlan === "free" ? 1 : null),
   };
 }
 
@@ -2660,19 +2830,12 @@ export async function updateEmployerProfile(payload: {
     | "trialing"
     | "pending_payment";
 }) {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("Not authenticated");
-  }
+  const employer = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin"] });
 
   const { error } = await supabase
     .from("employer_profiles")
     .update(payload)
-    .eq("user_id", user.id);
+    .eq("id", employer.employerId);
 
   if (error) {
     console.error("Failed to update employer profile", error);

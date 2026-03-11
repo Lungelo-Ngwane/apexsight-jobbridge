@@ -26,7 +26,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { Switch } from "@/app/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
-import { updateEmployerProfile, uploadEmployerLogo } from "@/lib/employer";
+import {
+  getEmployerTeamMembers,
+  inviteEmployerTeamMember,
+  revokeEmployerTeamMember,
+  updateEmployerProfile,
+  updateEmployerTeamMember,
+  uploadEmployerLogo,
+  type EmployerMembershipRole,
+  type EmployerTeamMember,
+} from "@/lib/employer";
 import { useAuth } from "@/app/context/AuthContext";
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
@@ -51,6 +60,12 @@ export function EmployerSettingsPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<EmployerTeamMember[]>([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamRefreshing, setTeamRefreshing] = useState(false);
+  const [teamBusyId, setTeamBusyId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<EmployerMembershipRole>("recruiter");
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   function handleFeedbackOpenChange(open: boolean) {
@@ -78,6 +93,30 @@ export function EmployerSettingsPage() {
     setPublicCompanyPage(profile.public_company_page ?? true);
     setLogoUrl(profile.logo_url ?? null);
   }, [profile, user?.email]);
+
+  async function loadTeamMembers(showLoader = true) {
+    try {
+      if (showLoader) {
+        setTeamLoading(true);
+      } else {
+        setTeamRefreshing(true);
+      }
+
+      const members = await getEmployerTeamMembers();
+      setTeamMembers(members);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We couldn't load team members right now.";
+      showFeedback("Unable to load team", message);
+    } finally {
+      setTeamLoading(false);
+      setTeamRefreshing(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!user || activeTab !== "team") return;
+    void loadTeamMembers();
+  }, [activeTab, user?.id]);
 
   async function handleSaveCompanySettings() {
     try {
@@ -122,6 +161,51 @@ export function EmployerSettingsPage() {
     }
   }
 
+  async function handleInviteMember() {
+    try {
+      setTeamBusyId("invite");
+      await inviteEmployerTeamMember({
+        email: inviteEmail,
+        role: inviteRole,
+      });
+      setInviteEmail("");
+      setInviteRole("recruiter");
+      await loadTeamMembers(false);
+      showFeedback("Invite created", "The team member has been added to your workspace.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We couldn't invite this team member right now.";
+      showFeedback("Invite failed", message === "TEAM_MEMBER_LIMIT_REACHED" ? "Your current plan has no free seats left." : message);
+    } finally {
+      setTeamBusyId(null);
+    }
+  }
+
+  async function handleRoleChange(memberId: string, role: EmployerMembershipRole) {
+    try {
+      setTeamBusyId(memberId);
+      await updateEmployerTeamMember(memberId, { role, status: "active" });
+      await loadTeamMembers(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We couldn't update this team member.";
+      showFeedback("Update failed", message);
+    } finally {
+      setTeamBusyId(null);
+    }
+  }
+
+  async function handleRemoveMember(memberId: string) {
+    try {
+      setTeamBusyId(memberId);
+      await revokeEmployerTeamMember(memberId);
+      await loadTeamMembers(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We couldn't remove this team member.";
+      showFeedback("Remove failed", message);
+    } finally {
+      setTeamBusyId(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
@@ -129,6 +213,17 @@ export function EmployerSettingsPage() {
       </div>
     );
   }
+
+  const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
+  const planSeatLimit =
+    normalizedPlan === "starter" ? 2 :
+    normalizedPlan === "professional" ? 5 :
+    normalizedPlan === "enterprise" ? 50 :
+    1;
+  const seatsUsed = teamMembers.filter((member) => member.status === "active" || member.status === "invited").length;
+  const seatsAvailable = Math.max(planSeatLimit - seatsUsed, 0);
+  const currentMember = teamMembers.find((member) => member.isCurrentUser) ?? null;
+  const canManageTeam = currentMember?.role === "owner" || currentMember?.role === "admin";
 
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
@@ -148,6 +243,10 @@ export function EmployerSettingsPage() {
             <TabsTrigger value="company" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Building2 className="w-4 h-4 mr-2" />
               Company Profile
+            </TabsTrigger>
+            <TabsTrigger value="team" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Users className="w-4 h-4 mr-2" />
+              Team
             </TabsTrigger>
           </TabsList>
 
@@ -372,42 +471,87 @@ export function EmployerSettingsPage() {
                 <Card className="p-6 border-gray-200 shadow-md">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-gray-900">Team Members</h3>
-                    <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+                    {teamRefreshing ? <span className="text-xs text-gray-500">Refreshing...</span> : null}
+                  </div>
+
+                  <div className="mb-6 grid gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 md:grid-cols-[minmax(0,1fr)_160px_auto]">
+                    <Input
+                      type="email"
+                      placeholder="teammate@company.com"
+                      value={inviteEmail}
+                      onChange={(event) => setInviteEmail(event.target.value)}
+                      disabled={!canManageTeam || teamBusyId === "invite"}
+                    />
+                    <select
+                      value={inviteRole}
+                      onChange={(event) => setInviteRole(event.target.value as EmployerMembershipRole)}
+                      disabled={!canManageTeam || teamBusyId === "invite"}
+                      className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900"
+                    >
+                      <option value="recruiter">Recruiter</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <Button
+                      onClick={handleInviteMember}
+                      disabled={!canManageTeam || !inviteEmail.trim() || teamBusyId === "invite"}
+                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                    >
                       <Users className="w-4 h-4 mr-2" />
-                      Invite Member
+                      {teamBusyId === "invite" ? "Inviting..." : "Invite Member"}
                     </Button>
                   </div>
 
-                  <div className="space-y-3">
-                    {[
-                      { name: "Sarah Motloung", email: "sarah.m@nedbank.co.za", role: "Admin", status: "Active" },
-                      { name: "John Khumalo", email: "john.k@nedbank.co.za", role: "Recruiter", status: "Active" },
-                      { name: "Thandi Dlamini", email: "thandi.d@nedbank.co.za", role: "Recruiter", status: "Active" }
-                    ].map((member, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  {teamLoading ? (
+                    <CircularLoader size="sm" label="Loading team..." />
+                  ) : teamMembers.length === 0 ? (
+                    <p className="text-sm text-gray-600">No team members yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {teamMembers.map((member) => (
+                        <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-10 h-10">
                             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-bold">
-                              {member.name.split(' ').map(n => n[0]).join('')}
+                              {member.name.split(" ").map((n) => n[0]).join("")}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{member.name}</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {member.name}
+                              {member.isCurrentUser ? <span className="ml-2 text-xs text-blue-600">(You)</span> : null}
+                            </p>
                             <p className="text-xs text-gray-600">{member.email}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className="text-sm font-medium text-gray-900">{member.role}</p>
-                            <p className="text-xs text-emerald-600">{member.status}</p>
+                          <div className="text-right min-w-[140px]">
+                            <select
+                              value={member.role}
+                              onChange={(event) => void handleRoleChange(member.id, event.target.value as EmployerMembershipRole)}
+                              disabled={!canManageTeam || member.role === "owner" || teamBusyId === member.id}
+                              className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900"
+                            >
+                              <option value="owner">Owner</option>
+                              <option value="admin">Admin</option>
+                              <option value="recruiter">Recruiter</option>
+                            </select>
+                            <p className={`mt-1 text-xs ${member.status === "active" ? "text-emerald-600" : member.status === "invited" ? "text-amber-600" : "text-gray-500"}`}>
+                              {member.status === "invited" ? "Pending invite" : member.status === "revoked" ? "Revoked" : "Active"}
+                            </p>
                           </div>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={!canManageTeam || member.role === "owner" || teamBusyId === member.id}
+                            onClick={() => void handleRemoveMember(member.id)}
+                          >
                             <Trash2 className="w-4 h-4 text-red-600" />
                           </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Card>
 
                 <Card className="p-6 border-gray-200 shadow-md">
@@ -442,13 +586,16 @@ export function EmployerSettingsPage() {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Active Members</span>
-                        <span className="text-sm font-bold text-gray-900">3 / 5</span>
+                        <span className="text-sm font-bold text-gray-900">{seatsUsed} / {planSeatLimit}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style={{ width: '60%' }} />
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
+                          style={{ width: `${Math.min(100, Math.round((seatsUsed / Math.max(planSeatLimit, 1)) * 100))}%` }}
+                        />
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500">2 seats available</p>
+                    <p className="text-xs text-gray-500">{seatsAvailable} seat{seatsAvailable === 1 ? "" : "s"} available</p>
                   </div>
                 </Card>
 

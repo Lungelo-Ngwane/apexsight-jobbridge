@@ -249,8 +249,8 @@ export function EmployerBillingPage() {
   const formatLimit = (value: number | null) => (value === null ? "Unlimited" : String(value));
   const activeJobsUsed = Number(usageSnapshot?.activeJobs ?? 0);
   const jobLimit = usageSnapshot?.jobLimit ?? currentPlanRow?.jobLimit ?? (isFreePlan ? 1 : null);
-  const teamMembersUsed = profile ? 1 : 0;
-  const teamMemberLimit = currentPlanRow?.userLimit ?? (isFreePlan ? 1 : null);
+  const teamMembersUsed = Number(usageSnapshot?.teamMembersUsed ?? 0);
+  const teamMemberLimit = usageSnapshot?.teamMemberLimit ?? currentPlanRow?.userLimit ?? (isFreePlan ? 1 : null);
   const nextBillingDate = profile?.current_period_end
     ? new Date(profile.current_period_end).toLocaleDateString(undefined, {
         year: "numeric",

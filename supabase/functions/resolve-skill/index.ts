@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,27 +41,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(token);
-
-    if (authError || !user?.id) {
+    try {
+      await resolveEmployerContext(supabase, token);
+    } catch {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: employerProfile } = await supabase
-      .from("employer_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!employerProfile?.id) {
-      return new Response(JSON.stringify({ error: "Employer profile not found" }), {
-        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

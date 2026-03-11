@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError, logInfo, logWarn } from "../_shared/observability.ts";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -120,29 +121,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
+    let employer;
+    try {
+      employer = await resolveEmployerContext(supabase, token, {
+        requiredRoles: ["owner", "admin"],
+      });
+    } catch {
       logWarn("confirm_addon.invalid_user_session", { requestId });
       return new Response(JSON.stringify({ error: "Invalid user session" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: employer, error: employerError } = await supabase
-      .from("employer_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (employerError || !employer?.id) {
-      logWarn("confirm_addon.employer_not_found", { requestId });
-      return new Response(JSON.stringify({ error: "Employer profile not found" }), {
-        status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -192,7 +179,7 @@ Deno.serve(async (req) => {
     const addonId = String(metadata.addonId ?? "").trim();
     const employerId = String(metadata.employerId ?? "").trim();
 
-    if (!addonId || !employerId || employerId !== employer.id) {
+    if (!addonId || !employerId || employerId !== employer.employerId) {
       logWarn("confirm_addon.metadata_mismatch", {
         requestId,
         reference,
@@ -246,7 +233,7 @@ Deno.serve(async (req) => {
       "grant_addon_credits",
       {
         p_reference: reference,
-        p_employer_id: employer.id,
+        p_employer_id: employer.employerId,
         p_addon_id: addon.id,
         p_amount_paid: amountPaid,
         p_credit_type: String(addon.type ?? ""),
@@ -276,7 +263,7 @@ Deno.serve(async (req) => {
     logInfo("confirm_addon.credit_grant_succeeded", {
       requestId,
       reference,
-      employerId: employer.id,
+      employerId: employer.employerId,
       addonId: addon.id,
       creditType: String(addon.type ?? ""),
       appliedCredits,
@@ -284,7 +271,7 @@ Deno.serve(async (req) => {
     });
 
     await upsertAddonInvoice({
-      employerId: employer.id,
+      employerId: employer.employerId,
       reference,
       addonType: String(addon.type ?? ""),
       creditsAdded: appliedCredits,

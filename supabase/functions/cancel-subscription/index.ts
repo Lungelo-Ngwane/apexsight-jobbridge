@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,12 +36,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing access token" }, 401);
     }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
+    let employerContext;
+    try {
+      employerContext = await resolveEmployerContext(supabase, token, {
+        requiredRoles: ["owner", "admin"],
+      });
+    } catch {
       return jsonResponse({ error: "Invalid user session" }, 401);
     }
 
@@ -49,7 +50,7 @@ Deno.serve(async (req) => {
       .select(
         "id, user_id, paystack_subscription_code, paystack_subscription_email_token",
       )
-      .eq("user_id", user.id)
+      .eq("id", employerContext.employerId)
       .maybeSingle();
 
     if (employerError || !employer?.id) {
@@ -94,8 +95,7 @@ Deno.serve(async (req) => {
         paystack_subscription_code: null,
         paystack_subscription_email_token: null,
       })
-      .eq("id", employer.id)
-      .eq("user_id", user.id);
+      .eq("id", employer.id);
 
     if (updateError) {
       return jsonResponse(

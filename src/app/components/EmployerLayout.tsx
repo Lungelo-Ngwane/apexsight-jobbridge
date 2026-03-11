@@ -24,9 +24,10 @@ interface EmployerLayoutProps {
 
 export function EmployerLayout({ children }: EmployerLayoutProps) {
   const { user, role, signOut } = useAuth();
-  const { profile } = useEmployerProfile();
+  const { profile, membershipRole } = useEmployerProfile();
   const [unreadCount, setUnreadCount] = useState(0);
   const hasCandidateMessagingAccess = hasEmployerPaidAccess(profile);
+  const canManageWorkspace = membershipRole === "owner" || membershipRole === "admin";
 
   useEffect(() => {
     if (!user || role !== "employer" || !hasCandidateMessagingAccess) {
@@ -92,10 +93,10 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
             to={hasCandidateMessagingAccess ? "/employer/messages" : undefined}
             badgeCount={hasCandidateMessagingAccess ? unreadCount : 0}
           />
-          <SidebarItem icon={Crown} label="Plans" to="/employer/plans" />
-          <SidebarItem icon={ShoppingBag} label="Add-ons" to="/employer/addons" />
-          <SidebarItem icon={CreditCard} label="Billing" to="/employer/billing" />
-          <SidebarItem icon={Settings} label="Settings" to="/employer/settings" />
+          <SidebarItem icon={Crown} label="Plans" to={canManageWorkspace ? "/employer/plans" : undefined} />
+          <SidebarItem icon={ShoppingBag} label="Add-ons" to={canManageWorkspace ? "/employer/addons" : undefined} />
+          <SidebarItem icon={CreditCard} label="Billing" to={canManageWorkspace ? "/employer/billing" : undefined} />
+          <SidebarItem icon={Settings} label="Settings" to={canManageWorkspace ? "/employer/settings" : undefined} />
         </nav>
 
         {/* Footer */}
@@ -146,10 +147,10 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
               to={hasCandidateMessagingAccess ? "/employer/messages" : ""}
               badgeCount={hasCandidateMessagingAccess ? unreadCount : 0}
             />
-            <MobileNavItem label="Plans" to="/employer/plans" />
-            <MobileNavItem label="Add-ons" to="/employer/addons" />
-            <MobileNavItem label="Billing" to="/employer/billing" />
-            <MobileNavItem label="Settings" to="/employer/settings" />
+            <MobileNavItem label="Plans" to={canManageWorkspace ? "/employer/plans" : ""} />
+            <MobileNavItem label="Add-ons" to={canManageWorkspace ? "/employer/addons" : ""} />
+            <MobileNavItem label="Billing" to={canManageWorkspace ? "/employer/billing" : ""} />
+            <MobileNavItem label="Settings" to={canManageWorkspace ? "/employer/settings" : ""} />
             <Button
               variant="ghost"
               className="h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"

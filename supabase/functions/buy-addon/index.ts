@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,30 +36,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid user session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let employer;
+    try {
+      employer = await resolveEmployerContext(supabase, token, {
+        requiredRoles: ["owner", "admin"],
       });
-    }
-
-    const { data: employer, error: employerError } = await supabase
-      .from("employer_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (employerError || !employer?.id) {
+    } catch {
       return new Response(JSON.stringify({ error: "Employer profile not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const user = employer.user;
 
     const { data: addon, error: addonError } = await supabase
       .from("addons")
@@ -100,7 +89,7 @@ Deno.serve(async (req) => {
             kind: "addon",
             addonId: addon.id,
             addonType: addon.type,
-            employerId: employer.id,
+            employerId: employer.employerId,
             userId: user.id,
           },
         }),

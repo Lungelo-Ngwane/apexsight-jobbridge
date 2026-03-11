@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,25 +66,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid user session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: employer, error: employerError } = await supabase
-      .from("employer_profiles")
-      .select("id, plan")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (employerError || !employer?.id) {
+    let employer;
+    try {
+      employer = await resolveEmployerContext(supabase, token);
+    } catch {
       return new Response(JSON.stringify({ error: "Employer profile not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -100,7 +86,7 @@ Deno.serve(async (req) => {
       appError ||
       !application ||
       String((application as { jobs?: { employer_id?: string } }).jobs?.employer_id ?? "") !==
-        String(employer.id)
+        String(employer.employerId)
     ) {
       return new Response(JSON.stringify({ error: "Application not found for this employer" }), {
         status: 404,
@@ -129,7 +115,7 @@ Deno.serve(async (req) => {
     try {
       usedThisMonth = await getUsedViewsThisMonth(
         supabase,
-        String(employer.id),
+        String(employer.employerId),
         startOfMonth.toISOString(),
       );
     } catch (error) {
@@ -142,7 +128,7 @@ Deno.serve(async (req) => {
     const { data: existingUnlockThisMonth } = await supabase
       .from("employer_credit_usage")
       .select("id")
-      .eq("employer_id", employer.id)
+      .eq("employer_id", employer.employerId)
       .eq("context_type", "candidate_profile_view")
       .eq("context_id", applicationId)
       .gte("created_at", startOfMonth.toISOString())
@@ -152,7 +138,7 @@ Deno.serve(async (req) => {
     if (existingUnlockThisMonth?.id) {
       const refreshedUsed = await getUsedViewsThisMonth(
         supabase,
-        String(employer.id),
+        String(employer.employerId),
         startOfMonth.toISOString(),
       );
       return new Response(
@@ -184,7 +170,7 @@ Deno.serve(async (req) => {
         const { data: creditRow, error: creditError } = await supabase
           .from("employer_credits")
           .select("id, remaining")
-          .eq("employer_id", employer.id)
+          .eq("employer_id", employer.employerId)
           .eq("credit_type", creditType)
           .maybeSingle();
 
@@ -221,7 +207,7 @@ Deno.serve(async (req) => {
     }
 
     const { error: usageInsertError } = await supabase.from("employer_credit_usage").insert({
-      employer_id: employer.id,
+      employer_id: employer.employerId,
       credit_type: source === "plan" ? "candidate_view_plan" : "candidate_unlock",
       amount: 1,
       context_type: "candidate_profile_view",
@@ -238,7 +224,7 @@ Deno.serve(async (req) => {
       if (String(usageInsertError.code ?? "") === "23505") {
         const refreshedUsed = await getUsedViewsThisMonth(
           supabase,
-          String(employer.id),
+          String(employer.employerId),
           startOfMonth.toISOString(),
         );
         return new Response(
@@ -265,7 +251,7 @@ Deno.serve(async (req) => {
 
     const refreshedUsed = await getUsedViewsThisMonth(
       supabase,
-      String(employer.id),
+      String(employer.employerId),
       startOfMonth.toISOString(),
     );
 

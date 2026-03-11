@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { registerUser, loginUser, requestPasswordReset, signInWithGoogle } from '../../lib/auth';
+import { checkEmployerInvite, registerUser, loginUser, requestPasswordReset, signInWithGoogle } from '../../lib/auth';
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -38,6 +38,7 @@ export default function Login({
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [inviteMatched, setInviteMatched] = useState(false);
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
@@ -48,6 +49,27 @@ export default function Login({
   useEffect(() => {
     setResetEmail(email);
   }, [email]);
+
+  useEffect(() => {
+    if (!isRegister || role !== "employer") {
+      setInviteMatched(false);
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setInviteMatched(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void checkEmployerInvite(normalizedEmail)
+        .then(setInviteMatched)
+        .catch(() => setInviteMatched(false));
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [email, isRegister, role]);
 
 const handleSubmit = async () => {
   try {
@@ -186,12 +208,17 @@ const handleForgotPassword = async () => {
                 <Building2 className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
                   type="text"
-                  placeholder="Company Name"
+                  placeholder={inviteMatched ? "Company Name (optional for invited users)" : "Company Name"}
                   value={company}
                   onChange={e => setCompany(e.target.value)}
                   className="pl-9"
                 />
               </div>
+            )}
+            {role === "employer" && inviteMatched && (
+              <p className="text-xs text-emerald-700">
+                This email has a team invite. After signup, you will join the shared employer workspace.
+              </p>
             )}
           </>
         )}

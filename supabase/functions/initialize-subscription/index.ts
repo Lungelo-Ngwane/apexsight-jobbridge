@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,30 +43,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid user session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let employer;
+    try {
+      employer = await resolveEmployerContext(supabase, token, {
+        requiredRoles: ["owner", "admin"],
       });
-    }
-
-    const { data: employer, error: employerError } = await supabase
-      .from("employer_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (employerError || !employer?.id) {
+    } catch {
       return new Response(JSON.stringify({ error: "Employer profile not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const user = employer.user;
 
     let plan = null;
     let resolvedPlanSlug = "";
@@ -129,7 +118,7 @@ Deno.serve(async (req) => {
       plan: plan.paystack_plan_code,
       callback_url: callbackUrl,
       metadata: {
-        employerId: employer.id,
+        employerId: employer.employerId,
         planId: plan.id,
         targetPlan: resolvedPlanSlug,
       },
@@ -146,8 +135,7 @@ Deno.serve(async (req) => {
           selected_plan: resolvedPlanSlug,
           subscription_status: "pending_payment",
         })
-        .eq("id", employer.id)
-        .eq("user_id", user.id);
+        .eq("id", employer.employerId);
 
       if (pendingUpdateError) {
         return new Response(
