@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck, Moon, Sun } from "lucide-react";
+import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck, Moon, Sun, Menu } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
@@ -59,6 +59,7 @@ export function Header({
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [candidateThreads, setCandidateThreads] = useState<ConversationThread[]>([]);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isAuthenticated = !!user && !!role;
   const email = user?.email ?? "";
@@ -183,130 +184,291 @@ export function Header({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            {!isAuthenticated ? (
-              <>
-                {(currentProduct === "jobbridge" || currentProduct === "landing") && (
+            <div className="hidden items-center gap-2 sm:gap-4 md:flex">
+              {!isAuthenticated ? (
+                <>
+                  {(currentProduct === "jobbridge" || currentProduct === "landing") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full px-3 text-neutral-700 hover:bg-white/70 hover:text-neutral-950 sm:px-4"
+                      onClick={onPricingClick}
+                    >
+                      Pricing
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
                     className="rounded-full px-3 text-neutral-700 hover:bg-white/70 hover:text-neutral-950 sm:px-4"
-                    onClick={onPricingClick}
+                    onClick={onSignInClick}
                   >
-                    Pricing
+                    Sign In
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full px-3 text-neutral-700 hover:bg-white/70 hover:text-neutral-950 sm:px-4"
-                  onClick={onSignInClick}
-                >
-                  Sign In
-                </Button>
-                <Button
-                  size="sm"
-                  className="rounded-full bg-neutral-950 px-4 text-white hover:bg-neutral-800 sm:px-5"
-                  onClick={onGetStartedClick ?? onSignInClick}
-                >
-                  Get Started
-                </Button>
-              </>
-            ) : (
-              <>
-                {role === "candidate" && (
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/80 text-neutral-700 transition hover:bg-white hover:text-neutral-950 dark:border-white/12 dark:bg-white/6 dark:text-neutral-200 dark:hover:bg-white/10 dark:hover:text-white"
-                    aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-                    title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-neutral-950 px-4 text-white hover:bg-neutral-800 sm:px-5"
+                    onClick={onGetStartedClick ?? onSignInClick}
                   >
-                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  </button>
-                )}
-                {role === "candidate" && (
-                  <button
-                    onClick={() => setInboxOpen(true)}
-                    className={`relative inline-flex h-10 items-center gap-2 rounded-full border px-3 transition ${
-                      location.pathname === "/candidate/messages"
-                        ? "border-neutral-900 bg-neutral-950 text-white"
-                        : "border-black/8 bg-white/80 text-neutral-700 hover:bg-white"
-                    }`}
-                    aria-label="Open inbox"
+                    Get Started
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {role === "candidate" && (
+                    <button
+                      type="button"
+                      onClick={toggleTheme}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/80 text-neutral-700 transition hover:bg-white hover:text-neutral-950 dark:border-white/12 dark:bg-white/6 dark:text-neutral-200 dark:hover:bg-white/10 dark:hover:text-white"
+                      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                    >
+                      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    </button>
+                  )}
+                  {role === "candidate" && (
+                    <button
+                      onClick={() => setInboxOpen(true)}
+                      className={`relative inline-flex h-10 items-center gap-2 rounded-full border px-3 transition ${
+                        location.pathname === "/candidate/messages"
+                          ? "border-neutral-900 bg-neutral-950 text-white"
+                          : "border-black/8 bg-white/80 text-neutral-700 hover:bg-white"
+                      }`}
+                      aria-label="Open inbox"
+                    >
+                      <Inbox className="h-4 w-4" />
+                      <span className="hidden text-sm font-medium sm:inline">Inbox</span>
+                      {candidateUnreadCount > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                          {candidateUnreadCount > 99 ? "99+" : candidateUnreadCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {role === "candidate" && (
+                    <button
+                      onClick={() => navigate("/candidate/my-jobs")}
+                      className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 transition ${
+                        location.pathname === "/candidate/my-jobs"
+                          ? "border-neutral-900 bg-neutral-950 text-white"
+                          : "border-black/8 bg-white/80 text-neutral-700 hover:bg-white"
+                      }`}
+                      aria-label="Open my jobs"
+                    >
+                      <Briefcase className="h-4 w-4" />
+                      <span className="hidden text-sm font-medium sm:inline">My Jobs</span>
+                    </button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-2 rounded-full border border-black/5 bg-white/80 px-3 py-2 shadow-[0_8px_24px_rgba(15,15,15,0.05)] hover:bg-white">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src="" />
+                          <AvatarFallback className="bg-neutral-950 text-sm text-white">
+                            {avatarInitials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="hidden text-left md:block">
+                          <div className="text-sm font-medium text-neutral-900">{fullName}</div>
+                          <div className="text-xs uppercase tracking-[0.18em] text-neutral-500">{displayRole}</div>
+                        </div>
+                        <ChevronDown className="h-4 w-4 text-neutral-500" />
+                      </button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end" className="w-56 border-black/5 bg-white">
+                      <DropdownMenuLabel>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{fullName}</span>
+                          <span className="text-xs text-gray-500">{email}</span>
+                        </div>
+                      </DropdownMenuLabel>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem onClick={onProfileClick}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Profile Settings
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => setSupportOpen(true)}>
+                        <HelpCircle className="mr-2 h-4 w-4" />
+                        Help & Support
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/80 text-neutral-700 transition hover:bg-white hover:text-neutral-950 md:hidden"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="right" className="w-full p-0 sm:max-w-sm md:hidden">
+          <div className="flex h-full flex-col">
+            <SheetHeader className="border-b border-gray-200 p-5">
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>
+                Quick navigation and account actions
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              {!isAuthenticated ? (
+                <>
+                  {(currentProduct === "jobbridge" || currentProduct === "landing") && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onPricingClick?.();
+                      }}
+                    >
+                      Pricing
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onSignInClick?.();
+                    }}
                   >
-                    <Inbox className="h-4 w-4" />
-                    <span className="hidden text-sm font-medium sm:inline">Inbox</span>
-                    {candidateUnreadCount > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-                        {candidateUnreadCount > 99 ? "99+" : candidateUnreadCount}
-                      </span>
-                    )}
-                  </button>
-                )}
-                {role === "candidate" && (
-                  <button
-                    onClick={() => navigate("/candidate/my-jobs")}
-                    className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 transition ${
-                      location.pathname === "/candidate/my-jobs"
-                        ? "border-neutral-900 bg-neutral-950 text-white"
-                        : "border-black/8 bg-white/80 text-neutral-700 hover:bg-white"
-                    }`}
-                    aria-label="Open my jobs"
+                    Sign In
+                  </Button>
+                  <Button
+                    className="w-full justify-start bg-neutral-950 text-white hover:bg-neutral-800"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      (onGetStartedClick ?? onSignInClick)?.();
+                    }}
                   >
-                    <Briefcase className="h-4 w-4" />
-                    <span className="hidden text-sm font-medium sm:inline">My Jobs</span>
-                  </button>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 rounded-full border border-black/5 bg-white/80 px-3 py-2 shadow-[0_8px_24px_rgba(15,15,15,0.05)] hover:bg-white">
-                      <Avatar className="h-8 w-8">
+                    Get Started
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
                         <AvatarImage src="" />
                         <AvatarFallback className="bg-neutral-950 text-sm text-white">
                           {avatarInitials}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="hidden text-left md:block">
-                        <div className="text-sm font-medium text-neutral-900">{fullName}</div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-neutral-500">{displayRole}</div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-neutral-900">{fullName}</p>
+                        <p className="truncate text-xs uppercase tracking-[0.16em] text-neutral-500">{displayRole}</p>
                       </div>
-                      <ChevronDown className="h-4 w-4 text-neutral-500" />
-                    </button>
-                  </DropdownMenuTrigger>
+                    </div>
+                  </div>
 
-                  <DropdownMenuContent align="end" className="w-56 border-black/5 bg-white">
-                    <DropdownMenuLabel>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{fullName}</span>
-                        <span className="text-xs text-gray-500">{email}</span>
-                      </div>
-                    </DropdownMenuLabel>
+                  {role === "candidate" && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        toggleTheme();
+                      }}
+                    >
+                      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                      {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                    </Button>
+                  )}
 
-                    <DropdownMenuSeparator />
+                  {role === "candidate" && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setInboxOpen(true);
+                      }}
+                    >
+                      <Inbox className="h-4 w-4" />
+                      Inbox
+                      {candidateUnreadCount > 0 && (
+                        <Badge className="ml-auto border-red-200 bg-red-100 text-red-700">
+                          {candidateUnreadCount > 99 ? "99+" : candidateUnreadCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  )}
 
-                    <DropdownMenuItem onClick={onProfileClick}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      Profile Settings
-                    </DropdownMenuItem>
+                  {role === "candidate" && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/candidate/my-jobs");
+                      }}
+                    >
+                      <Briefcase className="h-4 w-4" />
+                      My Jobs
+                    </Button>
+                  )}
 
-                    <DropdownMenuItem onClick={() => setSupportOpen(true)}>
-                      <HelpCircle className="mr-2 h-4 w-4" />
-                      Help & Support
-                    </DropdownMenuItem>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onProfileClick?.();
+                    }}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Profile Settings
+                  </Button>
 
-                    <DropdownMenuSeparator />
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setSupportOpen(true);
+                    }}
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                    Help & Support
+                  </Button>
 
-                    <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await handleLogout();
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </SheetContent>
+      </Sheet>
 
       <Sheet open={inboxOpen} onOpenChange={setInboxOpen}>
         <SheetContent side="right" className="w-full p-0 sm:max-w-md">

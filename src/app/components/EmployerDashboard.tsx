@@ -521,7 +521,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                 <Card
                   className={`
             px-6 py-4 border-gray-200 transition
-            ${isLocked ? "blur-sm pointer-events-none select-none" : ""}
+            ${isLocked ? "opacity-85" : ""}
           `}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -549,9 +549,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                 {isLocked && (
                   <button
                     onClick={() => setShowUpgradeModal(true)}
-                    className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg"
+                    className="absolute inset-0 cursor-pointer rounded-lg border border-white/20 bg-white/10 backdrop-blur-[2px] transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 dark:bg-black/20 dark:hover:bg-black/30"
+                    aria-label={`Upgrade to unlock ${stat.label}`}
+                    title={`Upgrade to unlock ${stat.label}`}
                   >
-                    <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold rounded-full shadow-lg">
+                    <div className="absolute inset-x-4 bottom-4 flex items-center justify-center gap-2 rounded-full border border-white/20 bg-neutral-950/90 px-4 py-2 text-sm font-semibold text-white shadow-lg dark:border-white/10">
                       <Crown className="w-4 h-4" />
                       Upgrade to Unlock
                     </div>
