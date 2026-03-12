@@ -47,7 +47,6 @@ export function ScheduleInterviewModal({
   const [scheduledAt, setScheduledAt] = useState(getDefaultDateTimeLocal);
   const [durationMinutes, setDurationMinutes] = useState("45");
   const [mode, setMode] = useState<"virtual" | "phone" | "onsite">("virtual");
-  const [timezone, setTimezone] = useState("Africa/Johannesburg");
   const [locationOrMeetingLink, setLocationOrMeetingLink] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -68,7 +67,7 @@ export function ScheduleInterviewModal({
         stage,
         scheduledAt: new Date(localValue).toISOString(),
         durationMinutes: Number(durationMinutes ?? 45),
-        timezone,
+        timezone: "Africa/Johannesburg",
         mode,
         locationOrMeetingLink,
         notes,
@@ -82,16 +81,16 @@ export function ScheduleInterviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
+      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-xl">
+        <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle>Schedule Interview</DialogTitle>
           <DialogDescription>
             Set the first interview details for {candidateName}.
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div className="grid gap-4 rounded-2xl bg-gray-50 p-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="interview-stage">Stage</Label>
               <Select value={stage} onValueChange={(value) => setStage(value as typeof stage)}>
@@ -120,7 +119,7 @@ export function ScheduleInterviewModal({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 rounded-2xl bg-gray-50 p-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="interview-date">Date and time</Label>
               <Input
@@ -147,40 +146,32 @@ export function ScheduleInterviewModal({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="interview-timezone">Timezone</Label>
-            <Input
-              id="interview-timezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder="Africa/Johannesburg"
-            />
+          <div className="space-y-4 rounded-2xl bg-gray-50 p-4">
+            <div className="space-y-2">
+              <Label htmlFor="interview-link">
+                {mode === "onsite" ? "Location" : mode === "phone" ? "Phone details" : "Meeting link"}
+              </Label>
+              <Input
+                id="interview-link"
+                value={locationOrMeetingLink}
+                onChange={(e) => setLocationOrMeetingLink(e.target.value)}
+                placeholder={mode === "onsite" ? "Office address" : mode === "phone" ? "Dial-in details" : "https://meet.google.com/..."}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="interview-notes">Notes</Label>
+              <Textarea
+                id="interview-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Anything the candidate should know before the interview"
+                className="min-h-24"
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="interview-link">
-              {mode === "onsite" ? "Location" : mode === "phone" ? "Phone details" : "Meeting link"}
-            </Label>
-            <Input
-              id="interview-link"
-              value={locationOrMeetingLink}
-              onChange={(e) => setLocationOrMeetingLink(e.target.value)}
-              placeholder={mode === "onsite" ? "Office address" : mode === "phone" ? "Dial-in details" : "https://meet.google.com/..."}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="interview-notes">Notes</Label>
-            <Textarea
-              id="interview-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Anything the candidate should know before the interview"
-              className="min-h-24"
-            />
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="border-t border-gray-200 pt-4 sm:sticky sm:bottom-0 sm:bg-white">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
               Cancel
             </Button>

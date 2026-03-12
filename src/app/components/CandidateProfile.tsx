@@ -387,8 +387,8 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-                <Card className="w-full max-w-sm p-8 border-gray-200">
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 dark:bg-neutral-950">
+                <Card className="w-full max-w-sm border-gray-200 p-8 dark:border-white/10 dark:bg-neutral-900">
                     <CircularLoader size="lg" label="Loading your profile..." />
                 </Card>
             </div>
@@ -399,17 +399,17 @@ export function CandidateProfile({ }: CandidateProfileProps) {
     const hiddenSkillsCount = Math.max(0, skills.length - visibleSkills.length);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
                 <Button variant="ghost" onClick={handleBack} className="mb-4">
                     <ArrowLeft className="w-4 h-4 mr-2" /> Dashboard
                 </Button>
 
                 {/* Profile Info */}
-                <Card className="p-6 border-gray-200">
+                <Card className="border-gray-200 p-6 dark:border-white/10 dark:bg-neutral-900">
                     <h2 className="text-lg font-semibold mb-4">Profile Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div className="space-y-2">
                             <Label>Full Names</Label>
                             <Input
                                 placeholder="e.g. Thando Siphesihle"
@@ -418,7 +418,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Surname</Label>
                             <Input
                                 placeholder="e.g. Mokoena"
@@ -427,7 +427,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-2 space-y-2">
                             <Label>Professional Title</Label>
                             <Input
                                 placeholder="e.g. Junior Data Analyst"
@@ -436,7 +436,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-2 space-y-2">
                             <Label>Professional Summary</Label>
                             <Textarea
                                 rows={5}
@@ -446,7 +446,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Date of Birth</Label>
                             <Input
                                 type="date"
@@ -455,7 +455,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>ID Number</Label>
                             <Input
                                 placeholder="e.g. 9901015800087"
@@ -464,7 +464,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Gender</Label>
                             <Input
                                 placeholder="e.g. Female"
@@ -473,7 +473,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Contact Number</Label>
                             <Input
                                 placeholder="e.g. 071 234 5678"
@@ -482,7 +482,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Location</Label>
                             <Input
                                 placeholder="e.g. Johannesburg"
@@ -491,7 +491,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Experience Level</Label>
                             <Input
                                 placeholder="e.g. Entry level"
@@ -500,7 +500,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Years of Experience</Label>
                             <Input
                                 type="number"
@@ -515,7 +515,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Availability</Label>
                             <Input
                                 placeholder="e.g. Immediately available"
@@ -524,10 +524,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Preferred Job Type</Label>
                             <select
-                                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={profile.preferred_job_type}
                                 onChange={(e) => setProfile({ ...profile, preferred_job_type: e.target.value })}
                             >
@@ -540,10 +540,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             </select>
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <Label>Work Mode</Label>
                             <select
-                                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={profile.work_mode}
                                 onChange={(e) => setProfile({ ...profile, work_mode: e.target.value })}
                             >
@@ -556,11 +556,11 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     </div>
                 </Card>
 
-                <Card className="mt-6 border-gray-200 p-6">
+                <Card className="mt-6 border-gray-200 p-6 dark:border-white/10 dark:bg-neutral-900">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold">CV / Resume</h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 Upload your latest CV so your profile and matching data stay current.
                             </p>
                         </div>
@@ -572,19 +572,19 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     </div>
 
                     <label className="block cursor-pointer" htmlFor="candidate-profile-cv-upload">
-                        <div className="rounded-xl border border-dashed border-blue-300 bg-blue-50 px-5 py-6 text-center transition hover:bg-blue-100">
-                            <p className="inline-flex items-center gap-2 text-sm font-medium text-blue-700">
+                        <div className="rounded-xl border border-dashed border-blue-300 bg-blue-50 px-5 py-6 text-center transition hover:bg-blue-100 dark:border-white/10 dark:bg-neutral-950 dark:hover:bg-neutral-800">
+                            <p className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 dark:text-white">
                                 <Upload className="h-4 w-4" />
                                 {cvUploading ? "Uploading CV..." : cvName ? "Replace CV" : "Upload CV"}
                             </p>
-                            <p className="mt-1 text-xs text-blue-600">
+                            <p className="mt-1 text-xs text-blue-600 dark:text-gray-300">
                                 Click to choose your CV file.
                             </p>
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                 Accepted: PDF, DOC, DOCX, TXT
                             </p>
                             {cvName && (
-                                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700">
+                                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 dark:bg-neutral-900 dark:text-gray-200">
                                     <FileText className="h-3.5 w-3.5" />
                                     {cvName}
                                 </p>
@@ -607,11 +607,11 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
                 {/* Skills */}
                 {/* Skills */}
-                <Card className="p-6 border-gray-200 mt-6">
+                <Card className="mt-6 border-gray-200 p-6 dark:border-white/10 dark:bg-neutral-900">
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h2 className="text-lg font-semibold">Skills</h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {skills.length} skills on your profile
                             </p>
                         </div>
@@ -627,10 +627,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         </div>
                     </div>
                     {skills.length > 12 ? (
-                        <div className="mb-4 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                        <div className="mb-4 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 dark:border-white/10 dark:bg-neutral-950">
                             <div>
-                                <p className="text-sm font-medium text-blue-900">Large skill library</p>
-                                <p className="text-xs text-blue-700">
+                                <p className="text-sm font-medium text-blue-900 dark:text-white">Large skill library</p>
+                                <p className="text-xs text-blue-700 dark:text-gray-300">
                                     Showing {visibleSkills.length} of {skills.length} skills.
                                 </p>
                             </div>
@@ -644,14 +644,14 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         {visibleSkills.map((s, index) => (
                             <div
                                 key={`${s.id ?? s.skill_id ?? s.skill}-${index}`}
-                                className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900"
+                                className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900 dark:border-white/10 dark:bg-neutral-950 dark:text-white"
                             >
                                 <span className="max-w-[180px] truncate text-sm font-medium" title={s.skill}>{s.skill}</span>
 
                                 {/* Skill Level Dropdown */}
                                 <select
                                     value={s.level || "beginner"}
-                                    className="rounded border border-blue-200 bg-white px-2 py-1 text-sm"
+                                    className="rounded border border-blue-200 bg-white px-2 py-1 text-sm dark:border-white/10 dark:bg-neutral-900 dark:text-white"
                                     onChange={async (e) => {
                                         if (!user) return;
                                         const newLevel = e.target.value;
@@ -700,7 +700,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     {!showAllSkills && hiddenSkillsCount > 0 ? (
                         <button
                             type="button"
-                            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-700 transition hover:text-blue-800"
+                            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-700 transition hover:text-blue-800 dark:text-gray-200"
                             onClick={() => setShowAllSkills(true)}
                         >
                             Show {hiddenSkillsCount} more skills
@@ -709,11 +709,11 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     ) : null}
                 </Card>
 
-                <Card className="mt-6 border-gray-200 p-6">
+                <Card className="mt-6 border-gray-200 p-6 dark:border-white/10 dark:bg-neutral-900">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold">Certifications</h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                 Add certifications earned through assessments or external providers.
                             </p>
                         </div>
@@ -727,7 +727,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             onChange={(e) => setNewCertification((prev) => ({ ...prev, name: e.target.value }))}
                         />
                         <label className="block cursor-pointer" htmlFor="candidate-profile-certification-upload">
-                            <div className="flex h-10 items-center justify-center rounded-md border border-dashed border-blue-300 bg-blue-50 px-3 text-sm font-medium text-blue-700 transition hover:bg-blue-100">
+                            <div className="flex h-10 items-center justify-center rounded-md border border-dashed border-blue-300 bg-blue-50 px-3 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800">
                                 <Upload className="mr-2 h-4 w-4" />
                                 {newCertificationFile ? "Replace PDF" : "Upload PDF"}
                             </div>
@@ -752,16 +752,16 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         </div>
                     </div>
                     {newCertificationFile ? (
-                        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-neutral-950 dark:text-gray-200">
                             <FileText className="h-3.5 w-3.5" />
                             {newCertificationFile.name}
                         </p>
                     ) : null}
 
                     {certifications.length === 0 ? (
-                        <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5 text-center">
-                            <p className="text-sm font-medium text-gray-900">No certifications added yet</p>
-                            <p className="mt-1 text-xs text-gray-500">
+                        <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5 text-center dark:border-white/10 dark:bg-neutral-950">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">No certifications added yet</p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                 Add the certifications you already hold so employers can see them immediately.
                             </p>
                         </div>
@@ -770,7 +770,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             {certifications.map((cert) => (
                                 <div
                                     key={cert.id ?? `${cert.name}-${cert.issued_at ?? ""}`}
-                                    className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4"
+                                    className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-950"
                                 >
                                     <div className="min-w-0">
                                         <p className="font-semibold text-gray-900">{cert.name}</p>

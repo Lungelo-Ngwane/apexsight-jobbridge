@@ -9,7 +9,9 @@ import {
   ShoppingBag,
   Settings,
   LogOut,
-  Building2
+  Building2,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { useAuth } from "../context/AuthContext";
@@ -17,6 +19,7 @@ import { useEmployerProfile } from "../../hooks/useEmployerProfile";
 import { NavLink } from "react-router-dom";
 import { getEmployerUnreadMessageCount, subscribeToMyMessageChanges } from "@/lib/messages";
 import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
+import { useTheme } from "../context/ThemeContext";
 
 interface EmployerLayoutProps {
   children: ReactNode;
@@ -25,6 +28,7 @@ interface EmployerLayoutProps {
 export function EmployerLayout({ children }: EmployerLayoutProps) {
   const { user, role, signOut } = useAuth();
   const { profile, membershipRole } = useEmployerProfile();
+  const { theme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const hasCandidateMessagingAccess = hasEmployerPaidAccess(profile);
   const canManageWorkspace = membershipRole === "owner" || membershipRole === "admin";
@@ -50,13 +54,13 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
   }, [hasCandidateMessagingAccess, user, role]);
 
   return (
-    <div className="min-h-screen md:flex bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 md:flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] shadow-sm">
+      <aside className="fixed left-0 top-16 hidden h-[calc(100vh-4rem)] w-64 flex-col border-r border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-950 md:flex">
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="border-b border-gray-100 p-6 dark:border-white/10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 bg-white flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-neutral-900">
               {profile?.logo_url ? (
                 <img
                   src={profile.logo_url}
@@ -70,10 +74,10 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-base font-bold text-gray-900 truncate">
+              <h2 className="truncate text-base font-bold text-gray-900 dark:text-white">
                 {profile?.company_name ?? "Your Company"}
               </h2>
-              <p className="text-xs text-gray-500">Employer Portal</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Employer Portal</p>
             </div>
           </div>
         </div>
@@ -100,10 +104,18 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100">
+        <div className="border-t border-gray-100 p-4 dark:border-white/10">
+          <Button
+            variant="outline"
+            className="mb-2 w-full justify-start border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:bg-neutral-900 dark:text-gray-200 dark:hover:bg-neutral-800"
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <Sun className="mr-3 h-4 w-4" /> : <Moon className="mr-3 h-4 w-4" />}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
             onClick={signOut}
           >
             <LogOut className="w-4 h-4 mr-3" />
@@ -113,10 +125,10 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
       </aside>
 
       {/* Mobile top nav */}
-      <div className="md:hidden bg-white border-b border-gray-200 sticky top-16 z-40">
+      <div className="sticky top-16 z-40 border-b border-gray-200 bg-white dark:border-white/10 dark:bg-neutral-950 md:hidden">
         <div className="px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md overflow-hidden border border-gray-200 bg-white flex items-center justify-center shrink-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-white dark:border-white/10 dark:bg-neutral-900">
               {profile?.logo_url ? (
                 <img
                   src={profile.logo_url}
@@ -129,7 +141,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
                 </div>
               )}
             </div>
-            <p className="text-sm font-semibold text-gray-900 truncate">
+            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
               {profile?.company_name ?? "Employer Portal"}
             </p>
           </div>
@@ -152,8 +164,16 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
             <MobileNavItem label="Billing" to={canManageWorkspace ? "/employer/billing" : ""} />
             <MobileNavItem label="Settings" to={canManageWorkspace ? "/employer/settings" : ""} />
             <Button
+              variant="outline"
+              className="h-9 shrink-0 border-gray-200 px-3 text-gray-700 dark:border-white/10 dark:bg-neutral-900 dark:text-gray-200"
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+              {theme === "dark" ? "Light" : "Dark"}
+            </Button>
+            <Button
               variant="ghost"
-              className="h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+              className="h-9 shrink-0 px-3 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
               onClick={signOut}
             >
               <LogOut className="w-4 h-4 mr-2" />
@@ -164,7 +184,7 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
       </div>
 
       {/* Main content area */}
-      <main className="flex-1 md:ml-64 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto md:ml-64">
         {children}
       </main>
     </div>
@@ -181,8 +201,8 @@ interface SidebarItemProps {
 function SidebarItem({ icon: Icon, label, to, badgeCount = 0 }: SidebarItemProps) {
   if (!to) {
     return (
-      <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-left transition-all text-gray-400 cursor-not-allowed">
-        <Icon className="w-4 h-4 text-gray-400" />
+      <button className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-left text-gray-400 transition-all dark:text-gray-500">
+        <Icon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
         <span className="text-sm">{label}</span>
       </button>
     );
@@ -194,14 +214,14 @@ function SidebarItem({ icon: Icon, label, to, badgeCount = 0 }: SidebarItemProps
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-left transition-all ${
           isActive
-            ? "bg-blue-50 text-blue-700 font-medium"
-            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            ? "bg-blue-50 text-blue-700 font-medium dark:bg-neutral-900 dark:text-white"
+            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white"
         }`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon className={`w-4 h-4 ${isActive ? "text-blue-600" : "text-gray-500"}`} />
+          <Icon className={`h-4 w-4 ${isActive ? "text-blue-600 dark:text-white" : "text-gray-500 dark:text-gray-400"}`} />
           <span className="text-sm">{label}</span>
           {badgeCount > 0 && (
             <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[11px] font-semibold inline-flex items-center justify-center">
@@ -229,8 +249,8 @@ function MobileNavItem({ label, to, badgeCount = 0 }: { label: string; to: strin
       className={({ isActive }) =>
         `h-9 px-3 rounded-lg text-sm whitespace-nowrap inline-flex items-center ${
           isActive
-            ? "bg-blue-50 text-blue-700 font-medium"
-            : "text-gray-700 hover:bg-gray-50"
+            ? "bg-blue-50 text-blue-700 font-medium dark:bg-neutral-900 dark:text-white"
+            : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-neutral-900"
         }`
       }
     >

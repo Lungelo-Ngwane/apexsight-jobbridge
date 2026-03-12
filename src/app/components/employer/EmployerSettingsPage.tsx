@@ -238,25 +238,25 @@ export function EmployerSettingsPage() {
   const canManageTeam = currentMember?.role === "owner" || currentMember?.role === "admin";
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 via-gray-100/60 to-gray-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-lg dark:border-white/10 dark:bg-neutral-950/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
-            <p className="text-sm text-gray-600">Manage your account and company preferences</p>
+            <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Manage your account and company preferences</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-8 bg-gray-100/80 backdrop-blur p-1">
-            <TabsTrigger value="company" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsList className="mb-8 bg-gray-100/80 p-1 backdrop-blur dark:bg-neutral-900 dark:border dark:dark:border-white/10">
+            <TabsTrigger value="company" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
               <Building2 className="w-4 h-4 mr-2" />
               Company Profile
             </TabsTrigger>
-            <TabsTrigger value="team" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="team" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
               <Users className="w-4 h-4 mr-2" />
               Team
             </TabsTrigger>
@@ -275,7 +275,7 @@ export function EmployerSettingsPage() {
                     <div className="flex items-center gap-4">
                       <Avatar className="w-20 h-20 border-2 border-gray-200">
                         {logoUrl ? <AvatarImage src={logoUrl} alt="Company logo" /> : null}
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
+                        <AvatarFallback className="bg-gradient-to-br from-neutral-900 to-neutral-700 text-white text-2xl font-bold">
                           {companyName?.trim()?.charAt(0)?.toUpperCase() || "C"}
                         </AvatarFallback>
                       </Avatar>
@@ -426,7 +426,7 @@ export function EmployerSettingsPage() {
                   <Button
                     onClick={handleSaveCompanySettings}
                     disabled={saving}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                    className="bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {saving ? "Saving..." : "Save Changes"}
@@ -439,9 +439,9 @@ export function EmployerSettingsPage() {
 
               {/* Sidebar */}
               <div className="space-y-6">
-                <Card className="p-6 bg-blue-50 border-blue-200 shadow-md">
+                <Card className="p-6 bg-gray-50 border-gray-200 shadow-md">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-900">
                       <CheckCircle className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -506,7 +506,7 @@ export function EmployerSettingsPage() {
                     <Button
                       onClick={handleInviteMember}
                       disabled={!canManageTeam || !inviteEmail.trim() || teamBusyId === "invite"}
-                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                      className="bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700"
                     >
                       <Users className="w-4 h-4 mr-2" />
                       {teamBusyId === "invite" ? "Inviting..." : "Invite Member"}
@@ -523,14 +523,14 @@ export function EmployerSettingsPage() {
                         <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-10 h-10">
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-bold">
+                            <AvatarFallback className="bg-gradient-to-br from-neutral-900 to-neutral-700 text-white text-sm font-bold">
                               {member.name.split(" ").map((n) => n[0]).join("")}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="text-sm font-medium text-gray-900">
                               {member.name}
-                              {member.isCurrentUser ? <span className="ml-2 text-xs text-blue-600">(You)</span> : null}
+                              {member.isCurrentUser ? <span className="ml-2 text-xs text-gray-500">(You)</span> : null}
                             </p>
                             <p className="text-xs text-gray-600">{member.email}</p>
                           </div>
@@ -609,7 +609,7 @@ export function EmployerSettingsPage() {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
+                          className="h-2 rounded-full bg-gradient-to-r from-neutral-900 to-neutral-700"
                           style={{ width: `${Math.min(100, Math.round((seatsUsed / Math.max(planSeatLimit, 1)) * 100))}%` }}
                         />
                       </div>
@@ -618,7 +618,7 @@ export function EmployerSettingsPage() {
                   </div>
                 </Card>
 
-                <Card className="p-6 bg-purple-50 border-purple-200 shadow-md">
+                <Card className="p-6 bg-gray-50 border-gray-200 shadow-md">
                   <h4 className="text-sm font-bold text-gray-900 mb-2">Need More Seats?</h4>
                   <p className="text-xs text-gray-700 mb-4">
                     Upgrade your plan to add more team members
@@ -687,7 +687,7 @@ export function EmployerSettingsPage() {
               </Card>
 
               <div className="mt-6">
-                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+                <Button className="bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700">
                   <Save className="w-4 h-4 mr-2" />
                   Save Preferences
                 </Button>
@@ -731,7 +731,7 @@ export function EmployerSettingsPage() {
                       className="mt-2 border-gray-300"
                     />
                   </div>
-                  <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+                  <Button className="bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700">
                     <Lock className="w-4 h-4 mr-2" />
                     Update Password
                   </Button>

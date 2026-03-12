@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jobbridge.apexsight.co.za/sitemap.xml

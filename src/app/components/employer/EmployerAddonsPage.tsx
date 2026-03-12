@@ -24,13 +24,13 @@ export function EmployerAddonsPage() {
 
   const addonTypeToLabel = (type: string) => {
     const normalized = String(type ?? "").trim().toLowerCase();
-    if (normalized === "ai_credit") return "AI Matching Credits";
+    if (normalized === "ai_credit") return "Candidate Matching Credits";
     if (normalized === "ai_report") return "AI Hiring Report";
     if (normalized === "candidate_profile_view" || normalized === "candidate_unlock") {
-      return "Candidate Unlock Credits";
+      return "Unlock Candidate Profile";
     }
-    if (normalized === "featured_job") return "Featured Job Credits";
-    if (normalized === "job_slot") return "Extra Job Slot Credits";
+    if (normalized === "featured_job") return "Featured Job";
+    if (normalized === "job_slot") return "Extra Job Slot";
     return String(type ?? "")
       .split("_")
       .filter(Boolean)
@@ -42,22 +42,22 @@ export function EmployerAddonsPage() {
     const normalized = String(type ?? "").trim().toLowerCase();
 
     if (normalized === "featured_job") {
-      return "Boost a listing to the top of candidate feeds for stronger visibility and faster applications.";
+      return "Make your job stand out by placing it at the top of candidate feeds. Featured jobs get more visibility and can attract more applications faster.";
     }
     if (normalized === "ai_report") {
-      return "Generate or refresh one recruiter-ready hiring report with role-fit insights, candidate comparisons, and shortlist recommendations. Saved reports remain viewable without spending another credit.";
+      return "Generate a report that highlights the best candidates for your job. It compares applicants, shows how well they match the role, and suggests a shortlist. Once created, you can view the report anytime without using another credit.";
     }
     if (normalized === "ai_credit") {
-      return "Use AI matching credits to rank applicants, refresh AI match scores, and identify top-fit candidates for your roles.";
+      return "Quickly identify the best applicants for your job. Use these credits to rank candidates based on how well they match your job requirements and easily spot the top candidates.";
     }
     if (normalized === "candidate_profile_view") {
-      return "Unlock extra full profile views after your monthly plan allocation is used.";
+      return "View the full profile of a candidate after you've used all the profile views included in your monthly plan.";
     }
     if (normalized === "candidate_unlock") {
-      return "Unlock extra full profile views after your monthly plan allocation is used.";
+      return "View the full profile of a candidate after you've used all the profile views included in your monthly plan.";
     }
     if (normalized === "job_slot") {
-      return "Add temporary extra active job slots without changing your subscription plan.";
+      return "Post an additional job without upgrading your subscription plan. This credit gives you one extra active job listing.";
     }
 
     return "Top up premium hiring actions on demand when your plan limits are reached.";
@@ -154,28 +154,28 @@ export function EmployerAddonsPage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900">
+      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-lg dark:border-white/10 dark:bg-neutral-950/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Add-ons</h1>
-          <p className="text-sm text-gray-600">
-            Buy credits and unlock premium actions on demand
+          <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Add-ons</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Purchase credits to access additional features and boost your hiring tools whenever you need them.
           </p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <Card className="p-6 border-gray-200 shadow-md">
+          <Card className="border-gray-200 p-6 shadow-md dark:border-white/10 dark:bg-neutral-950">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Store</h3>
-              <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Store</h3>
+              <Badge className="border-blue-200 bg-blue-100 text-blue-700 dark:border-white/10 dark:bg-neutral-900 dark:text-gray-200">
                 Pay as you go
               </Badge>
             </div>
             <div className="space-y-3">
               {addons.length === 0 && (
-                <p className="text-sm text-gray-500">No add-ons available right now.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No add-ons available right now.</p>
               )}
               {addons.map((addon) => {
                 const addonLabel = addonTypeToLabel(addon.type);
@@ -188,36 +188,37 @@ export function EmployerAddonsPage() {
                 return (
                   <div
                     key={addon.id}
-                    className={`flex items-center justify-between rounded-lg border p-4 ${
+                    className={`flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between ${
                       isRecommendedAiPack
-                        ? "border-blue-300 bg-blue-50 shadow-sm"
-                        : "border-gray-200 bg-gray-50"
+                        ? "border-blue-300 bg-blue-50 shadow-sm dark:border-white/15 dark:bg-neutral-900"
+                        : "border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-neutral-900"
                     }`}
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                           {displayName}
                         </p>
                         {isRecommendedAiPack ? (
-                          <Badge className="border-blue-200 bg-white text-blue-700">
+                          <Badge className="border-blue-200 bg-white text-blue-700 dark:border-white/10 dark:bg-neutral-950 dark:text-gray-200">
                             Best Value
                           </Badge>
                         ) : null}
                       </div>
-                      <p className="text-xs text-gray-700 mt-1 max-w-xl">
+                      <p className="mt-1 max-w-xl text-xs text-gray-700 dark:text-gray-300">
                         {getAddonDescription(addon.type)}
                       </p>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                         {addon.credits} credit{addon.credits === 1 ? "" : "s"} • {addonLabel}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-gray-900">
+                    <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:min-w-[148px] sm:justify-end">
+                      <span className="whitespace-nowrap text-right text-lg font-bold leading-none text-gray-900 dark:text-white">
                         {formatZarFromKobo(addon.price)}
                       </span>
                       <Button
                         size="sm"
+                        className="shrink-0"
                         disabled={Boolean(buyingAddonId) || verifyingCheckout}
                         onClick={() => handleBuyAddon(addon.id)}
                       >
@@ -232,16 +233,16 @@ export function EmployerAddonsPage() {
         </div>
 
         <div>
-          <Card className="p-6 border-gray-200 shadow-md">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Credit Balances</h3>
+          <Card className="border-gray-200 p-6 shadow-md dark:border-white/10 dark:bg-neutral-950">
+            <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Credit Balances</h3>
             <div className="space-y-3">
               {credits.length === 0 && (
-                <p className="text-sm text-gray-500">No credits purchased yet.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No credits purchased yet.</p>
               )}
               {credits.map((credit) => (
-                <div key={credit.creditType} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{addonTypeToLabel(credit.creditType)}</span>
-                  <span className="text-sm font-bold text-gray-900">{credit.remaining}</span>
+                <div key={credit.creditType} className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-white/10 dark:bg-neutral-900">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{addonTypeToLabel(credit.creditType)}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">{credit.remaining}</span>
                 </div>
               ))}
             </div>

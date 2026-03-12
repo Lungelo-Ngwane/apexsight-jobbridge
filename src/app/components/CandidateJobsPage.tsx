@@ -234,20 +234,20 @@ export function CandidateJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+    <div className="min-h-screen bg-slate-50 dark:bg-neutral-950">
+      <div className="sticky top-16 z-20 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-lg dark:border-white/10 dark:bg-neutral-950/95">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="max-w-7xl mx-auto">
             <div className="mb-4 flex items-center justify-between gap-3">
               <Button
                 variant="outline"
-                className="h-10 rounded-lg border-slate-300 text-slate-700"
+                className="h-10 rounded-lg border-slate-300 text-slate-700 dark:border-white/10 dark:text-gray-200"
                 onClick={() => navigate("/candidate/dashboard")}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to dashboard
               </Button>
-              <p className="hidden sm:block text-sm text-slate-500">
+              <p className="hidden text-sm text-slate-500 dark:text-gray-400 sm:block">
                 Find verified roles across South Africa
               </p>
             </div>
@@ -261,7 +261,7 @@ export function CandidateJobsPage() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="pl-10 h-12 border-gray-300 focus:ring-2 focus:ring-blue-500 rounded-lg bg-white"
+                  className="h-12 rounded-lg bg-white pl-10 focus:ring-2 focus:ring-blue-500 border-gray-300 dark:border-white/10 dark:bg-neutral-900 dark:text-white"
                 />
               </div>
 
@@ -363,19 +363,19 @@ export function CandidateJobsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
             {filteredJobs.length === 0 ? "No jobs found" : `${filteredJobs.length} open positions`}
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Showing {Math.min(startIndex + 1, filteredJobs.length)}-{Math.min(endIndex, filteredJobs.length)} of {filteredJobs.length} verified opportunities
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           <aside className="hidden lg:block">
-            <Card className="p-4 border-gray-200 sticky top-36 rounded-xl shadow-sm bg-white">
+            <Card className="sticky top-36 rounded-xl border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Filters</h3>
                 {activeFiltersCount > 0 && (
                   <Button variant="ghost" size="sm" onClick={handleClearFilters} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                     Clear
@@ -409,7 +409,7 @@ export function CandidateJobsPage() {
 
           <div>
             {loading ? (
-              <Card className="p-10 text-center border-gray-200">
+                <Card className="border-gray-200 p-10 text-center dark:border-white/10 dark:bg-neutral-900">
                 <CircularLoader size="md" label="Loading jobs..." />
               </Card>
             ) : currentJobs.length > 0 ? (
@@ -428,12 +428,12 @@ export function CandidateJobsPage() {
                 ))}
               </div>
             ) : (
-              <Card className="p-12 text-center border-gray-200">
+              <Card className="border-gray-200 p-12 text-center dark:border-white/10 dark:bg-neutral-900">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
-                <p className="text-gray-600 mb-4">Try adjusting your filters or search terms</p>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">No jobs found</h3>
+                <p className="mb-4 text-gray-600 dark:text-gray-400">Try adjusting your filters or search terms</p>
                 <Button onClick={handleClearFilters} variant="outline">Clear all filters</Button>
               </Card>
             )}
@@ -443,7 +443,7 @@ export function CandidateJobsPage() {
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center">
             <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Page {currentPage} of {totalPages}
               </p>
               <div className="flex items-center gap-2">
@@ -581,8 +581,8 @@ function JobCard({
   const salary = formatSalary(job.salary_min, job.salary_max);
 
   return (
-    <Card className="group relative overflow-hidden border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer bg-white rounded-xl" onClick={onClick}>
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/70 to-white opacity-0 group-hover:opacity-100 transition-opacity" />
+    <Card className="group relative cursor-pointer overflow-hidden rounded-xl border-gray-200 bg-white transition-all duration-200 hover:border-blue-300 hover:shadow-md dark:border-white/10 dark:bg-neutral-900" onClick={onClick}>
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-50/70 to-white opacity-0 transition-opacity group-hover:opacity-100 dark:from-neutral-900 dark:to-neutral-950" />
       <div className="relative p-5 sm:p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
@@ -600,8 +600,8 @@ function JobCard({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900 truncate">{job.employer.company_name}</p>
-                {job.employer.industry && <p className="text-xs text-gray-500 truncate">{job.employer.industry}</p>}
+                <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{job.employer.company_name}</p>
+                {job.employer.industry && <p className="truncate text-xs text-gray-500 dark:text-gray-400">{job.employer.industry}</p>}
               </div>
             </div>
           </div>
@@ -610,14 +610,14 @@ function JobCard({
               e.stopPropagation();
               onSave();
             }}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            className="flex-shrink-0 rounded-lg p-2 transition-colors hover:bg-gray-100 dark:hover:bg-neutral-800"
           >
             <Bookmark className={`w-5 h-5 ${isSaved ? "fill-blue-600 text-blue-600" : "text-gray-400"}`} />
           </button>
         </div>
 
         <div className="mb-3 flex items-start justify-between gap-2">
-          <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">{job.title}</h3>
+          <h3 className="line-clamp-2 text-lg font-bold text-gray-900 transition-colors group-hover:text-blue-600 dark:text-white">{job.title}</h3>
           {featuredActive && (
             <Badge className="bg-amber-100 text-amber-700 border-amber-200 shrink-0">
               Featured
@@ -626,7 +626,7 @@ function JobCard({
         </div>
 
         <div className="mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
             {job.location && (
               <>
                 <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -654,25 +654,25 @@ function JobCard({
         {job.skills_required && job.skills_required.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {job.skills_required.slice(0, 3).map((skill, index) => (
-              <Badge key={`${job.id}-${skill}-${index}`} variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs">
+              <Badge key={`${job.id}-${skill}-${index}`} variant="secondary" className="border-gray-200 bg-gray-100 text-xs text-gray-700 dark:border-white/10 dark:bg-neutral-950 dark:text-gray-300">
                 {skill}
               </Badge>
             ))}
             {job.skills_required.length > 3 && (
-              <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs">
+              <Badge variant="secondary" className="border-gray-200 bg-gray-100 text-xs text-gray-700 dark:border-white/10 dark:bg-neutral-950 dark:text-gray-300">
                 +{job.skills_required.length - 3}
               </Badge>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+        <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-white/10">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <Clock className="w-3.5 h-3.5" />
             {getTimeAgo(job.created_at)}
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); onClick(); }}>
+            <Button size="sm" variant="outline" className="text-xs dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800" onClick={(e) => { e.stopPropagation(); onClick(); }}>
               View Details
             </Button>
             <Button size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs" disabled={hasApplied || isApplying} onClick={(e) => { e.stopPropagation(); onApply(); }}>
@@ -713,18 +713,18 @@ function FilterContent({
   return (
     <div className="space-y-6 pb-6">
       {activeCount > 0 && (
-        <Button variant="outline" onClick={onClearAll} className="w-full border-red-200 text-red-600 hover:bg-red-50">
+        <Button variant="outline" onClick={onClearAll} className="w-full border-red-200 text-red-600 hover:bg-red-50 dark:border-red-400/20 dark:hover:bg-red-950/30">
           Clear all filters ({activeCount})
         </Button>
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Employment Type</h3>
+        <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Employment Type</h3>
         <div className="space-y-3">
           {employmentTypes.map((type) => (
             <div key={type} className="flex items-center">
               <Checkbox id={`type-${type}`} checked={selectedTypes.includes(type)} onCheckedChange={() => onTypeChange(type)} className="rounded border-gray-300" />
-              <Label htmlFor={`type-${type}`} className="ml-3 text-sm text-gray-700 cursor-pointer">{type}</Label>
+              <Label htmlFor={`type-${type}`} className="ml-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">{type}</Label>
             </div>
           ))}
         </div>
@@ -733,12 +733,12 @@ function FilterContent({
       <Separator />
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Experience Level</h3>
+        <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Experience Level</h3>
         <div className="space-y-3">
           {experienceLevels.map((level) => (
             <div key={level} className="flex items-center">
               <Checkbox id={`level-${level}`} checked={selectedLevels.includes(level)} onCheckedChange={() => onLevelChange(level)} className="rounded border-gray-300" />
-              <Label htmlFor={`level-${level}`} className="ml-3 text-sm text-gray-700 cursor-pointer">{level}</Label>
+              <Label htmlFor={`level-${level}`} className="ml-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">{level}</Label>
             </div>
           ))}
         </div>
@@ -747,12 +747,12 @@ function FilterContent({
       <Separator />
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Location</h3>
+        <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Location</h3>
         <div className="space-y-3">
           {locations.map((location) => (
             <div key={location} className="flex items-center">
               <Checkbox id={`location-${location}`} checked={selectedLocations.includes(location)} onCheckedChange={() => onLocationChange(location)} className="rounded border-gray-300" />
-              <Label htmlFor={`location-${location}`} className="ml-3 text-sm text-gray-700 cursor-pointer">{location}</Label>
+              <Label htmlFor={`location-${location}`} className="ml-3 cursor-pointer text-sm text-gray-700 dark:text-gray-300">{location}</Label>
             </div>
           ))}
         </div>

@@ -343,7 +343,7 @@ export function EmployerBillingPage() {
         "Priority support",
         `Team collaboration (${plans.find((p) => p.name === "professional")?.userLimit ?? 5} users)`,
       ],
-      color: "from-blue-500 to-blue-600",
+      color: "from-neutral-700 to-neutral-900",
       current: true,
       popular: true
     },
@@ -362,19 +362,19 @@ export function EmployerBillingPage() {
         "API access",
         "Custom integrations"
       ],
-      color: "from-purple-500 to-purple-600"
+      color: "from-neutral-500 to-neutral-700"
     }
   ];
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 via-emerald-50/20 to-gray-50">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 via-gray-100/60 to-gray-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-lg dark:border-white/10 dark:bg-neutral-950/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">Billing & Subscription</h1>
-              <p className="text-sm text-gray-600">Manage your plan and billing</p>
+              <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Billing & Subscription</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Manage your plan and billing</p>
             </div>
             <Button 
               onClick={() =>
@@ -382,7 +382,7 @@ export function EmployerBillingPage() {
                 handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "header")
               }
               disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30"
+              className="bg-gradient-to-r from-neutral-950 to-neutral-800 text-white shadow-lg shadow-black/15 hover:from-neutral-900 hover:to-neutral-700"
             >
               <Crown className="w-4 h-4 mr-2" />
               {loadingSource === "header"
@@ -422,24 +422,24 @@ export function EmployerBillingPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Current Plan */}
-            <Card className="relative overflow-hidden border-0 shadow-xl shadow-blue-200/50">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 opacity-[0.08]" />
+            <Card className="relative overflow-hidden border border-gray-200 shadow-xl shadow-gray-200/60 dark:border-white/10 dark:bg-neutral-950 dark:shadow-black/40">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-white opacity-[0.9] dark:from-neutral-900 dark:to-neutral-950" />
               <div className="relative p-8">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-neutral-900 to-neutral-700 shadow-lg shadow-black/15">
                       <currentPlan.icon className="w-7 h-7 text-white" />
                     </div>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h2 className="text-2xl font-bold text-gray-900">{currentPlan.name} Plan</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{currentPlan.name} Plan</h2>
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                           {currentPlan.status}
                         </Badge>
                       </div>
-                      <p className="text-gray-600">
-                        <span className="text-2xl font-bold text-gray-900">{currentPlan.price}</span>
-                        <span className="text-sm ml-2">{currentPlan.period}</span>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        <span className="text-2xl font-bold text-gray-900 dark:text-white">{currentPlan.price}</span>
+                        <span className="ml-2 text-sm">{currentPlan.period}</span>
                       </p>
                     </div>
                   </div>
@@ -447,13 +447,13 @@ export function EmployerBillingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   {/* Jobs Usage */}
-                  <div className="p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-900">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-gray-700">Job Postings</span>
+                        <Briefcase className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Job Postings</span>
                       </div>
-                      <span className="text-sm font-bold text-gray-900">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">
                         {currentPlan.usage.jobs.used} / {formatLimit(currentPlan.usage.jobs.total)}
                       </span>
                     </div>
@@ -461,7 +461,7 @@ export function EmployerBillingPage() {
                       value={Math.min(100, jobUsagePercent)}
                       className="h-2"
                     />
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                       {finiteJobLimit === null
                         ? "Unlimited slots"
                         : isOverJobLimit
@@ -471,13 +471,13 @@ export function EmployerBillingPage() {
                   </div>
 
                   {/* Users Usage */}
-                  <div className="p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-900">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-medium text-gray-700">Team Members</span>
+                        <Users className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Team Members</span>
                       </div>
-                      <span className="text-sm font-bold text-gray-900">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">
                         {currentPlan.usage.users.used} / {formatLimit(currentPlan.usage.users.total)}
                       </span>
                     </div>
@@ -489,7 +489,7 @@ export function EmployerBillingPage() {
                       }
                       className="h-2"
                     />
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                       {finiteTeamLimit === null
                         ? "Unlimited seats"
                         : `${Math.max(finiteTeamLimit - currentPlan.usage.users.used, 0)} seats available`}
@@ -497,22 +497,22 @@ export function EmployerBillingPage() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 mb-6">
+                <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-neutral-900">
                   <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <Calendar className="mt-0.5 h-5 w-5 text-gray-700 dark:text-gray-300" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 mb-1">Next billing date</p>
-                      <p className="text-sm text-gray-600">{currentPlan.renewalDate}</p>
+                      <p className="mb-1 text-sm font-medium text-gray-900 dark:text-white">Next billing date</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{currentPlan.renewalDate}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2 mb-6">
-                  <p className="text-sm font-medium text-gray-700 mb-3">Plan includes:</p>
+                  <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Plan includes:</p>
                   {currentPlan.features.map((feature, index) => (
                     <div key={index} className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-emerald-600" />
-                      <span className="text-sm text-gray-700">{feature}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -524,7 +524,7 @@ export function EmployerBillingPage() {
                       handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "card")
                     }
                     disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                    className="bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700"
                   >
                     <Crown className="w-4 h-4 mr-2" />
                     {loadingSource === "card"
@@ -533,7 +533,7 @@ export function EmployerBillingPage() {
                         ? "Complete Payment"
                         : (nextUpgradeLabel ? `Upgrade to ${nextUpgradeLabel}` : "Current Top Plan")}
                   </Button>
-                  <Button variant="outline" className="border-gray-300">
+                  <Button variant="outline" className="border-gray-300 dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800">
                     Change Plan
                   </Button>
                   <Button
@@ -653,9 +653,9 @@ export function EmployerBillingPage() {
             </Card>
             {/* Usage Alert */}
             {showUsageAlert && (
-              <Card className="p-5 bg-amber-50 border-amber-200 shadow-md">
+              <Card className="p-5 bg-gray-50 border-gray-200 shadow-md">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-neutral-900">
                     <AlertCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -672,7 +672,7 @@ export function EmployerBillingPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => navigate("/employer/jobs")}
-                        className="border-amber-300 bg-white hover:bg-amber-100"
+                        className="border-gray-300 bg-white hover:bg-gray-100"
                       >
                         Manage Jobs
                       </Button>
@@ -683,7 +683,7 @@ export function EmployerBillingPage() {
                           handleUpgrade(nextUpgradePlan, nextUpgradePlanRow?.id, "sidebar")
                         }
                         disabled={loadingSource !== null || verifyingCheckout || !nextUpgradePlan}
-                        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                        className="bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700"
                       >
                         {loadingSource === "sidebar"
                           ? "Redirecting..."
@@ -732,7 +732,7 @@ export function EmployerBillingPage() {
             </Card> */}
 
             {/* Need Help */}
-            <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 shadow-md">
+            <Card className="p-6 bg-gray-50 border-gray-200 shadow-md">
               <h3 className="text-sm font-bold text-gray-900 mb-2">Need Help?</h3>
               <p className="text-xs text-gray-600 mb-4">
                 Have questions about your billing or need to discuss custom plans?

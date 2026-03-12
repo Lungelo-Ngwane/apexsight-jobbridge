@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { Header } from '@/app/components/Header';
+import { Seo } from '@/app/components/Seo';
 import Login from '@/app/components/Login';
 import { HomePage } from '@/app/components/HomePage';
 import { SkillLinkLanding } from '@/app/components/SkillLinkLanding';
@@ -98,7 +99,9 @@ export default function App() {
   }, [user, role, loading, navigate, location.pathname]);
 
   const getCurrentProduct = (): 'skilllink' | 'jobbridge' | 'landing' => {
-    if (currentView === 'home') return 'landing';
+    if (location.pathname === "/jobbridge") return "jobbridge";
+    if (location.pathname === "/skilllink") return "skilllink";
+    if (location.pathname === "/") return "landing";
     return role === 'candidate' ? 'skilllink' : 'jobbridge';
   };
 
@@ -128,6 +131,19 @@ export default function App() {
   const openContextualRegisterModal = () => {
     const path = window.location.pathname.toLowerCase();
     openRegisterModal(path === "/jobbridge" ? "employer" : "candidate");
+  };
+
+  const openJobBridgePricing = () => {
+    if (window.location.pathname.toLowerCase() === "/jobbridge") {
+      window.history.replaceState(null, "", "/jobbridge#pricing");
+      const element = document.getElementById("jobbridge-pricing");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+
+    navigate("/jobbridge#pricing");
   };
 
   const handleLoginSuccess = async (resolvedRole?: "candidate" | "employer" | null) => {
@@ -206,12 +222,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Seo />
       <Header
         currentProduct={getCurrentProduct()}
-        userType={role}                      // ← now from context
         onSignInClick={openLoginModal}
         onGetStartedClick={openContextualRegisterModal}
         onProfileClick={handleProfileClick}
+        onPricingClick={openJobBridgePricing}
       />
 
       {/* {currentView === 'home' && <HomePage />}

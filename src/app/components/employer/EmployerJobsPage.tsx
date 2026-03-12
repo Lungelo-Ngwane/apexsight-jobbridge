@@ -255,25 +255,25 @@ export function EmployerJobsPage() {
         label: "Total Active Jobs",
         value: activeJobs.length,
         icon: Briefcase,
-        color: "from-blue-500 to-blue-600",
+        color: "from-neutral-900 to-neutral-700",
       },
       {
         label: "Total Applicants",
         value: totalApplicants,
         icon: Users,
-        color: "from-emerald-500 to-emerald-600",
+        color: "from-neutral-800 to-neutral-600",
       },
       {
         label: "Shortlisted",
         value: shortlisted,
         icon: Star,
-        color: "from-amber-500 to-amber-600",
+        color: "from-neutral-700 to-neutral-500",
       },
       {
         label: "Interviewed",
         value: interviewed,
         icon: Eye,
-        color: "from-purple-500 to-purple-600",
+        color: "from-neutral-600 to-neutral-500",
       },
     ];
   }, [jobsByStatus.active]);
@@ -370,26 +370,26 @@ export function EmployerJobsPage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+    <div className="min-h-full bg-gradient-to-br from-gray-50 via-gray-100/60 to-gray-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900">
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:border-white/10 dark:bg-neutral-950/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">Job Management</h1>
-              <p className="text-sm text-gray-600">Manage all your job postings and track applications</p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1 dark:text-white">Job Management</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Manage all your job postings and track applications</p>
             </div>
             <div className="flex flex-col items-start gap-2 lg:items-end">
               <Button
                 onClick={handleNewJob}
                 disabled={isPostingLocked}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                className="border border-transparent bg-gradient-to-r from-neutral-950 to-neutral-800 text-white shadow-lg shadow-black/15 transition-all hover:from-neutral-900 hover:to-neutral-700 hover:shadow-xl hover:shadow-black/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-none disabled:bg-neutral-900 disabled:text-gray-300 disabled:shadow-none disabled:opacity-100"
                 size="lg"
               >
                 {isPostingLocked ? <Lock className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
                 {isPostingLocked ? "Job Limit Reached" : "Post New Job"}
               </Button>
               {isPostingLocked ? (
-                <div className="flex flex-col items-start gap-2 text-sm text-gray-600 lg:items-end">
+                <div className="flex flex-col items-start gap-2 text-sm text-gray-600 dark:text-gray-400 lg:items-end">
                   <span>
                     You are using {activeJobsUsed}
                     {finiteJobLimit !== null ? ` / ${finiteJobLimit}` : ""} active job slots.
@@ -399,7 +399,7 @@ export function EmployerJobsPage() {
                   </Button>
                 </div>
               ) : availableJobSlotCredits > 0 ? (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   {availableJobSlotCredits} unused extra job slot credit{availableJobSlotCredits === 1 ? "" : "s"} available.
                 </div>
               ) : null}
@@ -413,23 +413,23 @@ export function EmployerJobsPage() {
           {stats.map((stat, index) => (
             <Card
               key={index}
-              className="relative overflow-hidden border-0 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 transition-all duration-300"
+              className="relative overflow-hidden border border-gray-200 shadow-lg shadow-gray-200/50 transition-all duration-300 hover:shadow-xl hover:shadow-gray-300/50 dark:border-white/10 dark:bg-neutral-950 dark:shadow-black/20 dark:hover:shadow-black/30"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-[0.03]`} />
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white opacity-100 dark:from-neutral-950 dark:to-neutral-900" />
               <div className="relative p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${stat.color} shadow-sm`}>
                     <stat.icon className="w-6 h-6 text-white" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                <div className="text-sm font-medium text-gray-600">{stat.label}</div>
+                <div className="text-3xl font-bold text-gray-900 mb-1 dark:text-white">{stat.value}</div>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.label}</div>
               </div>
             </Card>
           ))}
         </div>
 
-        <Card className="p-4 mb-6 border-gray-200 shadow-sm">
+        <Card className="p-4 mb-6 border-gray-200 shadow-sm dark:border-white/10 dark:bg-neutral-950">
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -437,14 +437,14 @@ export function EmployerJobsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by title, description, location, or type..."
-                className="pl-10 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                className="pl-10 border-gray-300 focus:ring-2 focus:ring-gray-300 dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:placeholder:text-gray-500"
               />
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+              <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <select
-                className="h-10 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                className="h-10 rounded-md border border-gray-300 px-3 text-sm bg-white dark:border-white/10 dark:bg-neutral-900 dark:text-white"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
               >
@@ -456,7 +456,7 @@ export function EmployerJobsPage() {
                 ))}
               </select>
               <select
-                className="h-10 rounded-md border border-gray-300 px-3 text-sm bg-white"
+                className="h-10 rounded-md border border-gray-300 px-3 text-sm bg-white dark:border-white/10 dark:bg-neutral-900 dark:text-white"
                 value={selectedLocation}
                 onChange={(e) => setSelectedLocation(e.target.value)}
               >
@@ -470,6 +470,7 @@ export function EmployerJobsPage() {
               <Button
                 type="button"
                 variant="outline"
+                className="dark:border-white/15 dark:bg-neutral-900 dark:text-white"
                 onClick={() => {
                   setSearchTerm("");
                   setSelectedType("all");
@@ -483,14 +484,14 @@ export function EmployerJobsPage() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as JobStatusTab)}>
-          <TabsList className="mb-6 bg-gray-100/80 backdrop-blur p-1">
-            <TabsTrigger value="active" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsList className="mb-6 bg-gray-100/80 backdrop-blur p-1 dark:bg-neutral-900/90">
+            <TabsTrigger value="active" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:text-gray-300 dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
               Active Jobs ({jobsByStatus.active.length})
             </TabsTrigger>
-            <TabsTrigger value="draft" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="draft" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:text-gray-300 dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
               Drafts ({jobsByStatus.draft.length})
             </TabsTrigger>
-            <TabsTrigger value="closed" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="closed" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:text-gray-300 dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
               Closed ({jobsByStatus.closed.length})
             </TabsTrigger>
           </TabsList>
@@ -498,13 +499,13 @@ export function EmployerJobsPage() {
           {(["active", "draft", "closed"] as JobStatusTab[]).map((tab) => (
             <TabsContent key={tab} value={tab} className="space-y-4">
               {loadingJobs && (
-                <Card className="p-6 text-center text-gray-500">
+                <Card className="p-6 text-center text-gray-500 dark:border-white/10 dark:bg-neutral-950 dark:text-gray-400">
                   <CircularLoader size="md" label="Loading jobs..." />
                 </Card>
               )}
 
               {!loadingJobs && filteredJobsForActiveTab.length === 0 && activeTab === tab && (
-                <Card className="p-6 text-center text-gray-500">No jobs match your filters.</Card>
+                <Card className="p-6 text-center text-gray-500 dark:border-white/10 dark:bg-neutral-950 dark:text-gray-400">No jobs match your filters.</Card>
               )}
 
               {!loadingJobs &&
@@ -524,18 +525,18 @@ export function EmployerJobsPage() {
                     expiresInDays >= 0;
 
                   return (
-                    <Card key={job.id} className="p-6 border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all duration-300 group">
+                    <Card key={job.id} className="group border-gray-200 p-6 transition-all duration-300 hover:border-gray-300 hover:shadow-lg dark:border-white/10 dark:bg-neutral-950 dark:hover:border-white/20 dark:hover:shadow-black/30">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-700 shadow-md">
                               <Briefcase className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                              <h3 className="text-lg font-bold text-gray-900 transition-colors group-hover:text-gray-700 dark:text-white dark:group-hover:text-gray-100">
                                 {job.title}
                               </h3>
-                              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mt-1">
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mt-1 dark:text-gray-400">
                                 <span className="flex items-center gap-1">
                                   <MapPin className="w-3.5 h-3.5" />
                                   {job.location ?? "Remote"}
@@ -549,13 +550,13 @@ export function EmployerJobsPage() {
                                 </span>
                               </div>
                               {job.expires_at && (
-                                <p className="text-xs mt-1 text-gray-500">
+                                <p className="text-xs mt-1 text-gray-500 dark:text-gray-500">
                                   Visible until {new Date(job.expires_at).toLocaleDateString()} (30-day listing window)
                                 </p>
                               )}
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 line-clamp-2">{job.description}</p>
+                          <p className="text-sm text-gray-600 line-clamp-2 dark:text-gray-300">{job.description}</p>
                         </div>
                         <Badge className={`border ${statusBadgeClass(job.status)}`}>
                           {statusToLabel(job.status)}
@@ -564,7 +565,7 @@ export function EmployerJobsPage() {
 
                       {featuredActive && (
                         <div className="mb-3">
-                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200">
                             Featured
                             {job.featured_until ? ` until ${new Date(job.featured_until).toLocaleDateString()}` : ""}
                           </Badge>
@@ -573,7 +574,7 @@ export function EmployerJobsPage() {
 
                       {expiryWarning && (
                         <div className="mb-3">
-                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200">
                             {expiresInDays === 0
                               ? "Expires today"
                               : `Expires in ${expiresInDays} day${expiresInDays === 1 ? "" : "s"}`}
@@ -582,44 +583,44 @@ export function EmployerJobsPage() {
                       )}
 
                       <div className="grid grid-cols-3 gap-3 mb-5">
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                          <div className="flex items-center gap-2 text-blue-600 mb-1">
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-neutral-900">
+                          <div className="mb-1 flex items-center gap-2 text-gray-700 dark:text-gray-300">
                             <Users className="w-4 h-4" />
                             <span className="text-xs font-medium">Applicants</span>
                           </div>
-                          <div className="text-2xl font-bold text-gray-900">{applicants}</div>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">{applicants}</div>
                         </div>
-                        <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
-                          <div className="flex items-center gap-2 text-amber-600 mb-1">
+                        <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 dark:border-amber-400/15 dark:bg-neutral-900">
+                          <div className="flex items-center gap-2 text-amber-600 mb-1 dark:text-amber-300">
                             <Star className="w-4 h-4" />
                             <span className="text-xs font-medium">Shortlisted</span>
                           </div>
-                          <div className="text-2xl font-bold text-gray-900">{shortlisted}</div>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">{shortlisted}</div>
                         </div>
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-                          <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 dark:border-emerald-400/15 dark:bg-neutral-900">
+                          <div className="flex items-center gap-2 text-emerald-600 mb-1 dark:text-emerald-300">
                             <CheckCircle className="w-4 h-4" />
                             <span className="text-xs font-medium">Interviewed</span>
                           </div>
-                          <div className="text-2xl font-bold text-gray-900">{interviewed}</div>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">{interviewed}</div>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
                         <Button
-                          className="flex-1 min-w-[160px] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                          className="min-w-[160px] flex-1 bg-blue-600 text-white hover:bg-blue-700"
                           onClick={() => setSelectedJobId(job.id)}
                         >
                           View Candidates
                         </Button>
 
-                        <Button variant="outline" className="flex-1 min-w-[140px] border-gray-300" onClick={() => handleEdit(job)}>
+                        <Button variant="outline" className="flex-1 min-w-[140px] border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white" onClick={() => handleEdit(job)}>
                           Edit Job
                         </Button>
 
                         <Button
                           variant="outline"
-                          className="border-gray-300"
+                          className="border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white"
                           onClick={() => handleFeatureJob(job)}
                           disabled={actionLoading === `feature-${job.id}` || featuredActive}
                         >
@@ -632,7 +633,7 @@ export function EmployerJobsPage() {
 
                         <Button
                           variant="outline"
-                          className="border-gray-300"
+                          className="border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white"
                           onClick={() => handleGenerateAiReport(job)}
                           disabled={actionLoading === `report-${job.id}`}
                         >
@@ -642,24 +643,24 @@ export function EmployerJobsPage() {
                         {job.status === "open" && (
                           <Button
                             variant="outline"
-                            className="border-gray-300"
+                            className="border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white"
                             onClick={() => setJobToClose(job)}
                           >
                             Close
                           </Button>
                         )}
                         {job.status === "closed" && (
-                          <Button variant="outline" className="border-gray-300" onClick={() => handleRenewJob(job)}>
+                          <Button variant="outline" className="border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white" onClick={() => handleRenewJob(job)}>
                             {actionLoading === `renew-${job.id}` ? "Renewing..." : "Renew 30 Days"}
                           </Button>
                         )}
                         {job.status === "archived" && (
-                          <Button variant="outline" className="border-gray-300" onClick={() => handleStatusChange(job.id, "open")}>
+                          <Button variant="outline" className="border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white" onClick={() => handleStatusChange(job.id, "open")}>
                             Publish
                           </Button>
                         )}
                         {job.status === "open" && (
-                          <Button variant="outline" className="border-gray-300" onClick={() => handleRenewJob(job)}>
+                          <Button variant="outline" className="border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white" onClick={() => handleRenewJob(job)}>
                             {actionLoading === `renew-${job.id}` ? "Renewing..." : "Extend 30 Days"}
                           </Button>
                         )}

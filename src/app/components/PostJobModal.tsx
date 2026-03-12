@@ -6,6 +6,7 @@ import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Badge } from "@/app/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { createJob, resolveOrCreateSkill, updateJob } from "@/lib/employer";
 import { supabase } from "@/lib/supabase";
 import { UpgradeModal } from "./UpgradeModal";
@@ -25,6 +26,42 @@ type SkillOption = { id: string; name: string };
 type SelectedSkill = { skill_id: string; name: string; min_score: number | null };
 
 const steps = ["Job Details", "Skills Required", "Compensation", "Review & Publish"];
+const EMPLOYMENT_TYPE_OPTIONS = ["Full-time", "Part-time", "Contract", "Temporary", "Internship"] as const;
+const WORK_MODE_OPTIONS = ["On-site", "Hybrid", "Remote"] as const;
+const EXPERIENCE_LEVEL_OPTIONS = [
+  { value: "junior", label: "Junior" },
+  { value: "mid", label: "Intermediate" },
+  { value: "senior", label: "Senior" },
+] as const;
+
+function normalizeEmploymentType(value?: string | null) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "";
+  if (normalized === "full-time" || normalized === "full time") return "Full-time";
+  if (normalized === "part-time" || normalized === "part time") return "Part-time";
+  if (normalized === "contract") return "Contract";
+  if (normalized === "temporary" || normalized === "temp") return "Temporary";
+  if (normalized === "internship" || normalized === "intern") return "Internship";
+  return "";
+}
+
+function normalizeWorkMode(value?: string | null) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "";
+  if (normalized === "on-site" || normalized === "on site" || normalized === "onsite") return "On-site";
+  if (normalized === "hybrid") return "Hybrid";
+  if (normalized === "remote") return "Remote";
+  return "";
+}
+
+function normalizeExperienceLevel(value?: string | null) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "";
+  if (normalized === "junior" || normalized === "entry" || normalized === "entry-level") return "junior";
+  if (normalized === "mid" || normalized === "mid-level" || normalized === "intermediate") return "mid";
+  if (normalized === "senior" || normalized === "lead" || normalized === "principal" || normalized === "executive" || normalized === "director") return "senior";
+  return "";
+}
 
 export function PostJobModal({ onClose, onSuccess, job }: Props) {
   const [step, setStep] = useState(1);
@@ -56,9 +93,9 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
     setTitle(job?.title ?? "");
     setDepartment(job?.department ?? "");
     setLocation(job?.location ?? "");
-    setEmploymentType(job?.employment_type ?? "");
-    setWorkMode(job?.work_mode ?? "");
-    setExperienceLevel(job?.experience_level ?? "");
+    setEmploymentType(normalizeEmploymentType(job?.employment_type));
+    setWorkMode(normalizeWorkMode(job?.work_mode));
+    setExperienceLevel(normalizeExperienceLevel(job?.experience_level));
     setMinYears(typeof job?.min_years_experience === "number" ? String(job.min_years_experience) : "");
     setDescription(job?.description ?? "");
     setStatus(job?.status ?? "open");
@@ -224,9 +261,51 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
                 <div className="md:col-span-2"><Label>Job Title *</Label><Input className="mt-2" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
                 <div><Label>Department</Label><Input className="mt-2" value={department} onChange={(e) => setDepartment(e.target.value)} /></div>
                 <div><Label>Location</Label><Input className="mt-2" value={location} onChange={(e) => setLocation(e.target.value)} /></div>
-                <div><Label>Employment Type</Label><Input className="mt-2" value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} placeholder="Full-time" /></div>
-                <div><Label>Work Mode</Label><Input className="mt-2" value={workMode} onChange={(e) => setWorkMode(e.target.value)} placeholder="Remote / Hybrid / On-site" /></div>
-                <div><Label>Experience Level *</Label><Input className="mt-2" value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)} placeholder="junior / mid / senior" /></div>
+                <div>
+                  <Label>Employment Type</Label>
+                  <Select value={employmentType} onValueChange={setEmploymentType}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select employment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EMPLOYMENT_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Work Mode</Label>
+                  <Select value={workMode} onValueChange={setWorkMode}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select work mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WORK_MODE_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Experience Level *</Label>
+                  <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXPERIENCE_LEVEL_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Minimum Years Experience</Label><Input className="mt-2" type="number" min={0} max={50} value={minYears} onChange={(e) => setMinYears(e.target.value)} /></div>
                 <div><Label>Status</Label><Input className="mt-2" value={status} onChange={(e) => setStatus(e.target.value as Status)} /></div>
                 <div className="md:col-span-2"><Label>Job Description *</Label><Textarea className="mt-2 min-h-[160px]" value={description} onChange={(e) => setDescription(e.target.value)} /></div>

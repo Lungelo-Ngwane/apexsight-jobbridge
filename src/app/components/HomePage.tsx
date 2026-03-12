@@ -1,351 +1,374 @@
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { 
-  CheckCircle2, 
-  Target, 
-  Shield, 
-  Award,
+import {
   ArrowRight,
-  Users,
+  BadgeCheck,
+  Binary,
+  Bot,
   Briefcase,
-  TrendingUp,
   Building2,
+  CheckCircle2,
+  CircuitBoard,
+  Globe2,
   GraduationCap,
-  BarChart3,
+  LineChart,
+  LockKeyhole,
+  MessageSquareMore,
+  ScanSearch,
   Sparkles,
-  Zap,
-  Globe
+  Users,
+  Workflow,
 } from "lucide-react";
-import logo from "../assets/ApexSight_logo.png";
 
 interface HomePageProps {
   onSelectSkillLink: () => void;
   onSelectJobBridge: () => void;
 }
 
+const employerCapabilities = [
+  "Structured search briefs with skill, location, and experience filters",
+  "Ranked candidates, fit signals, and review workflows in one place",
+  "Interview operations, messaging, and premium hiring controls",
+];
+
+const candidateCapabilities = [
+  "Structured profiles built from CV parsing, skills, certifications, and work history",
+  "Readiness, assessments, and preference data that make discovery easier",
+  "Application flow, interview visibility, and matched job recommendations",
+];
+
+const operatingSystemCards = [
+  {
+    title: "Search and ranking engine",
+    description:
+      "Candidate discovery is organized around structured criteria and AI-assisted fit signals, not loose keyword matching.",
+    icon: ScanSearch,
+  },
+  {
+    title: "Recruiter execution layer",
+    description:
+      "The employer side is built for decisions and throughput: review queues, interviews, messaging, reports, and plan controls.",
+    icon: Briefcase,
+  },
+  {
+    title: "Verified talent data",
+    description:
+      "Profiles are richer than a CV upload because skills, certifications, summaries, and preferences are captured as usable data.",
+    icon: BadgeCheck,
+  },
+];
+
+const proofStats = [
+  { value: "Structured", label: "Search, briefs, and profile data instead of loose applications" },
+  { value: "Two-sided", label: "Employer and candidate journeys connected in one system" },
+  { value: "Operational", label: "Messaging, reports, interviews, billing, and permissions built in" },
+  { value: "AI-assisted", label: "Ranking and recommendation layers support recruiter judgment" },
+];
+
+const marketSignals = [
+  { value: "01", title: "Cleaner recruiting signal", copy: "Profiles are normalized into skills, certifications, experience bands, and preferences." },
+  { value: "02", title: "Faster review velocity", copy: "Hiring teams can filter, rank, shortlist, message, and schedule without jumping across tools." },
+  { value: "03", title: "Sharper product split", copy: "SkillLink grows candidate quality while JobBridge turns that supply into a usable hiring market." },
+];
+
 export function HomePage({ onSelectSkillLink, onSelectJobBridge }: HomePageProps) {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white">
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
-        </div>
+    <div className="min-h-screen text-neutral-950 dark:text-white">
+      <section className="relative overflow-hidden border-b border-black/5 dark:border-white/10">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.05),_transparent_32%),radial-gradient(circle_at_85%_12%,_rgba(0,0,0,0.06),_transparent_26%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.06),_transparent_24%),radial-gradient(circle_at_85%_12%,_rgba(255,255,255,0.04),_transparent_20%)]" />
+        <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 lg:px-8 lg:pb-20 lg:pt-16">
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-neutral-900/80 dark:text-neutral-300">
+                <Sparkles className="h-4 w-4" />
+                Marketplace-grade hiring infrastructure
+              </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-28">
-          <div className="text-center max-w-5xl mx-auto">
-            {/* Logo Badge */}
-            {/* <div className="flex items-center justify-center gap-3 mb-8">
-              <img 
-                src={logo} 
-                alt="ApexSight" 
-                className="h-16 w-auto"
-              />
-            </div> */}
+              <h1 className="mt-6 max-w-4xl text-4xl font-extrabold leading-[0.98] tracking-[-0.06em] text-neutral-950 dark:text-white sm:text-5xl lg:text-[4.6rem]">
+                A cleaner way to
+                <span className="block text-neutral-500 dark:text-neutral-400">
+                  structure talent, search, and hiring decisions
+                </span>
+              </h1>
 
-            {/* Trust Badge */}
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold mb-8 shadow-lg">
-              <Shield className="w-4 h-4" />
-              South Africa's National Skills-Verified Hiring Platform
+              <p className="mt-6 max-w-2xl text-base leading-7 text-neutral-600 dark:text-neutral-300 sm:text-[1.05rem]">
+                ApexSight combines candidate data, structured job requirements, AI-assisted ranking,
+                interviews, messaging, and hiring operations in one product system. The result is a
+                market-style experience that feels direct, modern, and easier to trust.
+              </p>
+
+              <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+                <Button
+                  onClick={onSelectJobBridge}
+                  size="lg"
+                  className="h-14 rounded-full bg-neutral-950 px-8 text-base font-semibold text-white shadow-[0_18px_48px_rgba(15,15,15,0.18)] hover:bg-neutral-800"
+                >
+                  Explore JobBridge
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button
+                  onClick={onSelectSkillLink}
+                  size="lg"
+                  variant="outline"
+                  className="h-14 rounded-full border-black/10 bg-white/80 px-8 text-base font-semibold text-neutral-900 shadow-sm hover:bg-white dark:border-white/12 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800"
+                >
+                  Explore SkillLink
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="mt-10 grid gap-3 sm:grid-cols-3">
+                {[
+                  "Structured profiles, not static resumes",
+                  "Recruiter workflow with AI-assisted review",
+                  "Two products connected by one talent data layer",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-start gap-3 rounded-3xl border border-black/6 bg-white/78 p-4 shadow-[0_12px_30px_rgba(15,15,15,0.05)] backdrop-blur dark:border-white/10 dark:bg-neutral-900/90"
+                  >
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-neutral-950 dark:text-white" />
+                    <p className="text-sm leading-6 text-neutral-700 dark:text-neutral-300">{item}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              Transform Skills Into
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Verified Opportunities
-              </span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-              The trusted infrastructure connecting <span className="font-semibold text-gray-900">skill-verified job seekers</span> with <span className="font-semibold text-gray-900">South Africa's leading employers</span>
-            </p>
 
-            {/* Primary CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Button 
-                onClick={onSelectSkillLink}
-                size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-10 py-7 text-lg w-full sm:w-auto shadow-xl hover:shadow-2xl transition-all group"
-              >
-                <GraduationCap className="w-5 h-5 mr-2" />
-                For Job Seekers
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button 
-                onClick={onSelectJobBridge}
-                size="lg" 
-                variant="outline"
-                className="border-2 border-gray-300 text-gray-900 hover:bg-gray-50 hover:border-gray-400 px-10 py-7 text-lg w-full sm:w-auto shadow-lg hover:shadow-xl transition-all group"
-              >
-                <Building2 className="w-5 h-5 mr-2" />
-                For Employers
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
+            <div className="relative">
+              <Card className="overflow-hidden rounded-[34px] border border-black/6 bg-[#131313] text-white shadow-[0_32px_90px_rgba(15,15,15,0.22)]">
+                <div className="border-b border-white/10 px-6 py-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-400">Live market view</p>
+                      <h2 className="mt-2 text-2xl font-semibold text-white">Hiring intelligence, compressed into one surface</h2>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                      <Bot className="h-7 w-7" />
+                    </div>
+                  </div>
+                </div>
 
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-8 text-sm font-medium">
-              <div className="flex items-center gap-2 text-gray-700">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <div className="space-y-4 p-6">
+                  <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-2xl border border-white/10 bg-white/10 p-2 text-white">
+                          <Binary className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">Ranking layer</p>
+                          <p className="text-lg font-semibold text-white">Structured fit, AI support, human decision</p>
+                        </div>
+                      </div>
+                      <LineChart className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      {[
+                        { label: "Match confidence", value: "91%", icon: CircuitBoard },
+                        { label: "Review status", value: "24 shortlisted", icon: Workflow },
+                        { label: "Response time", value: "< 2 days", icon: MessageSquareMore },
+                      ].map((item) => (
+                        <div key={item.label} className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                          <item.icon className="h-4 w-4 text-[#f5f5f7]" />
+                          <p className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-white">{item.value}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-neutral-400">{item.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-white/10 bg-[#f5f5f7] p-5 text-neutral-950 dark:border-white/10 dark:bg-neutral-900 dark:text-white">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-neutral-600 dark:text-neutral-400">System modules</p>
+                        <p className="mt-2 text-xl font-semibold text-neutral-950 dark:text-white">Each core hiring function lives in the product, not in disconnected tools</p>
+                      </div>
+                      <LockKeyhole className="h-6 w-6 text-neutral-700 dark:text-neutral-300" />
+                    </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      {[
+                        { label: "Candidate intelligence", icon: Users },
+                        { label: "Search and ranking", icon: Globe2 },
+                        { label: "Billing and controls", icon: LockKeyhole },
+                      ].map((item) => (
+                        <div key={item.label} className="rounded-2xl border border-black/8 bg-white/80 p-4 dark:border-white/10 dark:bg-neutral-950">
+                          <item.icon className="h-5 w-5 text-neutral-900 dark:text-white" />
+                          <p className="mt-3 text-sm font-medium text-neutral-900 dark:text-white">{item.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                Government-Aligned
-              </div>
-              <div className="flex items-center gap-2 text-gray-700">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                </div>
-                SETA-Recognized
-              </div>
-              <div className="flex items-center gap-2 text-gray-700">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                </div>
-                Enterprise-Trusted
-              </div>
+              </Card>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Bar */}
-      <section className="relative -mt-12 max-w-7xl mx-auto px-4 sm:px-6 pb-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { value: "250K+", label: "Skills Verified", icon: Award },
-            { value: "15K+", label: "Active Job Seekers", icon: Users },
-            { value: "2.5K+", label: "Hiring Employers", icon: Building2 },
-            { value: "100%", label: "Skills-Based", icon: Target }
-          ].map((stat, index) => (
-            <Card key={index} className="bg-white p-6 text-center shadow-xl border-0 hover:shadow-2xl transition-all hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <stat.icon className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
-              <div className="text-sm text-gray-600 font-medium">{stat.label}</div>
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid gap-4 md:grid-cols-4">
+          {proofStats.map((stat) => (
+            <Card key={stat.label} className="rounded-[28px] border border-black/6 bg-white/75 p-6 shadow-[0_12px_30px_rgba(15,15,15,0.04)] dark:border-white/10 dark:bg-neutral-900">
+              <p className="text-3xl font-semibold tracking-[-0.05em] text-neutral-950 dark:text-white">{stat.value}</p>
+              <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">{stat.label}</p>
             </Card>
           ))}
         </div>
       </section>
 
-      {/* Choose Your Path Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Choose Your Path
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            ApexSight serves two connected communities. Select your journey below.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {/* SkillLink Card */}
-          <Card 
-            className="p-8 border-2 border-gray-200 hover:border-blue-600 hover:shadow-2xl transition-all cursor-pointer group bg-gradient-to-br from-white to-blue-50"
-            onClick={onSelectSkillLink}
-          >
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <GraduationCap className="w-8 h-8 text-white" />
-              </div>
-              <div className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium mb-3">
-                For Job Seekers
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-3">
-                SkillLink™
-              </h3>
-              <p className="text-gray-600 text-lg mb-6">
-                Turn your skills into verified opportunities. Complete assessments, 
-                earn certifications, and unlock jobs based on what you can do.
-              </p>
-            </div>
-
-            <div className="space-y-3 mb-8">
-              {[
-                { icon: Target, text: "Complete skills assessments" },
-                { icon: Award, text: "Earn verified certifications" },
-                { icon: TrendingUp, text: "Build your readiness score" },
-                { icon: Briefcase, text: "Access skill-matched jobs" }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <item.icon className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <span className="text-gray-700">{item.text}</span>
-                </div>
-              ))}
-            </div>
-
-            <Button 
-              onClick={onSelectSkillLink}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg group-hover:shadow-lg"
-              size="lg"
-            >
-              Start SkillLink
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Card>
-
-          {/* JobBridge Card */}
-          <Card 
-            className="p-8 border-2 border-gray-200 hover:border-blue-600 hover:shadow-2xl transition-all cursor-pointer group bg-gradient-to-br from-white to-purple-50"
-            onClick={onSelectJobBridge}
-          >
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Building2 className="w-8 h-8 text-white" />
-              </div>
-              <div className="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium mb-3">
-                For Employers
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-3">
-                JobBridge™
-              </h3>
-              <p className="text-gray-600 text-lg mb-6">
-                Hire based on skills, not CVs. Access South Africa's largest pool 
-                of skill-verified talent with complete confidence.
-              </p>
-            </div>
-
-            <div className="space-y-3 mb-8">
-              {[
-                { icon: Shield, text: "100% skills-verified candidates" },
-                { icon: Users, text: "Bias-free, fair hiring" },
-                { icon: TrendingUp, text: "60% faster time-to-hire" },
-                { icon: BarChart3, text: "Data-driven matching" }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <item.icon className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <span className="text-gray-700">{item.text}</span>
-                </div>
-              ))}
-            </div>
-
-            <Button 
-              onClick={onSelectJobBridge}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-6 text-lg group-hover:shadow-lg"
-              size="lg"
-            >
-              Go to JobBridge
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Card>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20 bg-white">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            How ApexSight Works
-          </h2>
-          <p className="text-lg text-gray-600">
-            A complete ecosystem connecting skills verification to employment
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              step: "1",
-              title: "Skills Are Verified",
-              description: "Job seekers complete comprehensive, SETA-aligned assessments and earn verified certifications",
-              icon: Target,
-              color: "bg-blue-600"
-            },
-            {
-              step: "2",
-              title: "Jobs Are Posted",
-              description: "Employers define skill-based requirements and access only verified, qualified candidates",
-              icon: Briefcase,
-              color: "bg-purple-600"
-            },
-            {
-              step: "3",
-              title: "Matches Happen",
-              description: "AI-powered matching connects verified skills to job requirements with zero bias",
-              icon: Shield,
-              color: "bg-green-600"
-            }
-          ].map((item, index) => (
-            <div key={index} className="text-center">
-              <div className={`w-16 h-16 ${item.color} rounded-xl flex items-center justify-center mx-auto mb-4`}>
-                <item.icon className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-sm font-bold text-gray-500 mb-2">STEP {item.step}</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
-              <p className="text-gray-600">{item.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Trusted By */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Trusted by Leading Organizations
-          </h2>
-          <p className="text-lg text-gray-600">
-            Government departments, SETAs, and enterprises nationwide
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            "Standard Bank",
-            "Department of Health",
-            "Discovery Health",
-            "Capitec Bank",
-            "Nedbank",
-            "Services SETA",
-            "City of Johannesburg",
-            "Shoprite Group"
-          ].map((org, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 flex items-center justify-center">
-              <div className="text-center">
-                <Building2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <div className="font-medium text-gray-700 text-sm">{org}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <Card className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white p-12 border-0">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-4">
-              Ready to Get Started?
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mb-10 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div className="max-w-3xl">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-600 dark:text-neutral-400">Why this product reads closer to a market</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-neutral-950 dark:text-white sm:text-[2.1rem]">
+              One infrastructure. Two front doors. One talent system.
             </h2>
-            <p className="text-lg text-blue-100 mb-8">
-              Join South Africa's trusted skill-verified talent infrastructure
+            <p className="mt-4 text-lg leading-8 text-neutral-600 dark:text-neutral-300">
+              SkillLink improves candidate quality and completeness. JobBridge turns that supply into a usable hiring workflow. Together they feel more like a structured market than a typical job board.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button 
-                onClick={onSelectSkillLink}
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-6 text-lg w-full sm:w-auto"
-              >
-                I'm a Job Seeker
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button 
-                onClick={onSelectJobBridge}
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white/10 px-8 py-6 text-lg w-full sm:w-auto"
-              >
-                I'm an Employer
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {marketSignals.map((item) => (
+              <Card key={item.title} className="rounded-[28px] border border-black/6 bg-[#f8f8fa] p-6 dark:border-white/10 dark:bg-neutral-900">
+                <p className="font-mono text-sm text-neutral-500 dark:text-neutral-400">{item.value}</p>
+                <h3 className="mt-6 text-xl font-semibold text-neutral-950 dark:text-white">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300">{item.copy}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="rounded-[32px] border border-black/6 bg-white/80 p-8 shadow-[0_16px_42px_rgba(15,15,15,0.05)] dark:border-white/10 dark:bg-neutral-900">
+            <div className="flex items-center gap-4">
+              <div className="rounded-2xl bg-neutral-950 p-3 text-white dark:bg-white dark:text-neutral-950">
+                <GraduationCap className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">Candidate product</p>
+                <h3 className="mt-1 text-[1.75rem] font-semibold tracking-[-0.04em] text-neutral-950 dark:text-white">SkillLink</h3>
+              </div>
+            </div>
+            <p className="mt-6 text-base leading-7 text-neutral-600 dark:text-neutral-300">
+              Candidates build profiles that are easier to search and evaluate because the platform captures structured evidence instead of leaving everything inside a CV file.
+            </p>
+            <div className="mt-6 space-y-3">
+              {candidateCapabilities.map((item) => (
+                <div key={item} className="flex gap-3 rounded-2xl border border-black/6 bg-[#fbfbfc] p-4 dark:border-white/10 dark:bg-neutral-950">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-neutral-950 dark:text-white" />
+                  <p className="text-sm leading-6 text-neutral-700 dark:text-neutral-300">{item}</p>
+                </div>
+              ))}
+            </div>
+            <Button
+              onClick={onSelectSkillLink}
+              size="lg"
+              className="mt-8 h-14 rounded-full bg-neutral-950 px-7 text-base font-semibold text-white hover:bg-neutral-800"
+            >
+              Enter SkillLink
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Card>
+
+          <Card className="rounded-[32px] border border-black/6 bg-[#131313] p-8 text-white shadow-[0_24px_70px_rgba(15,15,15,0.18)]">
+            <div className="flex items-center gap-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-white">
+                <Building2 className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">Employer product</p>
+                <h3 className="mt-1 text-[1.75rem] font-semibold tracking-[-0.04em]">JobBridge</h3>
+              </div>
+            </div>
+            <p className="mt-6 text-base leading-7 text-neutral-300">
+              Employers get a more disciplined workflow: structured search inputs, ranked candidates, interview operations, reporting, and monetized premium features in one environment.
+            </p>
+            <div className="mt-6 space-y-3">
+              {employerCapabilities.map((item) => (
+                <div key={item} className="flex gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#f5f5f7]" />
+                  <p className="text-sm leading-6 text-neutral-200">{item}</p>
+                </div>
+              ))}
+            </div>
+            <Button
+              onClick={onSelectJobBridge}
+              size="lg"
+              className="mt-8 h-14 rounded-full border border-white/10 bg-white text-base font-semibold text-neutral-950 hover:bg-neutral-200 dark:bg-neutral-100 dark:text-neutral-950 dark:hover:bg-white"
+            >
+              Enter JobBridge
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Card>
+        </div>
+      </section>
+
+      <section className="border-y border-black/5 bg-white/50 dark:border-white/10 dark:bg-neutral-950/30">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mb-10 max-w-3xl">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-600 dark:text-neutral-400">Platform capabilities</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-neutral-950 dark:text-white sm:text-[2.1rem]">
+              Built like an operating layer for recruiting, not a flat listing site
+            </h2>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            {operatingSystemCards.map((card) => (
+              <Card key={card.title} className="rounded-[30px] border border-black/6 bg-white p-7 shadow-[0_14px_34px_rgba(15,15,15,0.04)] dark:border-white/10 dark:bg-neutral-900">
+                <div className="inline-flex rounded-2xl bg-neutral-950 p-3 text-white dark:bg-white dark:text-neutral-950">
+                  <card.icon className="h-6 w-6" />
+                </div>
+                <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-neutral-950 dark:text-white">{card.title}</h3>
+                <p className="mt-4 text-sm leading-7 text-neutral-600 dark:text-neutral-300">{card.description}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <Card className="overflow-hidden rounded-[34px] border border-black/6 bg-[#111111] p-10 text-white shadow-[0_32px_90px_rgba(15,15,15,0.22)] sm:p-12">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+            <div>
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">Launch the right side of the system</p>
+              <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.05em] sm:text-[2.6rem]">
+                Choose the experience that matches where you enter the talent market
+              </h2>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-neutral-300">
+                Candidates build verified profiles and discover matched roles. Employers run structured hiring with better signal, faster review, and clearer decision support.
+              </p>
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                <Button
+                  onClick={onSelectSkillLink}
+                  size="lg"
+                  className="h-14 rounded-full bg-white px-8 text-base font-semibold text-neutral-950 hover:bg-neutral-100"
+                >
+                  Candidate journey
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button
+                  onClick={onSelectJobBridge}
+                  size="lg"
+                  variant="outline"
+                  className="h-14 rounded-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white hover:bg-white/10"
+                >
+                  Employer journey
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              {[
+                { icon: Users, label: "Candidate profile intelligence" },
+                { icon: MessageSquareMore, label: "Messaging and interview workflow" },
+                { icon: Globe2, label: "Search, ranking, and access controls" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <item.icon className="h-5 w-5 text-[#f5f5f7]" />
+                  <span className="text-sm font-medium text-white">{item.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </Card>

@@ -12,6 +12,7 @@ import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 import { UpgradeModal } from "./UpgradeModal";
 import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
+import { useNavigate } from "react-router-dom";
 
 export function CandidateProfileDrawer({
   applicationId,
@@ -20,6 +21,7 @@ export function CandidateProfileDrawer({
   applicationId: string;
   onClose: () => void;
 }) {
+  const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const { profile } = useEmployerProfile();
   const [credits, setCredits] = useState<EmployerCreditBalance[]>([]);
@@ -112,6 +114,7 @@ export function CandidateProfileDrawer({
     String(data.candidate_profiles.bio ?? "").trim();
   const knockoutFilters = Array.isArray(data.knockout_filters) ? data.knockout_filters : [];
   const matchExplanations = Array.isArray(data.match_explanations) ? data.match_explanations : [];
+  const candidateProfileId = String(data?.candidate_profiles?.id ?? "").trim();
 
 
   return (
@@ -363,7 +366,16 @@ export function CandidateProfileDrawer({
             Upgrade to Message Candidate
           </Button>
         ) : (
-          <Button variant="outline" className="w-full">
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={!candidateProfileId}
+            onClick={() => {
+              if (!candidateProfileId) return;
+              onClose();
+              navigate(`/employer/messages?candidate=${candidateProfileId}`);
+            }}
+          >
             Message Candidate
           </Button>
         )}

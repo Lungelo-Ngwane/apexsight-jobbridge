@@ -29,6 +29,14 @@ function toScoreBand(score: number) {
   return "Low";
 }
 
+function normalizeSkillKey(value: string): string {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\bjs\b/g, "javascript")
+    .replace(/\bts\b/g, "typescript")
+    .replace(/[^a-z0-9+#]/g, "");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -146,14 +154,14 @@ Deno.serve(async (req) => {
     const { data: matchRows } = candidateIds.length
       ? await supabase
           .from("job_matches")
-          .select("candidate_profile_id, similarity")
+          .select("candidate_id, similarity")
           .eq("job_id", jobId)
-          .in("candidate_profile_id", candidateIds)
-      : { data: [] as Array<{ candidate_profile_id: string; similarity: number | null }> };
+          .in("candidate_id", candidateIds)
+      : { data: [] as Array<{ candidate_id: string; similarity: number | null }> };
 
     const similarityByCandidateId = new Map<string, number>();
     for (const row of matchRows ?? []) {
-      similarityByCandidateId.set(String(row.candidate_profile_id), toPercent(Number(row.similarity ?? 0) * 100));
+      similarityByCandidateId.set(String(row.candidate_id), toPercent(Number(row.similarity ?? 0) * 100));
     }
 
     const requiredSkills = ((job as {
@@ -192,12 +200,14 @@ Deno.serve(async (req) => {
         .map((skill) => String(skill.skills?.name ?? "").trim())
         .filter(Boolean);
 
+      const candidateSkillKeys = new Set(candidateSkillNames.map((skill) => normalizeSkillKey(skill)));
+
       const matchedRequiredSkills = requiredSkills.filter((requiredSkill) =>
-        candidateSkillNames.some((candidateSkill) => candidateSkill.toLowerCase() === requiredSkill.toLowerCase()),
+        candidateSkillKeys.has(normalizeSkillKey(requiredSkill)),
       );
 
       const missingRequiredSkills = requiredSkills.filter((requiredSkill) =>
-        !candidateSkillNames.some((candidateSkill) => candidateSkill.toLowerCase() === requiredSkill.toLowerCase()),
+        !candidateSkillKeys.has(normalizeSkillKey(requiredSkill)),
       );
 
       const aiSimilarityPercent = similarityByCandidateId.get(String(candidate?.id ?? "")) ?? 0;

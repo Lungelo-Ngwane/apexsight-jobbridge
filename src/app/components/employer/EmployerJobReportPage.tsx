@@ -79,6 +79,44 @@ function normalizeArray(value: unknown) {
   return Array.isArray(value) ? value.filter((item) => typeof item === "string") as string[] : [];
 }
 
+function normalizeSkillKey(value: string) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\bjs\b/g, "javascript")
+    .replace(/\bts\b/g, "typescript")
+    .replace(/[^a-z0-9+#]/g, "");
+}
+
+function formatCandidateStatus(value: string) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === "shortlisted") return "Shortlisted";
+  if (normalized === "interview") return "Interviewed";
+  if (normalized === "hired") return "Hired";
+  if (normalized === "rejected") return "Rejected";
+  if (normalized === "applied") return "Applied";
+  return "Review";
+}
+
+function buildRecommendationSummary(status: string, matchedSkills: string[], missingSkills: string[], requiredCount: number) {
+  const prefix =
+    status === "Interviewed" ? "Interviewed;" :
+    status === "Shortlisted" ? "Shortlisted;" :
+    status === "Hired" ? "Hired;" :
+    status === "Applied" ? "Applied;" :
+    "Review;";
+
+  if (requiredCount === 0) {
+    return `${prefix} strong overall fit based on current pipeline data.`;
+  }
+  if (missingSkills.length === 0) {
+    return `${prefix} matches all configured required skills.`;
+  }
+  if (matchedSkills.length > 0) {
+    return `${prefix} matches ${matchedSkills.join(", ")} but is missing ${missingSkills.join(", ")}.`;
+  }
+  return `${prefix} does not yet show the configured required skills: ${missingSkills.join(", ")}.`;
+}
+
 export function EmployerJobReportPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -150,31 +188,43 @@ export function EmployerJobReportPage() {
 
   const topCandidates = useMemo<CandidateReportCard[]>(() => {
     const applicantMap = new Map<string, Record<string, unknown>>();
+    const jobRequiredSkills = ((((data?.job as { job_skills?: Array<{ required?: boolean | null; skills?: { name?: string | null } | null }> } | null)?.job_skills) ?? [])
+      .filter((skill) => skill.required)
+      .map((skill) => String(skill.skills?.name ?? "").trim())
+      .filter(Boolean));
+
     for (const applicant of applicants) {
       const candidate = (applicant.candidate as Record<string, unknown> | undefined) ?? {};
       const candidateName = String(candidate.full_name ?? "").trim();
-      if (candidateName) applicantMap.set(candidateName.toLowerCase(), candidate);
+      if (candidateName) applicantMap.set(candidateName.toLowerCase(), applicant);
     }
 
     if (reportCandidatesRaw.length > 0) {
       return reportCandidatesRaw.map((candidate) => {
         const name = String(candidate.name ?? "Candidate");
-        const candidateRow = applicantMap.get(name.toLowerCase()) ?? {};
-        const candidateSkills = normalizeArray(candidate.matched_required_skills);
-        const extraSkills = Array.isArray((candidateRow as { candidate_skills?: unknown[] }).candidate_skills)
+        const applicantRow = applicantMap.get(name.toLowerCase()) ?? {};
+        const candidateRow = ((applicantRow as { candidate?: Record<string, unknown> }).candidate) ?? {};
+        const liveSkills = Array.isArray((candidateRow as { candidate_skills?: unknown[] }).candidate_skills)
           ? (((candidateRow as { candidate_skills?: Array<{ skills?: { name?: string | null } | null }> }).candidate_skills) ?? [])
               .map((skill) => String(skill.skills?.name ?? "").trim())
               .filter(Boolean)
           : [];
+        const liveSkillKeys = new Set(liveSkills.map((skill) => normalizeSkillKey(skill)));
+        const matchedSkills = jobRequiredSkills.filter((skill) => liveSkillKeys.has(normalizeSkillKey(skill)));
+        const missingSkills = jobRequiredSkills.filter((skill) => !liveSkillKeys.has(normalizeSkillKey(skill)));
+        const status = formatCandidateStatus(String((applicantRow as { status?: string | null }).status ?? ""));
+        const displayedSkills = [...matchedSkills, ...liveSkills].filter((skill, index, all) => all.indexOf(skill) === index).slice(0, 4);
 
         return {
           name,
           score: Number(candidate.hybrid_score ?? 0),
           location: String(candidateRow.location ?? "Unknown"),
           experience: `${Number(candidateRow.years_experience ?? 0) || 0} years`,
-          status: String(candidate.recommendation ?? "Review"),
-          recommendation: String(candidate.recommendation ?? "Review"),
-          skills: [...candidateSkills, ...extraSkills].filter((skill, index, all) => all.indexOf(skill) === index).slice(0, 4),
+          status,
+          recommendation: buildRecommendationSummary(status, matchedSkills, missingSkills, jobRequiredSkills.length),
+          skills: displayedSkills.length > 0
+            ? displayedSkills
+            : normalizeArray(candidate.matched_required_skills).slice(0, 4),
         };
       });
     }
@@ -201,7 +251,7 @@ export function EmployerJobReportPage() {
           skills: candidateSkills.slice(0, 4),
         };
       });
-  }, [applicants, reportCandidatesRaw]);
+  }, [applicants, data?.job, reportCandidatesRaw]);
 
   const usingLiveFallbackRanking = reportCandidatesRaw.length === 0 && topCandidates.length > 0;
   const strongMatches = topCandidates.filter((candidate) => candidate.score >= 80).length;
@@ -448,24 +498,24 @@ export function EmployerJobReportPage() {
                       : "AI-ranked by current role fit and available pipeline data"}
                   </p>
                 </div>
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200">{topCandidates.length} Ranked</Badge>
+                <Badge className="border-gray-300 bg-gray-100 text-gray-800">{topCandidates.length} Ranked</Badge>
               </div>
 
               <div className="space-y-4">
                 {topCandidates.length > 0 ? topCandidates.map((candidate, index) => (
                   <div
                     key={`${candidate.name}-${index}`}
-                    className="rounded-lg border border-gray-200 bg-gradient-to-r from-gray-50 to-white p-5 transition-all hover:border-blue-300 hover:shadow-md"
+                    className="rounded-lg border border-gray-300 bg-gradient-to-r from-gray-50 to-white p-5 shadow-sm transition-all hover:border-gray-400 hover:shadow-md"
                   >
                     <div className="mb-4 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-lg font-bold text-white">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-gray-900 text-lg font-bold text-white shadow-sm">
                           {candidate.name.split(" ").map((part) => part[0]).join("").slice(0, 2)}
                         </div>
                         <div>
                           <div className="mb-1 flex items-center gap-2">
                             <h3 className="font-semibold text-gray-900">{candidate.name}</h3>
-                            <Badge variant="outline" className={candidate.score >= 85 ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}>
+                            <Badge variant="outline" className={candidate.score >= 85 ? "border-gray-300 bg-gray-100 text-gray-900" : "border-gray-300 bg-white text-gray-700"}>
                               {candidate.status}
                             </Badge>
                           </div>
