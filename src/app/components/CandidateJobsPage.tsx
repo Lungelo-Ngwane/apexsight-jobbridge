@@ -675,7 +675,7 @@ function JobCard({
             <Button size="sm" variant="outline" className="text-xs dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800" onClick={(e) => { e.stopPropagation(); onClick(); }}>
               View Details
             </Button>
-            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs" disabled={hasApplied || isApplying} onClick={(e) => { e.stopPropagation(); onApply(); }}>
+            <Button size="sm" className="!border-emerald-700 !bg-emerald-600 !bg-none !text-white text-xs hover:!bg-emerald-700 disabled:!border-emerald-200 disabled:!bg-emerald-100 disabled:!text-emerald-700 dark:disabled:!border-emerald-400/20 dark:disabled:!bg-emerald-500/10 dark:disabled:!text-emerald-300" disabled={hasApplied || isApplying} onClick={(e) => { e.stopPropagation(); onApply(); }}>
               {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply"}
             </Button>
           </div>
@@ -818,7 +818,7 @@ function JobDetailsView({
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white" onClick={onApply} disabled={hasApplied || isApplying}>
+              <Button className="!border-emerald-700 !bg-emerald-600 !bg-none !text-white hover:!bg-emerald-700 disabled:!border-emerald-200 disabled:!bg-emerald-100 disabled:!text-emerald-700 dark:disabled:!border-emerald-400/20 dark:disabled:!bg-emerald-500/10 dark:disabled:!text-emerald-300" onClick={onApply} disabled={hasApplied || isApplying}>
                 {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply"}
               </Button>
               <Button variant="outline" onClick={onSave} className="gap-2">
@@ -921,7 +921,7 @@ function JobDetailsView({
           <div className="space-y-6">
             <Card className="p-6 border-gray-200 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Ready to apply?</h3>
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg mb-3" onClick={onApply} disabled={hasApplied || isApplying}>
+              <Button className="mb-3 w-full !border-emerald-700 !bg-emerald-600 !bg-none !text-white shadow-lg hover:!bg-emerald-700 disabled:!border-emerald-200 disabled:!bg-emerald-100 disabled:!text-emerald-700 dark:disabled:!border-emerald-400/20 dark:disabled:!bg-emerald-500/10 dark:disabled:!text-emerald-300" onClick={onApply} disabled={hasApplied || isApplying}>
                 {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply Now"}
               </Button>
               <Button variant="outline" onClick={onSave} className="w-full border-gray-300">
