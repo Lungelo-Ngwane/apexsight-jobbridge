@@ -428,19 +428,19 @@ export function JobBridgeLanding({ onGetStarted }: JobBridgeLandingProps) {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <Card className="rounded-[34px] border border-black/6 bg-white/80 p-12">
+        <Card className="rounded-[34px] border border-black/6 bg-white/80 p-6 sm:p-12">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-[-0.05em] text-neutral-950">
+            <h2 className="mb-4 text-balance text-3xl font-bold tracking-[-0.05em] text-neutral-950">
               Ready to move from vacancy posting to structured hiring?
             </h2>
-            <p className="mb-8 text-lg text-neutral-600">
+            <p className="mb-8 text-base text-neutral-600 sm:text-lg">
               Bring search, ranking, communication, and employer controls into one cleaner workflow.
             </p>
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
               <Button
                 onClick={onGetStarted}
                 size="lg"
-                className="rounded-full bg-neutral-950 text-white hover:bg-neutral-800"
+                className="w-full rounded-full bg-neutral-950 text-white hover:bg-neutral-800 sm:w-auto"
               >
                 Open JobBridge
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -448,7 +448,7 @@ export function JobBridgeLanding({ onGetStarted }: JobBridgeLandingProps) {
               <Button
                 size="lg"
                 variant="outline"
-                className="rounded-full border-black/10 bg-white text-neutral-900 hover:bg-neutral-50"
+                className="w-full rounded-full border-black/10 bg-white text-neutral-900 hover:bg-neutral-50 sm:w-auto"
                 onClick={onGetStarted}
               >
                 Create Employer Account
