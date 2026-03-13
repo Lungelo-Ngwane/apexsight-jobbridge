@@ -188,8 +188,8 @@ async function resolvePlanName(
 
   const { data } = await supabase
     .from("plans")
-    .select("name")
-    .eq("paystack_plan_code", code)
+    .select("name, paystack_plan_code, paystack_test_plan_code")
+    .or(`paystack_plan_code.eq.${code},paystack_test_plan_code.eq.${code}`)
     .maybeSingle();
 
   const resolved = String(data?.name ?? "").trim().toLowerCase();

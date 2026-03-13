@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
         const { data: planByCode } = await supabase
           .from("plans")
           .select("name")
-          .eq("paystack_plan_code", paystackPlanCode)
+          .or(`paystack_plan_code.eq.${paystackPlanCode},paystack_test_plan_code.eq.${paystackPlanCode}`)
           .maybeSingle();
 
         targetPlan = String(planByCode?.name ?? "").toLowerCase();

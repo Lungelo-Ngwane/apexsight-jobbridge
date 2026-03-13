@@ -19,6 +19,18 @@ function normalizePlanValue(value: unknown) {
     .replace(/\s+/g, "_");
 }
 
+function isPaystackTestMode() {
+  const secret = String(Deno.env.get("PAYSTACK_SECRET_KEY") ?? "").trim().toLowerCase();
+  return secret.startsWith("sk_test_");
+}
+
+function resolvePaystackPlanCode(plan: Record<string, unknown>) {
+  const testMode = isPaystackTestMode();
+  const liveCode = String(plan.paystack_plan_code ?? "").trim();
+  const testCode = String(plan.paystack_test_plan_code ?? "").trim();
+  return testMode ? (testCode || liveCode) : liveCode;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -115,7 +127,7 @@ Deno.serve(async (req) => {
 
     const payload: Record<string, unknown> = {
       email: String(user.email ?? ""),
-      plan: plan.paystack_plan_code,
+      plan: resolvePaystackPlanCode(plan),
       callback_url: callbackUrl,
       metadata: {
         employerId: employer.employerId,
@@ -166,6 +178,7 @@ Deno.serve(async (req) => {
     const paystackData = await response.json();
 
     if (!response.ok || !paystackData?.status) {
+      const selectedPlanCode = resolvePaystackPlanCode(plan);
       const paystackMessage = String(
         paystackData?.message ?? "Failed to initialize checkout",
       );
@@ -174,11 +187,11 @@ Deno.serve(async (req) => {
         JSON.stringify({
           error:
             paystackMessage.toLowerCase() === "plan not found."
-              ? `Paystack plan not found for code "${String(plan.paystack_plan_code ?? "")}". Check that PAYSTACK_SECRET_KEY mode matches this plan code (test vs live).`
+              ? `Paystack plan not found for code "${selectedPlanCode}". Check that PAYSTACK_SECRET_KEY mode matches this plan code (test vs live).`
               : `Paystack initialize failed: ${paystackMessage}`,
           planId: String(plan.id ?? ""),
           planName: String(plan.name ?? ""),
-          planCode: String(plan.paystack_plan_code ?? ""),
+          planCode: selectedPlanCode,
         }),
         {
           status: 400,
