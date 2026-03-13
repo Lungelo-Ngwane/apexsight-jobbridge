@@ -810,15 +810,17 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
   };
 
   const employerMap = (employers || []).reduce((acc, emp) => {
+    const normalizedPlan = emp.plan ? String(emp.plan).toLowerCase() : "free";
+    const hasEnterpriseBenefits = normalizedPlan === "enterprise";
     acc[String(emp.id)] = {
       company_name: emp.company_name,
       industry: emp.industry ?? null,
       logo_url: resolveLogoUrl(emp.logo_url),
-      brand_primary_color: emp.brand_primary_color ? String(emp.brand_primary_color) : null,
-      custom_domain: emp.custom_domain ? String(emp.custom_domain) : null,
-      careers_page_headline: emp.careers_page_headline ? String(emp.careers_page_headline) : null,
-      public_company_page: emp.public_company_page !== false,
-      plan: emp.plan ? String(emp.plan).toLowerCase() : "free",
+      brand_primary_color: hasEnterpriseBenefits && emp.brand_primary_color ? String(emp.brand_primary_color) : null,
+      custom_domain: hasEnterpriseBenefits && emp.custom_domain ? String(emp.custom_domain) : null,
+      careers_page_headline: hasEnterpriseBenefits && emp.careers_page_headline ? String(emp.careers_page_headline) : null,
+      public_company_page: hasEnterpriseBenefits && emp.public_company_page !== false,
+      plan: normalizedPlan,
     };
     return acc;
   }, {} as Record<string, { company_name: string; industry: string | null; logo_url: string | null; brand_primary_color: string | null; custom_domain: string | null; careers_page_headline: string | null; public_company_page: boolean; plan: string }>);

@@ -45,7 +45,7 @@ import { UpgradeModal } from "./UpgradeModal";
 import { Skeleton } from "./ui/skeleton";
 import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { getCachedQuery, invalidateQueryCacheByPrefix } from "@/lib/queryCache";
-import { hasEmployerPaidAccess, isActiveEmployerTrial } from "@/lib/subscriptionAccess";
+import { hasEmployerPaidAccess, hasEmployerProfessionalAccess, isActiveEmployerTrial } from "@/lib/subscriptionAccess";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 // import { getEmployerOpenJobs } from "../../lib/employer";
@@ -313,9 +313,10 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const hasResolvedPlan = !profileLoading;
   const hasResolvedUsage = !analyticsLoading;
   const hasPaidAccess = hasEmployerPaidAccess(profile);
+  const hasProfessionalAccess = hasEmployerProfessionalAccess(profile);
   const hasAnalytics = hasPaidAccess;
-  const hasPremium = hasPaidAccess;
-  const hasPremiumInsights = hasPaidAccess;
+  const hasPremium = hasProfessionalAccess;
+  const hasPremiumInsights = hasProfessionalAccess;
   const hasCandidateMessagingAccess = hasPaidAccess;
   const activeJobs = Number(usageSnapshot?.activeJobs ?? 0);
   const finiteJobLimit =
@@ -340,6 +341,26 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       hasPremiumInsights ? loadPremiumInsights({ force: true }) : Promise.resolve(),
     ]);
   }, [cachePrefix, hasPremiumInsights, loadDashboardMetrics, loadJobs, loadPremiumInsights]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInsights() {
+      if (!hasPremiumInsights) {
+        setPremiumInsights(null);
+        return;
+      }
+
+      if (cancelled) return;
+      await loadPremiumInsights();
+    }
+
+    void loadInsights();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasPremiumInsights, loadPremiumInsights]);
 
   const handleCloseJob = useCallback(
     async (jobId: string) => {
@@ -367,26 +388,6 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
   }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadInsights() {
-      if (!hasPremiumInsights) {
-        setPremiumInsights(null);
-        return;
-      }
-
-      if (cancelled) return;
-      await loadPremiumInsights();
-    }
-
-    void loadInsights();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hasPremiumInsights, loadPremiumInsights]);
 
   const analyticsStats = [
     {

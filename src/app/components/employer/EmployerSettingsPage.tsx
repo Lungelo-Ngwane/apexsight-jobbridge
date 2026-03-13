@@ -282,7 +282,10 @@ export function EmployerSettingsPage() {
     if (!showTeamTab && activeTab === "team") {
       setActiveTab("company");
     }
-  }, [activeTab, showTeamTab]);
+    if (!isEnterprisePlan && activeTab === "enterprise") {
+      setActiveTab("company");
+    }
+  }, [activeTab, isEnterprisePlan, showTeamTab]);
 
   if (loading) {
     return (
@@ -317,10 +320,12 @@ export function EmployerSettingsPage() {
                 Team
               </TabsTrigger>
             ) : null}
-            <TabsTrigger value="enterprise" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
-              <Shield className="w-4 h-4 mr-2" />
-              Enterprise
-            </TabsTrigger>
+            {isEnterprisePlan ? (
+              <TabsTrigger value="enterprise" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
+                <Shield className="w-4 h-4 mr-2" />
+                Enterprise
+              </TabsTrigger>
+            ) : null}
           </TabsList>
 
           {/* Company Profile Tab */}
@@ -524,13 +529,15 @@ export function EmployerSettingsPage() {
                       </div>
                       <Switch checked={showOnPlatform} onCheckedChange={setShowOnPlatform} />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Company page</p>
-                        <p className="text-xs text-gray-500">Public company page</p>
+                    {isEnterprisePlan ? (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Company page</p>
+                          <p className="text-xs text-gray-500">Public company page</p>
+                        </div>
+                        <Switch checked={publicCompanyPage} onCheckedChange={setPublicCompanyPage} />
                       </div>
-                      <Switch checked={publicCompanyPage} onCheckedChange={setPublicCompanyPage} />
-                    </div>
+                    ) : null}
                   </div>
                 </Card>
               </div>
@@ -699,6 +706,7 @@ export function EmployerSettingsPage() {
           </TabsContent>
           ) : null}
 
+          {isEnterprisePlan ? (
           <TabsContent value="enterprise">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div className="space-y-6 lg:col-span-2">
@@ -858,6 +866,7 @@ export function EmployerSettingsPage() {
               </div>
             </div>
           </TabsContent>
+          ) : null}
 
           {/* Notifications Tab */}
           <TabsContent value="notifications">

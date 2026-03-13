@@ -35,3 +35,23 @@ export function hasEmployerPaidAccess(profile: EmployerProfileLike): boolean {
 
   return isPaidPlan && (status === "active" || status === "trialing");
 }
+
+export function hasEmployerProfessionalAccess(profile: EmployerProfileLike): boolean {
+  if (!profile) return false;
+  if (isActiveEmployerTrial(profile)) return true;
+
+  const plan = String(profile.plan ?? "free").toLowerCase();
+  const status = String(profile.subscription_status ?? "").toLowerCase();
+  const isEligiblePlan = plan === "professional" || plan === "enterprise";
+
+  return isEligiblePlan && (status === "active" || status === "trialing");
+}
+
+export function hasEmployerEnterpriseAccess(profile: EmployerProfileLike): boolean {
+  if (!profile) return false;
+  if (isActiveEmployerTrial(profile)) return true;
+
+  const plan = String(profile.plan ?? "free").toLowerCase();
+  const status = String(profile.subscription_status ?? "").toLowerCase();
+  return plan === "enterprise" && (status === "active" || status === "trialing");
+}

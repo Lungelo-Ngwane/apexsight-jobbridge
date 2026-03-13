@@ -211,6 +211,7 @@ export function EmployerBillingPage() {
   }
 
   const currentPlanName = String(profile?.plan ?? "free").toLowerCase();
+  const isEnterprisePlan = currentPlanName === "enterprise";
   const selectedPlanRaw = String((profile as { selected_plan?: string | null } | null)?.selected_plan ?? "").toLowerCase();
   const selectedPendingPlan: BillingPlanName | null =
     selectedPlanRaw === "starter" || selectedPlanRaw === "professional" || selectedPlanRaw === "enterprise"
@@ -739,7 +740,7 @@ export function EmployerBillingPage() {
             {/* Need Help */}
             <Card className="p-6 bg-gray-50 border-gray-200 shadow-md">
               <h3 className="text-sm font-bold text-gray-900 mb-2">Need Help?</h3>
-              {enterpriseManagerName || enterpriseManagerEmail ? (
+              {isEnterprisePlan && (enterpriseManagerName || enterpriseManagerEmail) ? (
                 <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Dedicated account manager</p>
                   <p className="mt-2 text-sm font-semibold text-gray-900">{enterpriseManagerName || "Assigned support manager"}</p>
@@ -750,7 +751,7 @@ export function EmployerBillingPage() {
                   ) : null}
                 </div>
               ) : null}
-              {slaTier || slaUptimeTarget || slaResponseTimeHours ? (
+              {isEnterprisePlan && (slaTier || slaUptimeTarget || slaResponseTimeHours) ? (
                 <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Service commitment</p>
                   <p className="mt-2 text-sm text-gray-700">
@@ -766,7 +767,7 @@ export function EmployerBillingPage() {
                 variant="outline"
                 className="w-full border-gray-300 bg-white hover:bg-gray-50"
                 onClick={() => {
-                  if (enterpriseManagerEmail) {
+                  if (isEnterprisePlan && enterpriseManagerEmail) {
                     window.location.href = `mailto:${enterpriseManagerEmail}`;
                     return;
                   }

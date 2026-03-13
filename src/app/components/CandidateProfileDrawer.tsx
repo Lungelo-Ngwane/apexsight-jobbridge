@@ -11,7 +11,7 @@ import { X } from "lucide-react";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { AddonUpsellModal } from "./employer/AddonUpsellModal";
 import { UpgradeModal } from "./UpgradeModal";
-import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
+import { hasEmployerPaidAccess, hasEmployerProfessionalAccess } from "@/lib/subscriptionAccess";
 import { useNavigate } from "react-router-dom";
 
 export function CandidateProfileDrawer({
@@ -78,11 +78,12 @@ export function CandidateProfileDrawer({
   const confidenceScore = data.confidence_score === null || data.confidence_score === undefined ? null : Number(data.confidence_score);
   const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
   const hasPaidAccess = hasEmployerPaidAccess(profile);
+  const hasProfessionalAccess = hasEmployerProfessionalAccess(profile);
   const isEnterprise = normalizedPlan === "enterprise";
   const aiCreditRemaining =
     credits.find((credit) => String(credit.creditType).toLowerCase() === "ai_credit")?.remaining ?? 0;
   const hasAiMatchingCredits = !loadingCredits && aiCreditRemaining > 0;
-  const canViewAdvancedMatching = hasPaidAccess || hasAiMatchingCredits;
+  const canViewAdvancedMatching = hasProfessionalAccess || hasAiMatchingCredits;
   const showBreakdown = isEnterprise && Boolean(data.score_breakdown);
   const matchingConfig = data.matching_config ?? {};
   const requiredJobSkills = Number(matchingConfig.required_job_skills ?? 0);
@@ -148,7 +149,7 @@ export function CandidateProfileDrawer({
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p className="text-sm font-semibold text-amber-900">Advanced match insights locked</p>
               <p className="text-xs text-amber-800 mt-1">
-                Buy AI Matching Credits or upgrade your plan to view scoring, match explanations, and recommendation details for candidates.
+                Buy AI Matching Credits or upgrade to Professional to view scoring, match explanations, and recommendation details for candidates.
               </p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" onClick={() => setShowAiCreditUpsell(true)}>
