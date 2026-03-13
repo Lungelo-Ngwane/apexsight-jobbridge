@@ -151,6 +151,22 @@ export interface ResolvedSkillCatalogItem {
   created_skill?: boolean;
 }
 
+const EMPLOYER_CONTEXT_CACHE_TTL_MS = 10_000;
+
+let employerContextCache:
+  | {
+      userId: string;
+      value: EmployerContext;
+      expiresAt: number;
+    }
+  | null = null;
+let employerContextInFlight:
+  | {
+      userId: string;
+      promise: Promise<EmployerContext>;
+    }
+  | null = null;
+
 async function getValidAccessToken(): Promise<string> {
   const {
     data: { session },
@@ -356,137 +372,190 @@ export async function getCurrentEmployerContext(
   options?: { requiredRoles?: EmployerMembershipRole[] },
 ): Promise<EmployerContext> {
   const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
-  if (userError || !user) {
+  if (sessionError || !user) {
     throw new Error("Not authenticated");
   }
 
-  try {
-    await supabase.rpc("claim_pending_employer_invites");
-  } catch {
-    // Older environments may not have the RPC yet; fall back to legacy owner resolution.
+  const now = Date.now();
+  if (
+    employerContextCache &&
+    employerContextCache.userId === user.id &&
+    employerContextCache.expiresAt > now
+  ) {
+    const cachedContext = employerContextCache.value;
+    if (
+      options?.requiredRoles &&
+      options.requiredRoles.length > 0 &&
+      !options.requiredRoles.includes(cachedContext.membershipRole)
+    ) {
+      throw new Error("You do not have permission to perform this action.");
+    }
+
+    return cachedContext;
   }
 
-  const { data: contextRows, error: contextError } = await supabase.rpc(
-    "get_current_employer_context",
-  );
+  if (employerContextInFlight?.userId === user.id) {
+    const pendingContext = await employerContextInFlight.promise;
+    if (
+      options?.requiredRoles &&
+      options.requiredRoles.length > 0 &&
+      !options.requiredRoles.includes(pendingContext.membershipRole)
+    ) {
+      throw new Error("You do not have permission to perform this action.");
+    }
 
-  const contextRow = Array.isArray(contextRows) ? contextRows[0] : null;
-  if (contextError) {
-    console.warn("Failed to resolve employer context from RPC", contextError);
+    return pendingContext;
   }
 
-  let resolvedContext: EmployerContext | null = null;
+  const contextPromise = (async () => {
+    try {
+      await supabase.rpc("claim_pending_employer_invites");
+    } catch {
+      // Older environments may not have the RPC yet; fall back to legacy owner resolution.
+    }
 
-  if (contextRow?.employer_id) {
-    resolvedContext = {
-      employerId: String(contextRow.employer_id),
-      membershipId: contextRow.membership_id ? String(contextRow.membership_id) : null,
-      membershipRole: normalizeMembershipRole(contextRow.membership_role),
-      membershipStatus: normalizeMembershipStatus(contextRow.membership_status),
-      companyName: contextRow.company_name ? String(contextRow.company_name) : null,
-      plan: contextRow.plan ? String(contextRow.plan) : null,
-      user: {
-        id: String(user.id),
-        email: user.email ?? null,
-      },
-    };
-  }
+    const { data: contextRows, error: contextError } = await supabase.rpc(
+      "get_current_employer_context",
+    );
 
-  if (!resolvedContext) {
-    const { data: memberships } = await supabase
-      .from("employer_memberships")
-      .select(`
-        id,
-        employer_id,
-        role,
-        status,
-        created_at,
-        employer_profiles!inner (
-          id,
-          user_id,
-          company_name,
-          plan
-        )
-      `)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .order("created_at", { ascending: true });
+    const contextRow = Array.isArray(contextRows) ? contextRows[0] : null;
+    if (contextError) {
+      console.warn("Failed to resolve employer context from RPC", contextError);
+    }
 
-    const preferredMembership = (memberships ?? [])
-      .map((row) => {
-        const employerProfile = (row as {
-          employer_profiles?: {
-            id?: string | null;
-            user_id?: string | null;
-            company_name?: string | null;
-            plan?: string | null;
-          } | null;
-        }).employer_profiles;
+    let resolvedContext: EmployerContext | null = null;
 
-        return {
-          membershipId: String(row.id ?? ""),
-          employerId: String(employerProfile?.id ?? row.employer_id ?? ""),
-          employerOwnerUserId: String(employerProfile?.user_id ?? ""),
-          membershipRole: normalizeMembershipRole(row.role),
-          membershipStatus: normalizeMembershipStatus(row.status),
-          companyName: employerProfile?.company_name ? String(employerProfile.company_name) : null,
-          plan: employerProfile?.plan ? String(employerProfile.plan) : null,
-          createdAt: String(row.created_at ?? ""),
-        };
-      })
-      .filter((row) => row.employerId)
-      .sort((a, b) => {
-        const aOwned = a.employerOwnerUserId === user.id ? 1 : 0;
-        const bOwned = b.employerOwnerUserId === user.id ? 1 : 0;
-        if (aOwned !== bOwned) return aOwned - bOwned;
-        const roleWeight = { owner: 0, admin: 1, recruiter: 2 };
-        return roleWeight[a.membershipRole] - roleWeight[b.membershipRole];
-      })[0];
-
-    if (preferredMembership) {
+    if (contextRow?.employer_id) {
       resolvedContext = {
-        employerId: preferredMembership.employerId,
-        membershipId: preferredMembership.membershipId,
-        membershipRole: preferredMembership.membershipRole,
-        membershipStatus: preferredMembership.membershipStatus,
-        companyName: preferredMembership.companyName,
-        plan: preferredMembership.plan,
+        employerId: String(contextRow.employer_id),
+        membershipId: contextRow.membership_id ? String(contextRow.membership_id) : null,
+        membershipRole: normalizeMembershipRole(contextRow.membership_role),
+        membershipStatus: normalizeMembershipStatus(contextRow.membership_status),
+        companyName: contextRow.company_name ? String(contextRow.company_name) : null,
+        plan: contextRow.plan ? String(contextRow.plan) : null,
         user: {
           id: String(user.id),
           email: user.email ?? null,
         },
       };
     }
-  }
 
-  if (!resolvedContext) {
-    const { data: employer, error: employerError } = await supabase
-      .from("employer_profiles")
-      .select("id, company_name, plan")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    if (!resolvedContext) {
+      const { data: memberships } = await supabase
+        .from("employer_memberships")
+        .select(`
+          id,
+          employer_id,
+          role,
+          status,
+          created_at,
+          employer_profiles!inner (
+            id,
+            user_id,
+            company_name,
+            plan
+          )
+        `)
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: true });
 
-    if (employerError || !employer?.id) {
-      throw new Error("Employer profile not found");
+      const preferredMembership = (memberships ?? [])
+        .map((row) => {
+          const employerProfile = (row as {
+            employer_profiles?: {
+              id?: string | null;
+              user_id?: string | null;
+              company_name?: string | null;
+              plan?: string | null;
+            } | null;
+          }).employer_profiles;
+
+          return {
+            membershipId: String(row.id ?? ""),
+            employerId: String(employerProfile?.id ?? row.employer_id ?? ""),
+            employerOwnerUserId: String(employerProfile?.user_id ?? ""),
+            membershipRole: normalizeMembershipRole(row.role),
+            membershipStatus: normalizeMembershipStatus(row.status),
+            companyName: employerProfile?.company_name ? String(employerProfile.company_name) : null,
+            plan: employerProfile?.plan ? String(employerProfile.plan) : null,
+            createdAt: String(row.created_at ?? ""),
+          };
+        })
+        .filter((row) => row.employerId)
+        .sort((a, b) => {
+          const aOwned = a.employerOwnerUserId === user.id ? 1 : 0;
+          const bOwned = b.employerOwnerUserId === user.id ? 1 : 0;
+          if (aOwned !== bOwned) return aOwned - bOwned;
+          const roleWeight = { owner: 0, admin: 1, recruiter: 2 };
+          return roleWeight[a.membershipRole] - roleWeight[b.membershipRole];
+        })[0];
+
+      if (preferredMembership) {
+        resolvedContext = {
+          employerId: preferredMembership.employerId,
+          membershipId: preferredMembership.membershipId,
+          membershipRole: preferredMembership.membershipRole,
+          membershipStatus: preferredMembership.membershipStatus,
+          companyName: preferredMembership.companyName,
+          plan: preferredMembership.plan,
+          user: {
+            id: String(user.id),
+            email: user.email ?? null,
+          },
+        };
+      }
     }
 
-    resolvedContext = {
-      employerId: String(employer.id),
-      membershipId: null,
-      membershipRole: "owner",
-      membershipStatus: "active",
-      companyName: employer.company_name ? String(employer.company_name) : null,
-      plan: employer.plan ? String(employer.plan) : null,
-      user: {
-        id: String(user.id),
-        email: user.email ?? null,
-      },
+    if (!resolvedContext) {
+      const { data: employer, error: employerError } = await supabase
+        .from("employer_profiles")
+        .select("id, company_name, plan")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (employerError || !employer?.id) {
+        throw new Error("Employer profile not found");
+      }
+
+      resolvedContext = {
+        employerId: String(employer.id),
+        membershipId: null,
+        membershipRole: "owner",
+        membershipStatus: "active",
+        companyName: employer.company_name ? String(employer.company_name) : null,
+        plan: employer.plan ? String(employer.plan) : null,
+        user: {
+          id: String(user.id),
+          email: user.email ?? null,
+        },
+      };
+    }
+
+    employerContextCache = {
+      userId: user.id,
+      value: resolvedContext,
+      expiresAt: Date.now() + EMPLOYER_CONTEXT_CACHE_TTL_MS,
     };
-  }
+
+    return resolvedContext;
+  })();
+
+  employerContextInFlight = {
+    userId: user.id,
+    promise: contextPromise,
+  };
+
+  const resolvedContext = await contextPromise.finally(() => {
+    if (employerContextInFlight?.userId === user.id) {
+      employerContextInFlight = null;
+    }
+  });
 
   if (
     options?.requiredRoles &&
@@ -499,12 +568,12 @@ export async function getCurrentEmployerContext(
   return resolvedContext;
 }
 
-export async function getEmployerProfile() {
-  const context = await getCurrentEmployerContext();
+export async function getEmployerProfile(context?: EmployerContext) {
+  const resolvedContext = context ?? (await getCurrentEmployerContext());
   const { data, error } = await supabase
     .from("employer_profiles")
     .select("*")
-    .eq("id", context.employerId)
+    .eq("id", resolvedContext.employerId)
     .maybeSingle();
 
   if (error) {
@@ -2268,140 +2337,30 @@ export async function getBillingInvoiceDownloadUrl(invoiceId: string): Promise<s
 }
 
 export async function confirmSubscriptionCheckout(reference: string) {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  let accessToken = session?.access_token;
-  const expiresAt = session?.expires_at ?? 0;
-
-  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
-    const { data: refreshed, error: refreshError } =
-      await supabase.auth.refreshSession();
-
-    accessToken = refreshed.session?.access_token;
-
-    if (refreshError || !accessToken) {
-      throw new Error("Session expired. Please sign in again.");
-    }
-  }
-
-  if (sessionError || !accessToken) {
-    throw new Error("Not authenticated.");
-  }
-
-  const { data, error } = await supabase.functions.invoke(
-    "confirm-subscription",
-    {
-      body: { reference },
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
+  const { data, error } = await invokeAuthedFunction("confirm-subscription", {
+    reference,
+  });
 
   if (error) {
-    const parsed = (
-      error as unknown as {
-        context?: { json?: () => Promise<{ error?: string }> };
-      }
-    )?.context?.json
-      ? await (
-          error as unknown as {
-            context: {
-              json: () => Promise<{
-                error?: string;
-                detail?: string;
-                code?: string;
-              }>;
-            };
-          }
-        ).context
-          .json()
-          .catch(() => null)
-      : null;
-
     const message =
-      parsed?.error ??
-      parsed?.detail ??
-      error.message ??
+      (error as { message?: string } | null)?.message ??
+      (error as { detail?: string | null } | null)?.detail ??
       "Failed to confirm subscription.";
-
-    const withCode = parsed?.code
-      ? `${message} (code: ${parsed.code})`
-      : message;
-
-    throw new Error(withCode);
+    throw new Error(String(message));
   }
 
   return data;
 }
 
 export async function cancelSubscription() {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  let accessToken = session?.access_token;
-  const expiresAt = session?.expires_at ?? 0;
-
-  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
-    const { data: refreshed, error: refreshError } =
-      await supabase.auth.refreshSession();
-
-    accessToken = refreshed.session?.access_token;
-
-    if (refreshError || !accessToken) {
-      throw new Error("Session expired. Please sign in again.");
-    }
-  }
-
-  if (sessionError || !accessToken) {
-    throw new Error("Not authenticated.");
-  }
-
-  const { data, error } = await supabase.functions.invoke(
-    "cancel-subscription",
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
+  const { data, error } = await invokeAuthedFunction("cancel-subscription");
 
   if (error) {
-    const parsed = (
-      error as unknown as {
-        context?: { json?: () => Promise<{ error?: string }> };
-      }
-    )?.context?.json
-      ? await (
-          error as unknown as {
-            context: {
-              json: () => Promise<{
-                error?: string;
-                detail?: string;
-                code?: string;
-              }>;
-            };
-          }
-        ).context
-          .json()
-          .catch(() => null)
-      : null;
-
     const message =
-      parsed?.error ??
-      parsed?.detail ??
-      error.message ??
+      (error as { message?: string } | null)?.message ??
+      (error as { detail?: string | null } | null)?.detail ??
       "Failed to cancel subscription.";
-
-    const withCode = parsed?.code
-      ? `${message} (code: ${parsed.code})`
-      : message;
-    throw new Error(withCode);
+    throw new Error(String(message));
   }
 
   return data;
@@ -2453,59 +2412,20 @@ function normalizeAddonReturnTo(returnTo?: string | null) {
 }
 
 export async function startAddonCheckout(addonId: string, returnTo?: string) {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  let accessToken = session?.access_token;
-  const expiresAt = session?.expires_at ?? 0;
-
-  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
-    const { data: refreshed, error: refreshError } =
-      await supabase.auth.refreshSession();
-
-    accessToken = refreshed.session?.access_token;
-
-    if (refreshError || !accessToken) {
-      throw new Error("Session expired. Please sign in again.");
-    }
-  }
-
-  if (sessionError || !accessToken) {
-    throw new Error("Not authenticated.");
-  }
-
-  const { data, error } = await supabase.functions.invoke("buy-addon", {
-    body: {
-      addonId,
-      returnTo: normalizeAddonReturnTo(returnTo),
-    },
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+  const { data, error } = await invokeAuthedFunction("buy-addon", {
+    addonId,
+    returnTo: normalizeAddonReturnTo(returnTo),
   });
 
   if (error) {
-    const parsed = (
-      error as unknown as {
-        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
-      }
-    )?.context?.json
-      ? await (
-          error as unknown as {
-            context: { json: () => Promise<{ error?: string; detail?: string }> };
-          }
-        ).context
-          .json()
-          .catch(() => null)
-      : null;
-
-    const message = parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to start add-on checkout.";
+    const message =
+      (error as { message?: string } | null)?.message ??
+      (error as { detail?: string | null } | null)?.detail ??
+      "Failed to start add-on checkout.";
     if (String(message).toLowerCase().includes("invalid jwt")) {
       throw new Error("Session expired. Please sign in again.");
     }
-    throw new Error(message);
+    throw new Error(String(message));
   }
 
   const checkoutUrl = data?.authorization_url ?? data?.authorizationUrl ?? null;
@@ -2515,56 +2435,17 @@ export async function startAddonCheckout(addonId: string, returnTo?: string) {
 }
 
 export async function confirmAddonCheckout(reference: string) {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  let accessToken = session?.access_token;
-  const expiresAt = session?.expires_at ?? 0;
-
-  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
-    const { data: refreshed, error: refreshError } =
-      await supabase.auth.refreshSession();
-
-    accessToken = refreshed.session?.access_token;
-
-    if (refreshError || !accessToken) {
-      throw new Error("Session expired. Please sign in again.");
-    }
-  }
-
-  if (sessionError || !accessToken) {
-    throw new Error("Not authenticated.");
-  }
-
-  const { data, error } = await supabase.functions.invoke("confirm-addon", {
-    body: { reference },
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const { data, error } = await invokeAuthedFunction("confirm-addon", { reference });
 
   if (error) {
-    const parsed = (
-      error as unknown as {
-        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
-      }
-    )?.context?.json
-      ? await (
-          error as unknown as {
-            context: { json: () => Promise<{ error?: string; detail?: string }> };
-          }
-        ).context
-          .json()
-          .catch(() => null)
-      : null;
-
-    const message = parsed?.error ?? parsed?.detail ?? error.message ?? "Failed to confirm add-on checkout.";
+    const message =
+      (error as { message?: string } | null)?.message ??
+      (error as { detail?: string | null } | null)?.detail ??
+      "Failed to confirm add-on checkout.";
     if (String(message).toLowerCase().includes("invalid jwt")) {
       throw new Error("Session expired. Please sign in again.");
     }
-    throw new Error(message);
+    throw new Error(String(message));
   }
 
   return data;

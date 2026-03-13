@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/employer";
 
 export function EmployerAddonsPage() {
+  const navigate = useNavigate();
   const [addons, setAddons] = useState<EmployerAddon[]>([]);
   const [credits, setCredits] = useState<EmployerCreditBalance[]>([]);
   const [buyingAddonId, setBuyingAddonId] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export function EmployerAddonsPage() {
 
         if (creditType === "featured_job") {
           if (returnTo && returnTo !== "/employer/addons") {
-            window.location.replace(returnTo);
+            navigate(returnTo, { replace: true });
             return;
           }
           showFeedback(
@@ -107,7 +109,7 @@ export function EmployerAddonsPage() {
           );
         } else if (creditType === "job_slot") {
           if (returnTo && returnTo !== "/employer/addons") {
-            window.location.replace(returnTo);
+            navigate(returnTo, { replace: true });
             return;
           }
           showFeedback(
@@ -116,7 +118,7 @@ export function EmployerAddonsPage() {
           );
         } else {
           if (returnTo && returnTo !== "/employer/addons") {
-            window.location.replace(returnTo);
+            navigate(returnTo, { replace: true });
             return;
           }
           showFeedback(
@@ -137,7 +139,7 @@ export function EmployerAddonsPage() {
     }
 
     confirmFromCallback();
-  }, []);
+  }, [navigate, showFeedback]);
 
   async function handleBuyAddon(addonId: string) {
     try {
