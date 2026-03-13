@@ -3,6 +3,11 @@ import { supabase } from "./supabase";
 const CANDIDATE_SAVED_JOBS_KEY_PREFIX = "candidate_saved_jobs_";
 const ENFORCE_JOB_EXPIRY =
   String(import.meta.env.VITE_ENFORCE_JOB_EXPIRY ?? "false").toLowerCase() === "true";
+const CANDIDATE_PROFILE_CACHE_TTL_MS = 10_000;
+const CANDIDATE_DASHBOARD_CACHE_TTL_MS = 15_000;
+const OPEN_JOBS_CACHE_TTL_MS = 20_000;
+const APPLIED_JOB_IDS_CACHE_TTL_MS = 10_000;
+const UPCOMING_INTERVIEWS_CACHE_TTL_MS = 15_000;
 
 export interface SkillCatalogItem {
   id: string;
@@ -15,6 +20,27 @@ export interface CandidateSkillRow {
   skill: string;
   level?: string | null;
 }
+
+interface CandidateProfileContext {
+  userId: string;
+  profileId: string;
+}
+
+type TimedCache<T> = {
+  value: T;
+  expiresAt: number;
+};
+
+let candidateProfileContextCache: TimedCache<CandidateProfileContext> | null = null;
+let candidateProfileContextInFlight: Promise<CandidateProfileContext> | null = null;
+let candidateDashboardCache: TimedCache<any> | null = null;
+let candidateDashboardInFlight: Promise<any> | null = null;
+let openJobsCache: TimedCache<any[]> | null = null;
+let openJobsInFlight: Promise<any[]> | null = null;
+let appliedJobIdsCache: TimedCache<string[]> | null = null;
+let appliedJobIdsInFlight: Promise<string[]> | null = null;
+let upcomingInterviewsCache: TimedCache<CandidateUpcomingInterviewRow[]> | null = null;
+let upcomingInterviewsInFlight: Promise<CandidateUpcomingInterviewRow[]> | null = null;
 
 export interface CandidateCertificationRow {
   id?: string;
@@ -63,9 +89,74 @@ function parseSavedJobIds(raw: string | null): string[] {
 
 async function resolveCurrentUserId() {
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
+}
+
+async function resolveCandidateProfileContext(options?: { force?: boolean }): Promise<CandidateProfileContext> {
+  const force = Boolean(options?.force);
+  const now = Date.now();
+
+  if (!force && candidateProfileContextCache && candidateProfileContextCache.expiresAt > now) {
+    return candidateProfileContextCache.value;
+  }
+
+  if (!force && candidateProfileContextInFlight) {
+    return candidateProfileContextInFlight;
+  }
+
+  const request = (async () => {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
+
+    if (sessionError || !user) {
+      throw new Error("Not authenticated");
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("candidate_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError) throw profileError;
+    if (!profile?.id) throw new Error("Candidate profile not found");
+
+    const value = {
+      userId: String(user.id),
+      profileId: String(profile.id),
+    } satisfies CandidateProfileContext;
+
+    candidateProfileContextCache = {
+      value,
+      expiresAt: Date.now() + CANDIDATE_PROFILE_CACHE_TTL_MS,
+    };
+
+    return value;
+  })();
+
+  candidateProfileContextInFlight = request;
+  return request.finally(() => {
+    if (candidateProfileContextInFlight === request) {
+      candidateProfileContextInFlight = null;
+    }
+  });
+}
+
+function invalidateCandidateProfileCaches() {
+  candidateDashboardCache = null;
+  candidateDashboardInFlight = null;
+  upcomingInterviewsCache = null;
+  upcomingInterviewsInFlight = null;
+}
+
+function invalidateCandidateApplicationCaches() {
+  appliedJobIdsCache = null;
+  appliedJobIdsInFlight = null;
 }
 
 async function getValidAccessToken(): Promise<string> {
@@ -250,114 +341,149 @@ export async function refreshCandidateEmbedding(profileId?: string) {
 }
 
 export async function getCandidateDashboardData() {
-  const { data, error } = await supabase
-    .from("candidate_profiles")
-    .select(
-      `
-      id,
-      full_name,
-      surname,
-      headline,
-      bio,
-      location,
-      years_experience,
-      date_of_birth,
-      id_number,
-      gender,
-      contact_number,
-      cv_url,
-      resume_analysis,
-      resume_last_analyzed_at,
-      candidate_skills (
+  const now = Date.now();
+  if (candidateDashboardCache && candidateDashboardCache.expiresAt > now) {
+    return candidateDashboardCache.value;
+  }
+
+  if (candidateDashboardInFlight) {
+    return candidateDashboardInFlight;
+  }
+
+  const request = (async () => {
+    const context = await resolveCandidateProfileContext();
+    const { data, error } = await supabase
+      .from("candidate_profiles")
+      .select(
+        `
         id,
-        skill_id,
-        skill,
-        level,
-        skills (
+        full_name,
+        surname,
+        headline,
+        bio,
+        location,
+        years_experience,
+        date_of_birth,
+        id_number,
+        gender,
+        contact_number,
+        cv_url,
+        resume_analysis,
+        resume_last_analyzed_at,
+        candidate_skills (
+          id,
+          skill_id,
+          skill,
+          level,
+          skills (
+            id,
+            name,
+            category
+          )
+        ),
+        candidate_assessments (
+          name,
+          progress,
+          status
+        ),
+        candidate_certifications (
           id,
           name,
-          category
+          issuer,
+          issued_at,
+          certificate_file_path
         )
-      ),
-      candidate_assessments (
-        name,
-        progress,
-        status
-      ),
-      candidate_certifications (
-        id,
-        name,
-        issuer,
-        issued_at,
-        certificate_file_path
+      `,
       )
-    `,
-    )
-    .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
-    .single();
+      .eq("id", context.profileId)
+      .single();
 
-  if (error) throw error;
-  return data;
+    if (error) throw error;
+
+    candidateDashboardCache = {
+      value: data,
+      expiresAt: Date.now() + CANDIDATE_DASHBOARD_CACHE_TTL_MS,
+    };
+
+    return data;
+  })();
+
+  candidateDashboardInFlight = request;
+  return request.finally(() => {
+    if (candidateDashboardInFlight === request) {
+      candidateDashboardInFlight = null;
+    }
+  });
 }
 
 export async function getCandidateUpcomingInterviews(): Promise<CandidateUpcomingInterviewRow[]> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const now = Date.now();
+  if (upcomingInterviewsCache && upcomingInterviewsCache.expiresAt > now) {
+    return upcomingInterviewsCache.value;
+  }
 
-  if (userError || !user) throw new Error("Not authenticated");
+  if (upcomingInterviewsInFlight) {
+    return upcomingInterviewsInFlight;
+  }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("candidate_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
+  const request = (async () => {
+    const context = await resolveCandidateProfileContext();
+    const { data, error } = await supabase
+      .from("interviews")
+      .select(`
+        id,
+        stage,
+        scheduled_at,
+        duration_minutes,
+        timezone,
+        mode,
+        location_or_meeting_link,
+        notes,
+        status,
+        jobs (
+          title,
+          location
+        ),
+        employer_profiles (
+          company_name
+        )
+      `)
+      .eq("candidate_profile_id", context.profileId)
+      .in("status", ["scheduled", "rescheduled"])
+      .gte("scheduled_at", new Date().toISOString())
+      .order("scheduled_at", { ascending: true });
 
-  if (profileError) throw profileError;
-  if (!profile?.id) return [];
+    if (error) throw error;
 
-  const { data, error } = await supabase
-    .from("interviews")
-    .select(`
-      id,
-      stage,
-      scheduled_at,
-      duration_minutes,
-      timezone,
-      mode,
-      location_or_meeting_link,
-      notes,
-      status,
-      jobs (
-        title,
-        location
-      ),
-      employer_profiles (
-        company_name
-      )
-    `)
-    .eq("candidate_profile_id", profile.id)
-    .in("status", ["scheduled", "rescheduled"])
-    .gte("scheduled_at", new Date().toISOString())
-    .order("scheduled_at", { ascending: true });
+    const rows = (data ?? []).map((row: any) => ({
+      id: String(row.id),
+      stage: row.stage,
+      scheduledAt: String(row.scheduled_at),
+      durationMinutes: Number(row.duration_minutes ?? 30),
+      timezone: String(row.timezone ?? "Africa/Johannesburg"),
+      mode: row.mode,
+      locationOrMeetingLink: row.location_or_meeting_link ? String(row.location_or_meeting_link) : null,
+      notes: row.notes ? String(row.notes) : null,
+      status: row.status,
+      jobTitle: String(row.jobs?.title ?? "Interview"),
+      jobLocation: row.jobs?.location ? String(row.jobs.location) : null,
+      companyName: String(row.employer_profiles?.company_name ?? "Employer"),
+    }));
 
-  if (error) throw error;
+    upcomingInterviewsCache = {
+      value: rows,
+      expiresAt: Date.now() + UPCOMING_INTERVIEWS_CACHE_TTL_MS,
+    };
 
-  return (data ?? []).map((row: any) => ({
-    id: String(row.id),
-    stage: row.stage,
-    scheduledAt: String(row.scheduled_at),
-    durationMinutes: Number(row.duration_minutes ?? 30),
-    timezone: String(row.timezone ?? "Africa/Johannesburg"),
-    mode: row.mode,
-    locationOrMeetingLink: row.location_or_meeting_link ? String(row.location_or_meeting_link) : null,
-    notes: row.notes ? String(row.notes) : null,
-    status: row.status,
-    jobTitle: String(row.jobs?.title ?? "Interview"),
-    jobLocation: row.jobs?.location ? String(row.jobs.location) : null,
-    companyName: String(row.employer_profiles?.company_name ?? "Employer"),
-  }));
+    return rows;
+  })();
+
+  upcomingInterviewsInFlight = request;
+  return request.finally(() => {
+    if (upcomingInterviewsInFlight === request) {
+      upcomingInterviewsInFlight = null;
+    }
+  });
 }
 
 export async function addCandidateSkill(
@@ -563,6 +689,7 @@ export async function addCandidateCertification(input: {
     .single();
 
   if (error) throw error;
+  invalidateCandidateProfileCaches();
 
   return data as CandidateCertificationRow;
 }
@@ -573,23 +700,13 @@ export async function removeCandidateCertification(certificationId: string) {
     throw new Error("Missing certification id.");
   }
 
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: profile, error: profileError } = await supabase
-    .from("candidate_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (profileError) throw profileError;
-  if (!profile?.id) throw new Error("Candidate profile not found");
+  const context = await resolveCandidateProfileContext();
 
   const { data: certification, error: certificationError } = await supabase
     .from("candidate_certifications")
     .select("id, certificate_file_path")
     .eq("id", normalizedCertificationId)
-    .eq("candidate_id", profile.id)
+    .eq("candidate_id", context.profileId)
     .single();
 
   if (certificationError) throw certificationError;
@@ -598,9 +715,10 @@ export async function removeCandidateCertification(certificationId: string) {
     .from("candidate_certifications")
     .delete()
     .eq("id", normalizedCertificationId)
-    .eq("candidate_id", profile.id);
+    .eq("candidate_id", context.profileId);
 
   if (deleteError) throw deleteError;
+  invalidateCandidateProfileCaches();
 
   const certificateFilePath = String(certification?.certificate_file_path ?? "").trim();
   if (certificateFilePath) {
@@ -654,6 +772,14 @@ export async function uploadCandidateCV(file: File) {
   }
 
   if (updatedProfile?.id) {
+    candidateProfileContextCache = {
+      value: {
+        userId: String(user.id),
+        profileId: String(updatedProfile.id),
+      },
+      expiresAt: Date.now() + CANDIDATE_PROFILE_CACHE_TTL_MS,
+    };
+    invalidateCandidateProfileCaches();
     try {
       await refreshCandidateMatchingProfile(String(updatedProfile.id));
     } catch (error) {
@@ -665,37 +791,17 @@ export async function uploadCandidateCV(file: File) {
 }
 
 export async function getOpenJobs() {
-  const withVisibility = await supabase
-    .from("jobs")
-    .select(`
-      id,
-      title,
-      description,
-      location,
-      employment_type,
-      salary_min,
-      salary_max,
-      experience_level,
-      is_featured,
-      featured_until,
-      expires_at,
-      created_at,
-      employer_id
-    `)
-    .eq("status", "open")
-    .order("is_featured", { ascending: false })
-    .order("created_at", { ascending: false });
+  const now = Date.now();
+  if (openJobsCache && openJobsCache.expiresAt > now) {
+    return openJobsCache.value;
+  }
 
-  let jobs = withVisibility.data as any[] | null;
-  let jobsError = withVisibility.error;
+  if (openJobsInFlight) {
+    return openJobsInFlight;
+  }
 
-  if (jobsError) {
-    const visibilityError = String(jobsError.message ?? "").toLowerCase();
-    if (!visibilityError.includes("expires_at")) {
-      throw jobsError;
-    }
-
-    const legacy = await supabase
+  const request = (async () => {
+    const withVisibility = await supabase
       .from("jobs")
       .select(`
         id,
@@ -715,27 +821,82 @@ export async function getOpenJobs() {
       .order("is_featured", { ascending: false })
       .order("created_at", { ascending: false });
 
-    jobs = legacy.data as any[] | null;
-    jobsError = legacy.error;
-  }
+    let jobs = withVisibility.data as any[] | null;
+    let jobsError = withVisibility.error;
 
-  if (jobsError) throw jobsError;
-  if (!jobs || jobs.length === 0) return [];
+    if (jobsError) {
+      const visibilityError = String(jobsError.message ?? "").toLowerCase();
+      if (!visibilityError.includes("expires_at")) {
+        throw jobsError;
+      }
 
-  let visibleJobs = jobs;
-  if (ENFORCE_JOB_EXPIRY) {
-    const now = Date.now();
-    visibleJobs = jobs.filter((job) => {
-      const raw = String((job as { expires_at?: unknown }).expires_at ?? "").trim();
-      if (!raw) return true;
-      const expiresMs = new Date(raw).getTime();
-      if (!Number.isFinite(expiresMs)) return true;
-      return expiresMs > now;
-    });
-  }
+      const legacy = await supabase
+        .from("jobs")
+        .select(`
+          id,
+          title,
+          description,
+          location,
+          employment_type,
+          salary_min,
+          salary_max,
+          experience_level,
+          is_featured,
+          featured_until,
+          created_at,
+          employer_id
+        `)
+        .eq("status", "open")
+        .order("is_featured", { ascending: false })
+        .order("created_at", { ascending: false });
 
-  if (visibleJobs.length === 0) return [];
-  return attachEmployerDetailsToJobs(visibleJobs);
+      jobs = legacy.data as any[] | null;
+      jobsError = legacy.error;
+    }
+
+    if (jobsError) throw jobsError;
+    if (!jobs || jobs.length === 0) {
+      openJobsCache = {
+        value: [],
+        expiresAt: Date.now() + OPEN_JOBS_CACHE_TTL_MS,
+      };
+      return [];
+    }
+
+    let visibleJobs = jobs;
+    if (ENFORCE_JOB_EXPIRY) {
+      const currentTime = Date.now();
+      visibleJobs = jobs.filter((job) => {
+        const raw = String((job as { expires_at?: unknown }).expires_at ?? "").trim();
+        if (!raw) return true;
+        const expiresMs = new Date(raw).getTime();
+        if (!Number.isFinite(expiresMs)) return true;
+        return expiresMs > currentTime;
+      });
+    }
+
+    if (visibleJobs.length === 0) {
+      openJobsCache = {
+        value: [],
+        expiresAt: Date.now() + OPEN_JOBS_CACHE_TTL_MS,
+      };
+      return [];
+    }
+
+    const enrichedJobs = await attachEmployerDetailsToJobs(visibleJobs);
+    openJobsCache = {
+      value: enrichedJobs,
+      expiresAt: Date.now() + OPEN_JOBS_CACHE_TTL_MS,
+    };
+    return enrichedJobs;
+  })();
+
+  openJobsInFlight = request;
+  return request.finally(() => {
+    if (openJobsInFlight === request) {
+      openJobsInFlight = null;
+    }
+  });
 }
 
 async function attachEmployerDetailsToJobs(jobs: any[]) {
@@ -1015,21 +1176,10 @@ export async function recordJobView(jobId: string) {
 
 
 export async function applyForJob(jobId: string) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: profile } = await supabase
-    .from("candidate_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!profile) throw new Error("Candidate profile not found");
+  const context = await resolveCandidateProfileContext();
 
   try {
-    await refreshCandidateMatchingProfile(String(profile.id));
+    await refreshCandidateMatchingProfile(String(context.profileId));
   } catch (error) {
     console.error("Failed to refresh candidate matching profile before applying", error);
   }
@@ -1039,7 +1189,7 @@ export async function applyForJob(jobId: string) {
     .from("job_applications")
     .select("id")
     .eq("job_id", jobId)
-    .eq("candidate_profile_id", profile.id)
+    .eq("candidate_profile_id", context.profileId)
     .maybeSingle();
 
   if (existing) throw new Error("Already applied");
@@ -1049,7 +1199,7 @@ export async function applyForJob(jobId: string) {
     "calculate_skill_match",
     {
       p_job_id: jobId,
-      p_candidate_profile_id: profile.id,
+      p_candidate_profile_id: context.profileId,
     },
   );
 
@@ -1059,7 +1209,7 @@ export async function applyForJob(jobId: string) {
     .from("job_applications")
     .insert({
       job_id: jobId,
-      candidate_profile_id: profile.id,
+      candidate_profile_id: context.profileId,
       status: "applied",
       score: matchScore,
     })
@@ -1080,31 +1230,42 @@ export async function applyForJob(jobId: string) {
       console.warn("Application created but notification email dispatch failed", notifyError);
     }
   }
+  invalidateCandidateApplicationCaches();
 }
 
 export async function getAppliedJobIds() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  const now = Date.now();
+  if (appliedJobIdsCache && appliedJobIdsCache.expiresAt > now) {
+    return appliedJobIdsCache.value;
+  }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("candidate_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  if (appliedJobIdsInFlight) {
+    return appliedJobIdsInFlight;
+  }
 
-  if (profileError) throw profileError;
-  if (!profile?.id) return [] as string[];
+  const request = (async () => {
+    const context = await resolveCandidateProfileContext();
+    const { data, error } = await supabase
+      .from("job_applications")
+      .select("job_id")
+      .eq("candidate_profile_id", context.profileId);
 
-  const { data, error } = await supabase
-    .from("job_applications")
-    .select("job_id")
-    .eq("candidate_profile_id", profile.id);
+    if (error) throw error;
 
-  if (error) throw error;
+    const value = (data ?? []).map((row) => row.job_id as string);
+    appliedJobIdsCache = {
+      value,
+      expiresAt: Date.now() + APPLIED_JOB_IDS_CACHE_TTL_MS,
+    };
+    return value;
+  })();
 
-  return (data ?? []).map((row) => row.job_id as string);
+  appliedJobIdsInFlight = request;
+  return request.finally(() => {
+    if (appliedJobIdsInFlight === request) {
+      appliedJobIdsInFlight = null;
+    }
+  });
 }
 
 export async function updateCandidateProfile(input: {
@@ -1127,6 +1288,7 @@ export async function updateCandidateProfile(input: {
     .maybeSingle();
 
   if (error) throw error;
+  invalidateCandidateProfileCaches();
 
   try {
     const { data: profile } = await supabase

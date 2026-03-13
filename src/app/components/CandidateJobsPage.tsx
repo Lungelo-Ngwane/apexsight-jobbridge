@@ -51,6 +51,7 @@ import {
 import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { calculateProfileCompletion, isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { useTheme } from "../context/ThemeContext";
 
 export interface Job {
   id: string;
@@ -819,6 +820,7 @@ function JobDetailsView({
   hasApplied: boolean;
 }) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [logoBroken, setLogoBroken] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const brandColor = job.employer.brand_primary_color ?? "#111111";
@@ -837,6 +839,14 @@ function JobDetailsView({
     ? `${descriptionText.slice(0, 520).trimEnd()}...`
     : descriptionText;
   const postedDate = new Date(job.created_at).toLocaleDateString();
+  const heroBackground =
+    theme === "dark"
+      ? `linear-gradient(135deg, ${brandColor}24 0%, rgba(255,255,255,0.02) 38%, rgba(10,10,11,0) 100%)`
+      : `linear-gradient(135deg, ${brandColor}10 0%, rgba(255,255,255,0) 55%)`;
+  const quickActionBackground =
+    theme === "dark"
+      ? `linear-gradient(180deg, ${brandColor}22 0%, rgba(24,24,27,0.98) 36%, rgba(9,9,11,1) 100%)`
+      : `linear-gradient(180deg, ${brandColor}16 0%, #ffffff 42%, #ffffff 100%)`;
   const detailStats = [
     {
       label: "Work setup",
@@ -897,7 +907,7 @@ function JobDetailsView({
         <Card className="mb-6 overflow-hidden border-gray-200/80 bg-white shadow-[0_18px_60px_-30px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-neutral-950">
           <div
             className="border-b border-gray-200/80 px-6 py-6 sm:px-8 dark:border-white/10"
-            style={{ background: `linear-gradient(135deg, ${brandColor}10 0%, rgba(255,255,255,0) 55%)` }}
+            style={{ background: heroBackground }}
           >
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
@@ -1056,7 +1066,7 @@ function JobDetailsView({
           <div className="space-y-6 lg:sticky lg:top-28 lg:self-start">
             <Card
               className="border-gray-200/80 p-6 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-neutral-950"
-              style={{ background: `linear-gradient(180deg, ${brandColor}16 0%, #ffffff 42%, #ffffff 100%)` }}
+              style={{ background: quickActionBackground }}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
                 Quick action

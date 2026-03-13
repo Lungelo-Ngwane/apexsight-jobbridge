@@ -15,23 +15,41 @@ import {
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { useAuth } from "../context/AuthContext";
-import { useEmployerProfile } from "../../hooks/useEmployerProfile";
 import { NavLink } from "react-router-dom";
 import { getEmployerUnreadMessageCount, subscribeToMyMessageChanges } from "@/lib/messages";
+import { getSupabaseTransformedImageUrl } from "@/lib/image";
 import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
 import { useTheme } from "../context/ThemeContext";
+import type { EmployerMembershipRole } from "@/lib/employer";
 
 interface EmployerLayoutProps {
   children: ReactNode;
+  profile?: any | null;
+  membershipRole?: EmployerMembershipRole | null;
 }
 
-export function EmployerLayout({ children }: EmployerLayoutProps) {
+export function EmployerLayout({
+  children,
+  profile = null,
+  membershipRole = null,
+}: EmployerLayoutProps) {
   const { user, role, signOut } = useAuth();
-  const { profile, membershipRole } = useEmployerProfile();
   const { theme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const hasCandidateMessagingAccess = hasEmployerPaidAccess(profile);
   const canManageWorkspace = membershipRole === "owner" || membershipRole === "admin";
+  const desktopLogoUrl = getSupabaseTransformedImageUrl(profile?.logo_url, {
+    width: 80,
+    height: 80,
+    resize: "cover",
+    quality: 75,
+  });
+  const mobileLogoUrl = getSupabaseTransformedImageUrl(profile?.logo_url, {
+    width: 64,
+    height: 64,
+    resize: "cover",
+    quality: 75,
+  });
 
   useEffect(() => {
     if (!user || role !== "employer" || !hasCandidateMessagingAccess) {
@@ -61,10 +79,13 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
         <div className="border-b border-gray-100 p-6 dark:border-white/10">
           <div className="flex items-center gap-3 mb-2">
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-neutral-900">
-              {profile?.logo_url ? (
+              {desktopLogoUrl ? (
                 <img
-                  src={profile.logo_url}
+                  src={desktopLogoUrl}
                   alt={`${profile?.company_name ?? "Company"} logo`}
+                  width={40}
+                  height={40}
+                  loading="lazy"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -129,10 +150,13 @@ export function EmployerLayout({ children }: EmployerLayoutProps) {
         <div className="px-4 py-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-white dark:border-white/10 dark:bg-neutral-900">
-              {profile?.logo_url ? (
+              {mobileLogoUrl ? (
                 <img
-                  src={profile.logo_url}
+                  src={mobileLogoUrl}
                   alt={`${profile?.company_name ?? "Company"} logo`}
+                  width={32}
+                  height={32}
+                  loading="lazy"
                   className="w-full h-full object-cover"
                 />
               ) : (

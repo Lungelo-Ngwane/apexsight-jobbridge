@@ -12,7 +12,6 @@ import {
     Crown,
     Zap
 } from "lucide-react";
-import logo from "../assets/apexsight_logo_transparent.png";
 import { updateEmployerProfile } from "../../lib/employer";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import { isActiveEmployerTrial } from "@/lib/subscriptionAccess";

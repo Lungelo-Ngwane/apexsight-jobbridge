@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -24,29 +24,34 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   createJob,
+  getEmployerDashboardMetrics,
   getEmployerCredits,
   getEmployerJobs,
-  getEmployerUsageSnapshot,
-  getJobApplicants,
-  updateJobStatus,
-  updateApplicationStatus,
-  getEmployerAnalytics,
   getEmployerPremiumDashboardInsights,
+  getJobApplicants,
   type EmployerRecentActivityItem,
   type EmployerCreditBalance,
   type EmployerPremiumDashboardInsights,
   type EmployerUsageSnapshot,
+  updateApplicationStatus,
+  updateJobStatus,
 } from '@/lib/employer';
-import { StatBox } from "./ui/statbox";
-import { PostJobModal } from "./PostJobModal";
-import { JobCandidatesModal } from "./JobCandidatesModal";
 import { useEmployerProfile } from "../../hooks/useEmployerProfile";
-import { UpgradeModal } from "./UpgradeModal";
 import { Skeleton } from "./ui/skeleton";
 import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { getCachedQuery, invalidateQueryCacheByPrefix } from "@/lib/queryCache";
 import { hasEmployerPaidAccess, hasEmployerProfessionalAccess, isActiveEmployerTrial } from "@/lib/subscriptionAccess";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+
+const PostJobModal = lazy(() =>
+  import("./PostJobModal").then((module) => ({ default: module.PostJobModal })),
+);
+const JobCandidatesModal = lazy(() =>
+  import("./JobCandidatesModal").then((module) => ({ default: module.JobCandidatesModal })),
+);
+const UpgradeModal = lazy(() =>
+  import("./UpgradeModal").then((module) => ({ default: module.UpgradeModal })),
+);
 
 // import { getEmployerOpenJobs } from "../../lib/employer";
 
@@ -118,15 +123,33 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       try {
         setAnalyticsLoading(true);
 
-        const [analytics, credits, usage] = await Promise.all([
-          getCachedQuery(keyFor("analytics"), 60_000, getEmployerAnalytics, { force }),
+        const [dashboardSnapshot, credits] = await Promise.all([
+          getCachedQuery(
+            keyFor("dashboard-snapshot"),
+            20_000,
+            getEmployerDashboardMetrics,
+            { force },
+          ),
           getCachedQuery(keyFor("credits"), 45_000, getEmployerCredits, { force }),
-          getCachedQuery(keyFor("usage"), 20_000, getEmployerUsageSnapshot, { force }),
         ]);
 
-        setStats(analytics);
+        setStats({
+          activeJobs: dashboardSnapshot.activeJobs,
+          totalApplicants: dashboardSnapshot.totalApplicants,
+          shortlisted: dashboardSnapshot.shortlisted,
+          avgTimeToHire: 0,
+        });
         setCreditBalances(credits);
-        setUsageSnapshot(usage);
+        setUsageSnapshot({
+          planName: dashboardSnapshot.planName,
+          activeJobs: dashboardSnapshot.activeJobs,
+          jobLimit: dashboardSnapshot.jobLimit,
+          extraJobSlotCredits: dashboardSnapshot.extraJobSlotCredits,
+          candidateViewsUsedThisMonth: dashboardSnapshot.candidateViewsUsedThisMonth,
+          candidateViewLimit: dashboardSnapshot.candidateViewLimit,
+          teamMembersUsed: dashboardSnapshot.teamMembersUsed,
+          teamMemberLimit: dashboardSnapshot.teamMemberLimit,
+        });
       } catch (error) {
         console.error("Failed to load employer dashboard metrics", error);
       } finally {
@@ -1062,23 +1085,29 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         </div>
       </div>
       {showPostJob && (
-        <PostJobModal
-          onClose={() => {
-            setShowPostJob(false);
-            setJobToEdit(null);
-          }}
-          onSuccess={() => void refreshDashboardData()}
-          job={jobToEdit ?? undefined}
-        />
+        <Suspense fallback={<CircularLoader size="md" label="Loading job editor..." />}>
+          <PostJobModal
+            onClose={() => {
+              setShowPostJob(false);
+              setJobToEdit(null);
+            }}
+            onSuccess={() => void refreshDashboardData()}
+            job={jobToEdit ?? undefined}
+          />
+        </Suspense>
       )}
       {selectedJobId && (
-        <JobCandidatesModal
-          jobId={selectedJobId}
-          onClose={() => setSelectedJobId(null)}
-        />
+        <Suspense fallback={<CircularLoader size="md" label="Loading candidates..." />}>
+          <JobCandidatesModal
+            jobId={selectedJobId}
+            onClose={() => setSelectedJobId(null)}
+          />
+        </Suspense>
       )}
       {showUpgradeModal && (
-        <UpgradeModal plan={profile?.plan ?? "free"} onClose={() => setShowUpgradeModal(false)} />
+        <Suspense fallback={<CircularLoader size="md" label="Loading upgrade options..." />}>
+          <UpgradeModal plan={profile?.plan ?? "free"} onClose={() => setShowUpgradeModal(false)} />
+        </Suspense>
       )}
     </div>
   );

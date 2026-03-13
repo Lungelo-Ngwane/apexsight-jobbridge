@@ -1,4 +1,3 @@
-import { PLAN_LIMITS } from "./plan";
 import { supabase } from "./supabase";
 import { hasEmployerPaidAccess } from "./subscriptionAccess";
 
@@ -61,6 +60,19 @@ export interface EmployerUsageSnapshot {
   candidateViewLimit: number | null;
   teamMembersUsed: number;
   teamMemberLimit: number | null;
+}
+
+interface EmployerDashboardSnapshotRow {
+  plan_name?: string | null;
+  active_jobs?: number | null;
+  total_applicants?: number | null;
+  shortlisted?: number | null;
+  job_limit?: number | null;
+  extra_job_slot_credits?: number | null;
+  candidate_views_used_this_month?: number | null;
+  candidate_view_limit?: number | null;
+  team_members_used?: number | null;
+  team_member_limit?: number | null;
 }
 
 export interface BillingInvoice {
@@ -1668,32 +1680,12 @@ export async function updateApplicationStatus(
 ========================= */
 
 export async function getEmployerAnalytics() {
-  const employer = await getCurrentEmployerContext();
-
-  // Active jobs
-  const { count: activeJobs } = await supabase
-    .from("jobs")
-    .select("*", { count: "exact", head: true })
-    .eq("employer_id", employer.employerId)
-    .eq("status", "open");
-
-  // Total applicants
-  const { count: totalApplicants } = await supabase
-    .from("job_applications")
-    .select("id, jobs!inner(employer_id)", { count: "exact", head: true })
-    .eq("jobs.employer_id", employer.employerId);
-
-  // Shortlisted
-  const { count: shortlisted } = await supabase
-    .from("job_applications")
-    .select("id, jobs!inner(employer_id)", { count: "exact", head: true })
-    .eq("jobs.employer_id", employer.employerId)
-    .eq("status", "shortlisted");
+  const snapshot = await getEmployerDashboardMetrics();
 
   return {
-    activeJobs: activeJobs ?? 0,
-    totalApplicants: totalApplicants ?? 0,
-    shortlisted: shortlisted ?? 0,
+    activeJobs: snapshot.activeJobs,
+    totalApplicants: snapshot.totalApplicants,
+    shortlisted: snapshot.shortlisted,
     avgTimeToHire: 0,
   };
 }
@@ -2555,84 +2547,56 @@ export async function consumeCandidateViewAccess(applicationId: string) {
   return data;
 }
 
-export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot> {
-  const employer = await getCurrentEmployerContext();
+export async function getEmployerDashboardMetrics(): Promise<
+  EmployerUsageSnapshot & {
+    totalApplicants: number;
+    shortlisted: number;
+  }
+> {
+  const { data, error } = await supabase.rpc("get_employer_dashboard_snapshot");
 
-  const normalizedPlan = String(employer.plan ?? "free").toLowerCase();
-  const fallbackCandidateViewLimits: Record<string, number | null> = {
-    free: 10,
-    starter: 50,
-    professional: 300,
-    enterprise: 9999,
-  };
+  if (error) throw error;
 
-  const { data: planRow } = await supabase
-    .from("plans")
-    .select("name, job_limit, user_limit, candidate_view_limit")
-    .ilike("name", normalizedPlan)
-    .maybeSingle();
-
-  const { count: activeJobs, error: activeJobsError } = await supabase
-    .from("jobs")
-    .select("*", { count: "exact", head: true })
-    .eq("employer_id", employer.employerId)
-    .eq("status", "open");
-
-  if (activeJobsError) throw activeJobsError;
-
-  const startOfMonth = new Date();
-  startOfMonth.setUTCDate(1);
-  startOfMonth.setUTCHours(0, 0, 0, 0);
-
-  const { count: usedViewsThisMonth, error: viewsError } = await supabase
-    .from("employer_credit_usage")
-    .select("id", { count: "exact", head: true })
-    .eq("employer_id", employer.employerId)
-    .eq("context_type", "candidate_profile_view")
-    .gte("created_at", startOfMonth.toISOString());
-
-  if (viewsError) throw viewsError;
-
-  const { data: extraJobSlotRow, error: extraJobSlotError } = await supabase
-    .from("employer_credits")
-    .select("remaining")
-    .eq("employer_id", employer.employerId)
-    .eq("credit_type", "job_slot")
-    .maybeSingle();
-
-  if (extraJobSlotError) throw extraJobSlotError;
-
-  const { count: teamMembersUsed, error: teamMembersError } = await supabase
-    .from("employer_memberships")
-    .select("id", { count: "exact", head: true })
-    .eq("employer_id", employer.employerId)
-    .in("status", ["active", "invited"]);
-
-  if (teamMembersError) throw teamMembersError;
-
-  const baseJobLimit =
-    planRow && planRow.job_limit === null
-      ? null
-      : (planRow?.job_limit ??
-        PLAN_LIMITS[normalizedPlan as keyof typeof PLAN_LIMITS]?.maxActiveJobs ??
-        null);
-  const extraJobSlotCredits = Number(extraJobSlotRow?.remaining ?? 0);
+  const row = (Array.isArray(data) ? data[0] : data) as EmployerDashboardSnapshotRow | null;
+  if (!row) {
+    throw new Error("Employer dashboard snapshot unavailable.");
+  }
 
   return {
-    planName: String(planRow?.name ?? normalizedPlan),
-    activeJobs: Number(activeJobs ?? 0),
+    planName: String(row.plan_name ?? "free"),
+    activeJobs: Number(row.active_jobs ?? 0),
+    totalApplicants: Number(row.total_applicants ?? 0),
+    shortlisted: Number(row.shortlisted ?? 0),
     jobLimit:
-      baseJobLimit === null
+      row.job_limit === null || row.job_limit === undefined
         ? null
-        : baseJobLimit + extraJobSlotCredits,
-    extraJobSlotCredits,
-    candidateViewsUsedThisMonth: Number(usedViewsThisMonth ?? 0),
+        : Number(row.job_limit),
+    extraJobSlotCredits: Number(row.extra_job_slot_credits ?? 0),
+    candidateViewsUsedThisMonth: Number(row.candidate_views_used_this_month ?? 0),
     candidateViewLimit:
-      planRow && planRow.candidate_view_limit === null
+      row.candidate_view_limit === null || row.candidate_view_limit === undefined
         ? null
-        : (planRow?.candidate_view_limit ?? fallbackCandidateViewLimits[normalizedPlan] ?? 0),
-    teamMembersUsed: Number(teamMembersUsed ?? 0),
-    teamMemberLimit: planRow?.user_limit ?? (normalizedPlan === "free" ? 1 : null),
+        : Number(row.candidate_view_limit),
+    teamMembersUsed: Number(row.team_members_used ?? 0),
+    teamMemberLimit:
+      row.team_member_limit === null || row.team_member_limit === undefined
+        ? null
+        : Number(row.team_member_limit),
+  };
+}
+
+export async function getEmployerUsageSnapshot(): Promise<EmployerUsageSnapshot> {
+  const snapshot = await getEmployerDashboardMetrics();
+
+  return {
+    planName: snapshot.planName,
+    activeJobs: snapshot.activeJobs,
+    jobLimit: snapshot.jobLimit,
+    extraJobSlotCredits: snapshot.extraJobSlotCredits,
+    candidateViewsUsedThisMonth: snapshot.candidateViewsUsedThisMonth,
+    candidateViewLimit: snapshot.candidateViewLimit,
+    teamMembersUsed: snapshot.teamMembersUsed,
+    teamMemberLimit: snapshot.teamMemberLimit,
   };
 }
 

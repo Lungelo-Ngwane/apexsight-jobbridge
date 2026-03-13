@@ -21,7 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
-import logo from "../assets/apexsight_logo_transparent.png";
 import whiteLogo from "../assets/apexsight_white_logo_transparent.png";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -147,7 +146,7 @@ export function Header({
   if (loading) return null;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/8 bg-white/95 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-black/8 bg-white/95 backdrop-blur-xl dark:border-white/10 dark:bg-neutral-950/95">
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-3 sm:gap-8">
           <div className="min-w-0 flex items-center gap-3 sm:gap-6">
@@ -157,12 +156,18 @@ export function Header({
               className="flex min-w-0 items-center gap-2.5 rounded-2xl px-1 py-1 text-left transition"
               aria-label="Go to dashboard"
             >
-              <img src={theme === "dark" ? whiteLogo : logo} alt="ApexSight Logo" className="h-10 w-auto shrink-0 sm:h-12" />
+              <img
+                src={whiteLogo}
+                alt="ApexSight Logo"
+                width={192}
+                height={48}
+                className={`h-10 w-auto shrink-0 sm:h-12 ${theme === "dark" ? "" : "brightness-0"}`}
+              />
               <div className="flex flex-col justify-center">
-                <span className="text-sm font-semibold tracking-[0.04em] text-neutral-900">
+                <span className="text-sm font-semibold tracking-[0.04em] text-neutral-900 dark:text-white">
                   ApexSight
                 </span>
-                <p className="hidden text-[11px] tracking-[0.03em] text-neutral-500 sm:block">
+                <p className="hidden text-[11px] tracking-[0.03em] text-neutral-500 dark:text-neutral-400 sm:block">
                   Talent platform
                 </p>
               </div>
@@ -175,7 +180,7 @@ export function Header({
                 className="hidden items-center gap-3 text-sm font-bold text-neutral-700 transition hover:text-neutral-950 md:inline-flex"
               >
                 <span className="text-neutral-300">|</span>
-                <span>
+                <span className="dark:text-neutral-200">
                   {role === "candidate" ? "SkillLink" : "JobBridge"}
                   <sup className="ml-0.5 text-[0.55em] font-bold align-super">TM</sup>
                 </span>

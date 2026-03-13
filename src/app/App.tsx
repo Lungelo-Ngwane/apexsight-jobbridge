@@ -1,28 +1,18 @@
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from 'react';
 import { Header } from '@/app/components/Header';
 import { Seo } from '@/app/components/Seo';
-import Login from '@/app/components/Login';
 import { HomePage } from '@/app/components/HomePage';
 import { SkillLinkLanding } from '@/app/components/SkillLinkLanding';
 import { JobBridgeLanding } from '@/app/components/JobBridgeLanding';
 import { CandidateDashboard } from '@/app/components/CandidateDashboard';
-import { EmployerDashboard } from '@/app/components/EmployerDashboard';
 import { CandidateProfile } from "@/app/components/CandidateProfile";
 import { EmployerProfile } from "@/app/components/EmployerProfile";
 import { useAuth } from './context/AuthContext';
 import CandidateJobsPage from "./components/CandidateJobsPage";
 import CandidateMyJobsPage from "./components/CandidateMyJobsPage";
 import { EmployerPublicProfilePage } from "./components/EmployerPublicProfilePage";
-import { EmployerApp } from "./components/EmployerApp";
-import { EmployerJobsPage } from "./components/employer/EmployerJobsPage";
-import { EmployerJobReportPage } from "./components/employer/EmployerJobReportPage";
-import { EmployerCandidatesPage } from "./components/employer/EmployerCandidatesPage";
-import { EmployerBillingPage } from "./components/employer/EmployerBillingPage";
-import { EmployerAddonsPage } from "./components/employer/EmployerAddonsPage";
-import { EmployerPlansPage } from "./components/employer/EmployerPlansPage";
-import { EmployerSettingsPage } from "./components/employer/EmployerSettingsPage";
-import { MessagesPage } from "./components/messages/MessagesPage";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -35,6 +25,50 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 // import { useAuth } from '../context/AuthContext'; // adjust path
+
+const Login = lazy(() => import("@/app/components/Login"));
+const EmployerApp = lazy(() =>
+  import("./components/EmployerApp").then((module) => ({ default: module.EmployerApp })),
+);
+const EmployerDashboard = lazy(() =>
+  import("./components/EmployerDashboard").then((module) => ({ default: module.EmployerDashboard })),
+);
+const EmployerJobsPage = lazy(() =>
+  import("./components/employer/EmployerJobsPage").then((module) => ({ default: module.EmployerJobsPage })),
+);
+const EmployerJobReportPage = lazy(() =>
+  import("./components/employer/EmployerJobReportPage").then((module) => ({ default: module.EmployerJobReportPage })),
+);
+const EmployerCandidatesPage = lazy(() =>
+  import("./components/employer/EmployerCandidatesPage").then((module) => ({ default: module.EmployerCandidatesPage })),
+);
+const EmployerBillingPage = lazy(() =>
+  import("./components/employer/EmployerBillingPage").then((module) => ({ default: module.EmployerBillingPage })),
+);
+const EmployerAddonsPage = lazy(() =>
+  import("./components/employer/EmployerAddonsPage").then((module) => ({ default: module.EmployerAddonsPage })),
+);
+const EmployerPlansPage = lazy(() =>
+  import("./components/employer/EmployerPlansPage").then((module) => ({ default: module.EmployerPlansPage })),
+);
+const EmployerSettingsPage = lazy(() =>
+  import("./components/employer/EmployerSettingsPage").then((module) => ({ default: module.EmployerSettingsPage })),
+);
+const MessagesPage = lazy(() =>
+  import("./components/messages/MessagesPage").then((module) => ({ default: module.MessagesPage })),
+);
+
+function RouteLoader({ label = "Loading page..." }: { label?: string }) {
+  return (
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+      <CircularLoader size="md" label={label} />
+    </div>
+  );
+}
+
+function withRouteSuspense(node: React.ReactNode, label?: string) {
+  return <Suspense fallback={<RouteLoader label={label} />}>{node}</Suspense>;
+}
 
 type View = 'home' | 'candidate-dashboard' | 'employer-dashboard';
 
@@ -273,20 +307,20 @@ export default function App() {
         />
         <Route path="/candidate/jobs" element={<CandidateJobsPage />} />
         <Route path="/candidate/my-jobs" element={<CandidateMyJobsPage />} />
-        <Route path="/candidate/messages" element={<MessagesPage />} />
+        <Route path="/candidate/messages" element={withRouteSuspense(<MessagesPage />, "Loading messages...")} />
         <Route path="/candidate/profile" element={<CandidateProfile />} />
         <Route path="/companies/:employerId" element={<EmployerPublicProfilePage />} />
 
-        <Route path="/employer" element={<EmployerApp />}>
-          <Route path="dashboard" element={<EmployerDashboard />} />
-          <Route path="jobs" element={<EmployerJobsPage />} />
-          <Route path="jobs/:jobId/report" element={<EmployerJobReportPage />} />
-          <Route path="candidates" element={<EmployerCandidatesPage />} />
-          <Route path="messages" element={<MessagesPage />} />
-          <Route path="plans" element={<EmployerPlansPage />} />
-          <Route path="addons" element={<EmployerAddonsPage />} />
-          <Route path="billing" element={<EmployerBillingPage />} />
-          <Route path="settings" element={<EmployerSettingsPage />} />
+        <Route path="/employer" element={withRouteSuspense(<EmployerApp />, "Loading employer workspace...")}>
+          <Route path="dashboard" element={withRouteSuspense(<EmployerDashboard />, "Loading dashboard...")} />
+          <Route path="jobs" element={withRouteSuspense(<EmployerJobsPage />, "Loading jobs...")} />
+          <Route path="jobs/:jobId/report" element={withRouteSuspense(<EmployerJobReportPage />, "Loading report...")} />
+          <Route path="candidates" element={withRouteSuspense(<EmployerCandidatesPage />, "Loading candidates...")} />
+          <Route path="messages" element={withRouteSuspense(<MessagesPage />, "Loading messages...")} />
+          <Route path="plans" element={withRouteSuspense(<EmployerPlansPage />, "Loading plans...")} />
+          <Route path="addons" element={withRouteSuspense(<EmployerAddonsPage />, "Loading add-ons...")} />
+          <Route path="billing" element={withRouteSuspense(<EmployerBillingPage />, "Loading billing...")} />
+          <Route path="settings" element={withRouteSuspense(<EmployerSettingsPage />, "Loading settings...")} />
         </Route>
 
         <Route path="/employer/profile" element={<EmployerProfile />} />
@@ -308,11 +342,13 @@ export default function App() {
             >
               ✕
             </button>
-            <Login
-              initialMode={authInitialMode}
-              initialRole={authInitialRole}
-              onLoginSuccess={handleLoginSuccess}
-            />
+            <Suspense fallback={<RouteLoader label="Loading sign-in..." />}>
+              <Login
+                initialMode={authInitialMode}
+                initialRole={authInitialRole}
+                onLoginSuccess={handleLoginSuccess}
+              />
+            </Suspense>
           </div>
         </div>
       )}

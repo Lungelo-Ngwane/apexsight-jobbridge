@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { useEmployerProfile } from "@/hooks/useEmployerProfile";
+import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
 import { EmployerLayout } from "./EmployerLayout";
 import { EmployerOnboarding } from "./EmployerOnBoarding";
-import { useEmployerProfile } from "@/hooks/useEmployerProfile";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
-import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 export function EmployerApp() {
   const location = useLocation();
@@ -24,24 +24,17 @@ export function EmployerApp() {
     return () => window.clearTimeout(timer);
   }, [loading, profile]);
 
-  if (loading) {
+  if (loading || (!profile && !canShowMissingProfile)) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <CircularLoader size="md" label="Loading employer data..." />
-      </div>
+      <EmployerLayout profile={profile} membershipRole={membershipRole}>
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-8">
+          <CircularLoader size="md" label="Loading employer workspace..." />
+        </div>
+      </EmployerLayout>
     );
   }
 
-  // 🚨 HARD GUARD — prevents crashes
   if (!profile) {
-    if (!canShowMissingProfile) {
-      return (
-        <div className="p-8 flex items-center justify-center">
-          <CircularLoader size="md" label="Finalizing employer profile..." />
-        </div>
-      );
-    }
-
     return (
       <div className="p-8 text-red-600">
         Employer profile not found
@@ -49,14 +42,8 @@ export function EmployerApp() {
     );
   }
 
-
-  // 👇 onboarding gate
   if ((profile.onboarding_step ?? 0) < 3) {
-    return (
-      <EmployerOnboarding
-        initialStep={profile.onboarding_step ?? 0}
-      />
-    );
+    return <EmployerOnboarding initialStep={profile.onboarding_step ?? 0} />;
   }
 
   const hasCandidateMessagingAccess = hasEmployerPaidAccess(profile);
@@ -82,7 +69,7 @@ export function EmployerApp() {
   }
 
   return (
-    <EmployerLayout>
+    <EmployerLayout profile={profile} membershipRole={membershipRole}>
       <Outlet />
     </EmployerLayout>
   );
