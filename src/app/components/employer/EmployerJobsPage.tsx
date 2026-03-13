@@ -144,6 +144,8 @@ export function EmployerJobsPage() {
   const availableJobSlotCredits = Math.max(extraJobSlotCredits, creditedJobSlotBalance);
   const isOverJobLimit = finiteJobLimit !== null && activeJobsUsed >= finiteJobLimit;
   const isPostingLocked = isOverJobLimit && availableJobSlotCredits <= 0;
+  const isPostingActionPending = loadingJobs || usageSnapshot === null;
+  const isPostingActionDisabled = isPostingActionPending || isPostingLocked;
 
   async function loadJobs() {
     try {
@@ -306,6 +308,7 @@ export function EmployerJobsPage() {
   }
 
   function handleNewJob() {
+    if (isPostingActionPending || isPostingLocked) return;
     setEditingJob(null);
     setShowPostJobModal(true);
   }
@@ -381,14 +384,18 @@ export function EmployerJobsPage() {
             <div className="flex flex-col items-start gap-2 lg:items-end">
               <Button
                 onClick={handleNewJob}
-                disabled={isPostingLocked}
+                disabled={isPostingActionDisabled}
                 className="border border-transparent bg-gradient-to-r from-neutral-950 to-neutral-800 text-white shadow-lg shadow-black/15 transition-all hover:from-neutral-900 hover:to-neutral-700 hover:shadow-xl hover:shadow-black/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-none disabled:bg-neutral-900 disabled:text-gray-300 disabled:shadow-none disabled:opacity-100"
                 size="lg"
               >
-                {isPostingLocked ? <Lock className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-                {isPostingLocked ? "Job Limit Reached" : "Post New Job"}
+                {isPostingActionPending || isPostingLocked ? <Lock className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                {isPostingActionPending ? "Loading limits..." : isPostingLocked ? "Job Limit Reached" : "Post New Job"}
               </Button>
-              {isPostingLocked ? (
+              {isPostingActionPending ? (
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Checking your job slot access...
+                </div>
+              ) : isPostingLocked ? (
                 <div className="flex flex-col items-start gap-2 text-sm text-gray-600 dark:text-gray-400 lg:items-end">
                   <span>
                     You are using {activeJobsUsed}

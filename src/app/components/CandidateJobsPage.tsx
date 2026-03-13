@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   applyForJob,
   getAppliedJobIds,
@@ -20,15 +21,14 @@ import {
   Gauge,
   Clock,
   Building2,
+  Globe,
   ChevronLeft,
   X,
   CheckCircle,
   Bookmark,
   ArrowLeft,
-  Share2,
   ExternalLink,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import {
   Sheet,
   SheetContent,
@@ -54,6 +54,7 @@ import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 export interface Job {
   id: string;
+  employer_id: string;
   title: string;
   description: string;
   location: string | null;
@@ -69,6 +70,11 @@ export interface Job {
     company_name: string;
     industry?: string | null;
     logo_url?: string | null;
+    plan?: string | null;
+    brand_primary_color?: string | null;
+    custom_domain?: string | null;
+    careers_page_headline?: string | null;
+    public_company_page?: boolean;
   };
 }
 
@@ -76,6 +82,8 @@ const JOBS_PER_PAGE = 9;
 
 export function CandidateJobsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
@@ -108,6 +116,43 @@ export function CandidateJobsPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const selectedJobId = String(
+      (location.state as { selectedJobId?: string } | null)?.selectedJobId ??
+      searchParams.get("job") ??
+      "",
+    ).trim();
+    if (!selectedJobId || jobs.length === 0) return;
+
+    const preselectedJob = jobs.find((job) => job.id === selectedJobId);
+    if (preselectedJob) {
+      setSelectedJob(preselectedJob);
+    }
+
+    if ((location.state as { selectedJobId?: string } | null)?.selectedJobId) {
+      navigate(location.pathname + (location.search || ""), { replace: true, state: null });
+    }
+  }, [jobs, location.pathname, location.search, location.state, navigate, searchParams]);
+
+  useEffect(() => {
+    const state = location.state as { selectedJobId?: string; autoApply?: boolean } | null;
+    const selectedJobId = String(state?.selectedJobId ?? searchParams.get("job") ?? "").trim();
+    const shouldAutoApply = Boolean(state?.autoApply || searchParams.get("autoApply") === "1");
+    if (!shouldAutoApply || !selectedJobId || jobs.length === 0) return;
+
+    const targetJob = jobs.find((job) => job.id === selectedJobId);
+    if (!targetJob) return;
+
+    void handleApply(targetJob);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("job", selectedJobId);
+      next.delete("autoApply");
+      return next;
+    }, { replace: true });
+    navigate(location.pathname + `?job=${selectedJobId}`, { replace: true, state: { selectedJobId } });
+  }, [jobs, location.pathname, location.state, navigate, searchParams, setSearchParams]);
 
   const employmentTypes = useMemo(
     () => Array.from(new Set(jobs.map((j) => j.employment_type).filter(Boolean))) as string[],
@@ -238,15 +283,7 @@ export function CandidateJobsPage() {
       <div className="sticky top-16 z-20 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-lg dark:border-white/10 dark:bg-neutral-950/95">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="max-w-7xl mx-auto">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <Button
-                variant="outline"
-                className="h-10 rounded-lg border-slate-300 text-slate-700 dark:border-white/10 dark:text-gray-200"
-                onClick={() => navigate("/candidate/dashboard")}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to dashboard
-              </Button>
+            <div className="mb-4 flex items-center justify-end gap-3">
               <p className="hidden text-sm text-slate-500 dark:text-gray-400 sm:block">
                 Find verified roles across South Africa
               </p>
@@ -587,7 +624,10 @@ function JobCard({
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
+              <div
+                className="w-10 h-10 border border-gray-200 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0"
+                style={!job.employer.logo_url || logoBroken ? { backgroundColor: job.employer.brand_primary_color ?? "#f5f5f5" } : undefined}
+              >
                 {job.employer.logo_url && !logoBroken ? (
                   <img
                     src={job.employer.logo_url}
@@ -596,7 +636,7 @@ function JobCard({
                     onError={() => setLogoBroken(true)}
                   />
                 ) : (
-                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <Building2 className="w-5 h-5 text-white" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -781,6 +821,13 @@ function JobDetailsView({
   const navigate = useNavigate();
   const [logoBroken, setLogoBroken] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const brandColor = job.employer.brand_primary_color ?? "#111111";
+  const companyProfileEnabled =
+    job.employer.public_company_page !== false &&
+    String(job.employer.plan ?? "free").toLowerCase() === "enterprise";
+  const customDomainHref = job.employer.custom_domain
+    ? `https://${String(job.employer.custom_domain).replace(/^https?:\/\//i, "").trim()}`
+    : null;
   const featuredActive =
     Boolean(job.is_featured) &&
     (!job.featured_until || new Date(job.featured_until).getTime() > Date.now());
@@ -789,6 +836,29 @@ function JobDetailsView({
   const visibleDescription = descriptionNeedsExpand && !showFullDescription
     ? `${descriptionText.slice(0, 520).trimEnd()}...`
     : descriptionText;
+  const postedDate = new Date(job.created_at).toLocaleDateString();
+  const detailStats = [
+    {
+      label: "Work setup",
+      value: job.location || "Location flexible",
+      icon: MapPin,
+    },
+    {
+      label: "Employment type",
+      value: job.employment_type || "Not specified",
+      icon: Briefcase,
+    },
+    {
+      label: "Experience level",
+      value: job.experience_level || "Open to multiple levels",
+      icon: Gauge,
+    },
+    {
+      label: "Posted",
+      value: postedDate,
+      icon: Clock,
+    },
+  ];
 
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return "Salary not disclosed";
@@ -800,21 +870,14 @@ function JobDetailsView({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f5f7fa_0%,#f8fafc_220px,#ffffff_220px)] dark:bg-[linear-gradient(180deg,#09090b_0%,#111827_220px,#09090b_220px)]">
+      <div className="sticky top-16 z-20 border-b border-gray-200 bg-white/92 backdrop-blur-lg shadow-sm dark:border-white/10 dark:bg-neutral-950/88">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={onBack} className="gap-2">
+              <Button variant="ghost" onClick={onBack} className="gap-2 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white">
                 <ArrowLeft className="w-5 h-5" />
                 <span className="hidden sm:inline">Back to jobs</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/candidate/dashboard")}
-                className="hidden sm:inline-flex"
-              >
-                Dashboard
               </Button>
             </div>
             <div className="flex items-center gap-2">
@@ -825,119 +888,244 @@ function JobDetailsView({
                 <Bookmark className={`w-4 h-4 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
                 <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
               </Button>
-              <Button variant="outline" className="gap-2">
-                <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Share</span>
-              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        <Card className="p-6 sm:p-8 mb-6 border-gray-200 shadow-lg">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-14 h-14 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm">
-              {job.employer.logo_url && !logoBroken ? (
-                <img
-                  src={job.employer.logo_url}
-                  alt={`${job.employer.company_name} logo`}
-                  className="w-full h-full object-cover rounded-xl"
-                  onError={() => setLogoBroken(true)}
-                />
-              ) : (
-                <Building2 className="w-7 h-7 text-blue-600" />
-              )}
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{job.title}</h1>
-              <p className="text-gray-700">{job.employer.company_name}</p>
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <Card className="mb-6 overflow-hidden border-gray-200/80 bg-white shadow-[0_18px_60px_-30px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-neutral-950">
+          <div
+            className="border-b border-gray-200/80 px-6 py-6 sm:px-8 dark:border-white/10"
+            style={{ background: `linear-gradient(135deg, ${brandColor}10 0%, rgba(255,255,255,0) 55%)` }}
+          >
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-start gap-4">
+                <div
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-900"
+                  style={!job.employer.logo_url || logoBroken ? { backgroundColor: brandColor } : undefined}
+                >
+                  {job.employer.logo_url && !logoBroken ? (
+                    <img
+                      src={job.employer.logo_url}
+                      alt={`${job.employer.company_name} logo`}
+                      className="h-full w-full rounded-2xl object-cover"
+                      onError={() => setLogoBroken(true)}
+                    />
+                  ) : (
+                    <Building2 className="h-8 w-8 text-white" />
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="border-gray-200 bg-gray-100 text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-200">
+                      {job.employer.company_name}
+                    </Badge>
+                    {featuredActive ? (
+                      <Badge className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-200">
+                        Featured role
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl dark:text-white">
+                      {job.title}
+                    </h1>
+                    <p className="mt-2 max-w-3xl text-base leading-7 text-gray-600 dark:text-gray-300">
+                      A structured role summary with the key job facts upfront, followed by the full brief and company context.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    {job.location ? (
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        {job.location}
+                      </span>
+                    ) : null}
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      Posted {postedDate}
+                    </span>
+                    {job.featured_until ? (
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Featured until {new Date(job.featured_until).toLocaleDateString()}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <Button className="w-full !border-emerald-700 !bg-emerald-600 !text-white hover:!bg-emerald-700 disabled:!border-emerald-200 disabled:!bg-emerald-100 disabled:!text-emerald-700 dark:disabled:!border-emerald-400/20 dark:disabled:!bg-emerald-500/10 dark:disabled:!text-emerald-300" onClick={onApply} disabled={hasApplied || isApplying}>
+                  {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply now"}
+                </Button>
+                <Button variant="outline" onClick={onSave} className="w-full border-gray-300 dark:border-white/15 dark:bg-neutral-900 dark:text-white">
+                  <Bookmark className={`mr-2 h-4 w-4 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
+                  {isSaved ? "Saved" : "Save job"}
+                </Button>
+                {companyProfileEnabled ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/companies/${job.employer_id}`)}
+                    className="w-full border-gray-300 sm:col-span-2 lg:col-span-1 dark:border-white/15 dark:bg-neutral-900 dark:text-white"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Company Profile
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
-          {featuredActive && (
-            <Badge className="mb-3 bg-amber-100 text-amber-700 border-amber-200">
-              Featured Position
-              {job.featured_until ? ` until ${new Date(job.featured_until).toLocaleDateString()}` : ""}
-            </Badge>
-          )}
-          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-            {job.location && (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                {job.location}
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <Briefcase className="w-4 h-4 text-gray-400" />
-              {job.employment_type || "Not specified"}
-            </div>
-            {job.experience_level && (
-              <div className="flex items-center gap-1.5">
-                <Gauge className="w-4 h-4 text-gray-400" />
-                {job.experience_level}
-              </div>
-            )}
+
+          <div className="grid gap-3 border-t border-gray-200/80 bg-gray-50/80 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-4 dark:border-white/10 dark:bg-white/[0.02]">
+            {detailStats.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-white/10 dark:bg-neutral-900"
+                >
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5">
+                    <Icon className="h-4 w-4 text-gray-700 dark:text-gray-200" />
+                  </div>
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                    {item.value}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200 shadow-md mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div>
-              <p className="text-sm text-emerald-700 font-medium">Compensation</p>
-              <p className="text-xl font-bold text-gray-900">{formatSalary(job.salary_min, job.salary_max)}</p>
-            </div>
-          </div>
-        </Card>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-6">
+            <Card className="border-gray-200/80 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950">
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-950 dark:text-white">Role overview</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Everything a candidate should understand before applying.
+                  </p>
+                </div>
+                <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200">
+                  {formatSalary(job.salary_min, job.salary_max)}
+                </div>
+              </div>
+              <div className="space-y-4">
+                <p className="whitespace-pre-line text-[15px] leading-7 text-gray-700 dark:text-gray-300">
+                  {visibleDescription}
+                </p>
+                {descriptionNeedsExpand ? (
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-gray-900 transition hover:text-black dark:text-gray-100 dark:hover:text-white"
+                    onClick={() => setShowFullDescription((prev) => !prev)}
+                  >
+                    {showFullDescription ? "Show less" : "Read full description"}
+                  </button>
+                ) : null}
+              </div>
+            </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="p-6 border-gray-200 shadow-md lg:col-span-2">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Job Description</h2>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{visibleDescription}</p>
-            {descriptionNeedsExpand && (
-              <button
-                type="button"
-                className="mt-3 text-sm font-medium text-blue-600 transition hover:text-blue-700"
-                onClick={() => setShowFullDescription((prev) => !prev)}
-              >
-                {showFullDescription ? "Show less" : "Show more"}
-              </button>
-            )}
-
-            {job.skills_required && job.skills_required.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Skills</h3>
-                <div className="flex flex-wrap gap-2">
+            {job.skills_required && job.skills_required.length > 0 ? (
+              <Card className="border-gray-200/80 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-950 dark:text-white">Core skills</h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    The capabilities this employer is actively looking for.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2.5">
                   {job.skills_required.map((skill, index) => (
-                    <Badge key={`${skill}-${index}`} className="px-3 py-1.5 bg-blue-100 text-blue-700 border-blue-200 text-sm">
-                      <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                    <Badge
+                      key={`${skill}-${index}`}
+                      className="rounded-full border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
+                    >
+                      <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
                       {skill}
                     </Badge>
                   ))}
                 </div>
-              </div>
-            )}
-          </Card>
+              </Card>
+            ) : null}
+          </div>
 
-          <div className="space-y-6">
-            <Card className="p-6 border-gray-200 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Ready to apply?</h3>
-              <Button className="mb-3 w-full !border-emerald-700 !bg-emerald-600 !bg-none !text-white shadow-lg hover:!bg-emerald-700 disabled:!border-emerald-200 disabled:!bg-emerald-100 disabled:!text-emerald-700 dark:disabled:!border-emerald-400/20 dark:disabled:!bg-emerald-500/10 dark:disabled:!text-emerald-300" onClick={onApply} disabled={hasApplied || isApplying}>
-                {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply Now"}
-              </Button>
-              <Button variant="outline" onClick={onSave} className="w-full border-gray-300">
-                <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
-                {isSaved ? "Saved" : "Save for later"}
-              </Button>
+          <div className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+            <Card
+              className="border-gray-200/80 p-6 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-neutral-950"
+              style={{ background: `linear-gradient(180deg, ${brandColor}16 0%, #ffffff 42%, #ffffff 100%)` }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                Quick action
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-gray-950 dark:text-white">Ready to apply?</h3>
+              <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                Save the role or submit your application now while the job is still active.
+              </p>
+              <div className="mt-5 space-y-3">
+                <Button className="w-full !border-emerald-700 !bg-emerald-600 !text-white hover:!bg-emerald-700 disabled:!border-emerald-200 disabled:!bg-emerald-100 disabled:!text-emerald-700 dark:disabled:!border-emerald-400/20 dark:disabled:!bg-emerald-500/10 dark:disabled:!text-emerald-300" onClick={onApply} disabled={hasApplied || isApplying}>
+                  {hasApplied ? "Applied" : isApplying ? "Applying..." : "Apply now"}
+                </Button>
+                <Button variant="outline" onClick={onSave} className="w-full border-gray-300 bg-white/80 dark:border-white/15 dark:bg-neutral-900 dark:text-white">
+                  <Bookmark className={`mr-2 h-4 w-4 ${isSaved ? "fill-blue-600 text-blue-600" : ""}`} />
+                  {isSaved ? "Saved" : "Save for later"}
+                </Button>
+              </div>
             </Card>
 
-            <Card className="p-6 border-gray-200 shadow-md">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">About the Company</h3>
-              <p className="text-sm text-gray-700 mb-3">{job.employer.company_name}</p>
-              {job.employer.industry && <p className="text-sm text-gray-600 mb-3">{job.employer.industry}</p>}
-              <Button variant="outline" className="w-full mt-2 border-gray-300">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View Company Profile
-              </Button>
+            <Card
+              className="border-gray-200/80 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-neutral-950"
+              style={{ borderTop: `4px solid ${brandColor}` }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                Company
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-gray-950 dark:text-white">About {job.employer.company_name}</h3>
+              <div className="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                {job.employer.industry ? (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-gray-400" />
+                    <span>{job.employer.industry}</span>
+                  </div>
+                ) : null}
+                {job.employer.careers_page_headline ? (
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-200">
+                    {job.employer.careers_page_headline}
+                  </div>
+                ) : (
+                  <p>Explore the company profile and active roles before deciding where to apply.</p>
+                )}
+              </div>
+              <div className="mt-5 space-y-3">
+                {companyProfileEnabled ? (
+                  <Button
+                    variant="outline"
+                    className="w-full border-gray-300 bg-white dark:border-white/15 dark:bg-neutral-900 dark:text-white"
+                    onClick={() => navigate(`/companies/${job.employer_id}`)}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Company Profile
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="w-full border-gray-300 bg-white dark:border-white/15 dark:bg-neutral-900 dark:text-white" disabled>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Company profile hidden
+                  </Button>
+                )}
+                {customDomainHref ? (
+                  <Button
+                    variant="outline"
+                    className="w-full border-gray-300 bg-white dark:border-white/15 dark:bg-neutral-900 dark:text-white"
+                    onClick={() => window.open(customDomainHref, "_blank", "noopener,noreferrer")}
+                  >
+                    <Globe className="mr-2 h-4 w-4" />
+                    Visit Careers Site
+                  </Button>
+                ) : null}
+              </div>
             </Card>
           </div>
         </div>

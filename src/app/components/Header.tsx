@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck, Moon, Sun, Menu } from "lucide-react";
+import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck, Moon, Sun, Menu, LayoutDashboard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
@@ -286,6 +286,13 @@ export function Header({
 
                       <DropdownMenuSeparator />
 
+                      {role === "candidate" && (
+                        <DropdownMenuItem onClick={() => navigate("/candidate/dashboard")}>
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          Dashboard
+                        </DropdownMenuItem>
+                      )}
+
                       <DropdownMenuItem onClick={onProfileClick}>
                         <Settings className="mr-2 h-4 w-4" />
                         Profile Settings
@@ -381,6 +388,20 @@ export function Header({
                       </div>
                     </div>
                   </div>
+
+                  {role === "candidate" && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/candidate/dashboard");
+                      }}
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Button>
+                  )}
 
                   {role === "candidate" && (
                     <Button

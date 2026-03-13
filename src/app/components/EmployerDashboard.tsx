@@ -311,6 +311,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     String((profile as { subscription_status?: string | null } | null)?.subscription_status ?? "").toLowerCase() === "pending_payment" &&
     Boolean(selectedPendingPlan);
   const hasResolvedPlan = !profileLoading;
+  const hasResolvedUsage = !analyticsLoading;
   const hasPaidAccess = hasEmployerPaidAccess(profile);
   const hasAnalytics = hasPaidAccess;
   const hasPremium = hasPaidAccess;
@@ -326,6 +327,8 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const availableJobSlotCredits = Math.max(extraJobSlotCredits, creditedJobSlotBalance);
   const isOverJobLimit = finiteJobLimit !== null && activeJobs >= finiteJobLimit;
   const isPostingLocked = isOverJobLimit && availableJobSlotCredits <= 0;
+  const isPostingActionPending = profileLoading || !hasResolvedUsage;
+  const isPostingActionDisabled = isPostingActionPending || isPostingLocked;
 
   const refreshDashboardData = useCallback(async () => {
     if (!cachePrefix) return;
@@ -479,12 +482,12 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
 
           <Button
             onClick={() => setShowPostJob(true)}
-            disabled={isPostingLocked}
+            disabled={isPostingActionDisabled}
             className="bg-blue-600 hover:bg-blue-700 text-white"
             size="lg"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Post New Job
+            {isPostingActionPending ? "Loading limits..." : "Post New Job"}
           </Button>
         </div>
 
@@ -514,7 +517,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
           {analyticsStats.map((stat, index) => {
-            const isLocked = hasResolvedPlan && stat.premium && !hasPremium;
+            const isLocked = stat.premium && (profileLoading || (hasResolvedPlan && !hasPremium));
 
             return (
               <div key={index} className="relative">
@@ -548,14 +551,19 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                 {/* 🔒 Upgrade overlay */}
                 {isLocked && (
                   <button
-                    onClick={() => setShowUpgradeModal(true)}
+                    onClick={() => {
+                      if (!profileLoading) {
+                        setShowUpgradeModal(true);
+                      }
+                    }}
+                    disabled={profileLoading}
                     className="absolute inset-0 cursor-pointer rounded-lg border border-white/20 bg-white/10 backdrop-blur-[2px] transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 dark:bg-black/20 dark:hover:bg-black/30"
                     aria-label={`Upgrade to unlock ${stat.label}`}
                     title={`Upgrade to unlock ${stat.label}`}
                   >
                     <div className="absolute inset-x-4 bottom-4 flex items-center justify-center gap-2 rounded-full border border-white/20 bg-neutral-950/90 px-4 py-2 text-sm font-semibold text-white shadow-lg dark:border-white/10">
                       <Crown className="w-4 h-4" />
-                      Upgrade to Unlock
+                      {profileLoading ? "Checking access..." : "Upgrade to Unlock"}
                     </div>
                   </button>
                 )}
@@ -902,10 +910,10 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   onClick={() => setShowPostJob(true)}
                   variant="outline"
                   className="w-full justify-start"
-                  disabled={isPostingLocked}
+                  disabled={isPostingActionDisabled}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  {isPostingLocked ? "Job Limit Reached" : "Post New Job"}
+                  {isPostingActionPending ? "Loading limits..." : isPostingLocked ? "Job Limit Reached" : "Post New Job"}
                 </Button>
 
                 {hasAnalytics ? (

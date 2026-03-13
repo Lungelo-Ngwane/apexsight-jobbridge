@@ -779,7 +779,7 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
 
   const { data: employers, error: empError } = await supabase
     .from("employer_profiles")
-    .select("id, company_name, industry, logo_url")
+    .select("id, company_name, industry, logo_url, brand_primary_color, custom_domain, careers_page_headline, public_company_page, plan")
     .in("id", employerIds);
   if (empError) {
     // Do not block job listing when employer metadata is restricted by RLS.
@@ -790,6 +790,11 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
         company_name: "Company",
         industry: null,
         logo_url: null,
+        brand_primary_color: null,
+        custom_domain: null,
+        careers_page_headline: null,
+        public_company_page: true,
+        plan: "free",
       },
     }));
   }
@@ -809,9 +814,14 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
       company_name: emp.company_name,
       industry: emp.industry ?? null,
       logo_url: resolveLogoUrl(emp.logo_url),
+      brand_primary_color: emp.brand_primary_color ? String(emp.brand_primary_color) : null,
+      custom_domain: emp.custom_domain ? String(emp.custom_domain) : null,
+      careers_page_headline: emp.careers_page_headline ? String(emp.careers_page_headline) : null,
+      public_company_page: emp.public_company_page !== false,
+      plan: emp.plan ? String(emp.plan).toLowerCase() : "free",
     };
     return acc;
-  }, {} as Record<string, { company_name: string; industry: string | null; logo_url: string | null }>);
+  }, {} as Record<string, { company_name: string; industry: string | null; logo_url: string | null; brand_primary_color: string | null; custom_domain: string | null; careers_page_headline: string | null; public_company_page: boolean; plan: string }>);
 
   return jobs.map((job) => ({
     ...job,
@@ -820,6 +830,11 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
       company_name: employerMap[String(job.employer_id)]?.company_name || "Unknown Company",
       industry: employerMap[String(job.employer_id)]?.industry || null,
       logo_url: employerMap[String(job.employer_id)]?.logo_url || null,
+      brand_primary_color: employerMap[String(job.employer_id)]?.brand_primary_color || null,
+      custom_domain: employerMap[String(job.employer_id)]?.custom_domain || null,
+      careers_page_headline: employerMap[String(job.employer_id)]?.careers_page_headline || null,
+      public_company_page: employerMap[String(job.employer_id)]?.public_company_page ?? true,
+      plan: employerMap[String(job.employer_id)]?.plan || "free",
     }
   }));
 }
@@ -849,6 +864,111 @@ export async function getJobsByIds(jobIds: string[]) {
   if (jobsError) throw jobsError;
   if (!jobs || jobs.length === 0) return [];
   return attachEmployerDetailsToJobs(jobs);
+}
+
+export async function getPublicEmployerProfile(employerId: string) {
+  const normalizedEmployerId = String(employerId ?? "").trim();
+  if (!normalizedEmployerId) return null;
+
+  const { data: employer, error: employerError } = await supabase
+    .from("employer_profiles")
+    .select(`
+      id,
+      company_name,
+      industry,
+      company_size,
+      description,
+      website,
+      address,
+      logo_url,
+      banner_image_url,
+      show_on_platform,
+      public_company_page,
+      plan,
+      brand_primary_color,
+      custom_domain,
+      careers_page_headline,
+      enterprise_account_manager_name,
+      enterprise_account_manager_email,
+      sla_tier,
+      sla_uptime_target,
+      sla_response_time_hours
+    `)
+    .eq("id", normalizedEmployerId)
+    .maybeSingle();
+
+  if (employerError) throw employerError;
+  if (!employer) return null;
+  const normalizedPlan = String(employer.plan ?? "free").toLowerCase();
+  if (
+    employer.show_on_platform === false ||
+    employer.public_company_page === false ||
+    normalizedPlan !== "enterprise"
+  ) {
+    return null;
+  }
+
+  const { data: jobs, error: jobsError } = await supabase
+    .from("jobs")
+    .select(`
+      id,
+      title,
+      description,
+      location,
+      employment_type,
+      salary_min,
+      salary_max,
+      experience_level,
+      is_featured,
+      featured_until,
+      created_at,
+      employer_id
+    `)
+    .eq("employer_id", normalizedEmployerId)
+    .eq("status", "open")
+    .order("is_featured", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (jobsError) throw jobsError;
+
+  const resolveLogoUrl = (value: unknown): string | null => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw)) return raw;
+
+    const normalizedPath = raw.replace(/^\/+/, "");
+    const { data } = supabase.storage.from("employer-logos").getPublicUrl(normalizedPath);
+    return String(data?.publicUrl ?? "").trim() || null;
+  };
+
+  const enrichedJobs = await attachEmployerDetailsToJobs((jobs ?? []) as any[]);
+
+  return {
+    employer: {
+      id: String(employer.id),
+      company_name: String(employer.company_name ?? "Company").trim(),
+      industry: employer.industry ? String(employer.industry) : null,
+      company_size: employer.company_size ? String(employer.company_size) : null,
+      description: employer.description ? String(employer.description) : null,
+      website: employer.website ? String(employer.website) : null,
+      address: employer.address ? String(employer.address) : null,
+      logo_url: resolveLogoUrl(employer.logo_url),
+      banner_image_url: resolveLogoUrl(employer.banner_image_url),
+      plan: normalizedPlan,
+      brand_primary_color: employer.brand_primary_color ? String(employer.brand_primary_color) : null,
+      custom_domain: employer.custom_domain ? String(employer.custom_domain) : null,
+      careers_page_headline: employer.careers_page_headline ? String(employer.careers_page_headline) : null,
+      enterprise_account_manager_name: employer.enterprise_account_manager_name ? String(employer.enterprise_account_manager_name) : null,
+      enterprise_account_manager_email: employer.enterprise_account_manager_email ? String(employer.enterprise_account_manager_email) : null,
+      sla_tier: employer.sla_tier ? String(employer.sla_tier) : null,
+      sla_uptime_target: employer.sla_uptime_target ? String(employer.sla_uptime_target) : null,
+      sla_response_time_hours:
+        employer.sla_response_time_hours === null || employer.sla_response_time_hours === undefined
+          ? null
+          : Number(employer.sla_response_time_hours),
+    },
+    jobs: enrichedJobs,
+  };
 }
 
 export async function getCandidateSavedJobIds() {

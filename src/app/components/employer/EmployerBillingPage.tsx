@@ -59,6 +59,11 @@ export function EmployerBillingPage() {
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
+  const enterpriseManagerName = String((profile as { enterprise_account_manager_name?: string | null } | null)?.enterprise_account_manager_name ?? "").trim();
+  const enterpriseManagerEmail = String((profile as { enterprise_account_manager_email?: string | null } | null)?.enterprise_account_manager_email ?? "").trim();
+  const slaTier = String((profile as { sla_tier?: string | null } | null)?.sla_tier ?? "").trim();
+  const slaUptimeTarget = String((profile as { sla_uptime_target?: string | null } | null)?.sla_uptime_target ?? "").trim();
+  const slaResponseTimeHours = (profile as { sla_response_time_hours?: number | null } | null)?.sla_response_time_hours ?? null;
 
   useEffect(() => {
     getActivePlans()
@@ -360,7 +365,7 @@ export function EmployerBillingPage() {
         "Dedicated account manager",
         `${plans.find((p) => p.name === "enterprise")?.userLimit ?? 50} users`,
         "API access",
-        "Custom integrations"
+        "White-label options"
       ],
       color: "from-neutral-500 to-neutral-700"
     }
@@ -734,12 +739,39 @@ export function EmployerBillingPage() {
             {/* Need Help */}
             <Card className="p-6 bg-gray-50 border-gray-200 shadow-md">
               <h3 className="text-sm font-bold text-gray-900 mb-2">Need Help?</h3>
-              <p className="text-xs text-gray-600 mb-4">
-                Have questions about your billing or need to discuss custom plans?
-              </p>
-              <Button 
-                variant="outline" 
+              {enterpriseManagerName || enterpriseManagerEmail ? (
+                <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Dedicated account manager</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-900">{enterpriseManagerName || "Assigned support manager"}</p>
+                  {enterpriseManagerEmail ? (
+                    <a className="mt-1 block text-sm text-blue-600 hover:text-blue-700" href={`mailto:${enterpriseManagerEmail}`}>
+                      {enterpriseManagerEmail}
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+              {slaTier || slaUptimeTarget || slaResponseTimeHours ? (
+                <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Service commitment</p>
+                  <p className="mt-2 text-sm text-gray-700">
+                    {slaTier || "Enterprise"}{slaUptimeTarget ? ` • ${slaUptimeTarget} uptime target` : ""}{slaResponseTimeHours ? ` • ${slaResponseTimeHours}h initial response` : ""}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-600 mb-4">
+                  Have questions about your billing or need to discuss custom plans?
+                </p>
+              )}
+              <Button
+                variant="outline"
                 className="w-full border-gray-300 bg-white hover:bg-gray-50"
+                onClick={() => {
+                  if (enterpriseManagerEmail) {
+                    window.location.href = `mailto:${enterpriseManagerEmail}`;
+                    return;
+                  }
+                  navigate("/employer/settings");
+                }}
               >
                 Contact Support
               </Button>

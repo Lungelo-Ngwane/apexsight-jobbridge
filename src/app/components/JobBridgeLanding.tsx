@@ -55,7 +55,7 @@ const pricingPlans = [
     period: "per month",
     description: "For larger hiring teams with scale and control requirements.",
     icon: Crown,
-    features: ["4 active job postings", "Dedicated account manager", "Custom integrations", "SLA-backed support"],
+    features: ["4 active job postings", "Dedicated account manager", "White-label options", "SLA-backed support"],
   },
 ] as const;
 

@@ -123,7 +123,6 @@ export function EmployerPlansPage() {
         features: [
           `${enterprise?.jobLimit ?? 4} active job postings`,
           "Dedicated account manager",
-          "Custom integrations",
           "White-label options",
           "SLA guarantee",
         ],

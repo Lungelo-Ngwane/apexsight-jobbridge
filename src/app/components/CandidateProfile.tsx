@@ -4,6 +4,7 @@ import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Textarea } from "@/app/components/ui/textarea";
 import { ArrowLeft, ChevronDown, ChevronUp, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
@@ -17,6 +18,40 @@ import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 interface CandidateProfileProps { }
+
+const EXPERIENCE_LEVEL_OPTIONS = [
+    { value: "junior", label: "Junior" },
+    { value: "mid", label: "Intermediate" },
+    { value: "senior", label: "Senior" },
+] as const;
+
+const GENDER_OPTIONS = [
+    { value: "Female", label: "Female" },
+    { value: "Male", label: "Male" },
+    { value: "Non-binary", label: "Non-binary" },
+    { value: "Other", label: "Other" },
+    { value: "Prefer not to say", label: "Prefer not to say" },
+] as const;
+
+function normalizeExperienceLevel(value?: string | null) {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    if (!normalized) return "";
+    if (normalized === "junior" || normalized === "entry" || normalized === "entry-level") return "junior";
+    if (normalized === "mid" || normalized === "mid-level" || normalized === "intermediate") return "mid";
+    if (normalized === "senior" || normalized === "lead" || normalized === "principal" || normalized === "executive" || normalized === "director") return "senior";
+    return "";
+}
+
+function normalizeGender(value?: string | null) {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    if (!normalized) return "";
+    if (normalized === "female" || normalized === "woman") return "Female";
+    if (normalized === "male" || normalized === "man") return "Male";
+    if (normalized === "non-binary" || normalized === "nonbinary" || normalized === "non binary") return "Non-binary";
+    if (normalized === "other") return "Other";
+    if (normalized === "prefer not to say" || normalized === "prefer_not_to_say" || normalized === "decline to state") return "Prefer not to say";
+    return "";
+}
 
 export function CandidateProfile({ }: CandidateProfileProps) {
     const { user, role } = useAuth();
@@ -82,13 +117,13 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 bio: profile.bio || null,
                 location: profile.location || null,
                 years_experience: Number(profile.years_experience ?? 0),
-                experience_level: profile.experience_level || null,
+                experience_level: normalizeExperienceLevel(profile.experience_level) || null,
                 availability: profile.availability || null,
                 preferred_job_type: profile.preferred_job_type || null,
                 work_mode: profile.work_mode || null,
                 date_of_birth: profile.date_of_birth || null,
                 id_number: profile.id_number || null,
-                gender: profile.gender || null,
+                gender: normalizeGender(profile.gender) || null,
                 contact_number: profile.contact_number || null,
             })
             .select("id")
@@ -131,13 +166,13 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                             candidateProfile.years_experience !== undefined
                             ? Number(candidateProfile.years_experience)
                             : 0,
-                    experience_level: candidateProfile.experience_level || "",
+                    experience_level: normalizeExperienceLevel(candidateProfile.experience_level),
                     availability: candidateProfile.availability || "",
                     preferred_job_type: candidateProfile.preferred_job_type || "",
                     work_mode: candidateProfile.work_mode || "",
                     date_of_birth: candidateProfile.date_of_birth || "",
                     id_number: candidateProfile.id_number || "",
-                    gender: candidateProfile.gender || "",
+                    gender: normalizeGender(candidateProfile.gender),
                     contact_number: candidateProfile.contact_number || "",
                 });
                 setCvName(String(candidateProfile.cv_url ?? "").trim().split("/").pop() || null);
@@ -254,7 +289,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 ...profile,
                 date_of_birth: profile.date_of_birth || null,
                 id_number: profile.id_number || null,
-                gender: profile.gender || null,
+                gender: normalizeGender(profile.gender) || null,
                 contact_number: profile.contact_number || null,
                 surname: profile.surname || null,
                 updated_at: new Date().toISOString(),
@@ -466,11 +501,21 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
                         <div className="space-y-2">
                             <Label>Gender</Label>
-                            <Input
-                                placeholder="e.g. Female"
+                            <Select
                                 value={profile.gender}
-                                onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
-                            />
+                                onValueChange={(value) => setProfile({ ...profile, gender: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {GENDER_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="space-y-2">
@@ -493,11 +538,21 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
                         <div className="space-y-2">
                             <Label>Experience Level</Label>
-                            <Input
-                                placeholder="e.g. Entry level"
+                            <Select
                                 value={profile.experience_level}
-                                onChange={(e) => setProfile({ ...profile, experience_level: e.target.value })}
-                            />
+                                onValueChange={(value) => setProfile({ ...profile, experience_level: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select experience level" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {EXPERIENCE_LEVEL_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="space-y-2">

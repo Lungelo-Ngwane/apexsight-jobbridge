@@ -5,7 +5,9 @@ import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { BookmarkCheck, Briefcase, Building2, Clock3, MapPin } from "lucide-react";
-import { getAppliedJobIds, getCandidateSavedJobIds, getJobsByIds } from "@/lib/candidate";
+import { applyForJob, getAppliedJobIds, getCandidateDashboardData, getCandidateSavedJobIds, getJobsByIds } from "@/lib/candidate";
+import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
 
 type MyJob = {
   id: string;
@@ -18,6 +20,10 @@ type MyJob = {
     company_name: string;
     industry?: string | null;
     logo_url?: string | null;
+    brand_primary_color?: string | null;
+    custom_domain?: string | null;
+    careers_page_headline?: string | null;
+    public_company_page?: boolean;
   };
 };
 
@@ -30,14 +36,18 @@ export default function CandidateMyJobsPage() {
   const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [jobsById, setJobsById] = useState<Record<string, MyJob>>({});
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+  const [profileReadyForApplication, setProfileReadyForApplication] = useState<boolean | null>(null);
+  const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
-    Promise.all([getAppliedJobIds(), getCandidateSavedJobIds()])
-      .then(async ([appliedIds, savedIds]) => {
+    Promise.all([getAppliedJobIds(), getCandidateSavedJobIds(), getCandidateDashboardData()])
+      .then(async ([appliedIds, savedIds, profileData]) => {
         const applied = appliedIds ?? [];
         const saved = savedIds ?? [];
         setAppliedJobIds(applied);
         setSavedJobIds(saved);
+        setProfileReadyForApplication(isCandidateProfileReadyForApplication(profileData));
 
         const ids = Array.from(new Set([...applied, ...saved]));
         if (ids.length === 0) {
@@ -69,6 +79,36 @@ export default function CandidateMyJobsPage() {
     [savedJobIds, jobsById],
   );
   const visibleJobs = activeTab === "applied" ? appliedJobs : savedJobs;
+
+  async function handleApply(job: MyJob) {
+    if (appliedJobIds.includes(job.id) || job.status !== "open") return;
+    if (profileReadyForApplication === false) {
+      showFeedback(
+        "Complete your profile first",
+        "Finish your profile details before applying so employers can review a complete application.",
+      );
+      return;
+    }
+
+    try {
+      setApplyingJobId(job.id);
+      await applyForJob(job.id);
+      setAppliedJobIds((prev) => [...new Set([...prev, job.id])]);
+      showFeedback("Application sent", `Your application for ${job.title} has been submitted.`);
+    } catch (error: any) {
+      const message = String(error?.message ?? "");
+      if (message.toLowerCase().includes("already applied")) {
+        setAppliedJobIds((prev) => [...new Set([...prev, job.id])]);
+      } else {
+        showFeedback(
+          "Application failed",
+          "We couldn't submit your application right now. Please try again.",
+        );
+      }
+    } finally {
+      setApplyingJobId(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -125,7 +165,10 @@ export default function CandidateMyJobsPage() {
             {visibleJobs.map((job) => (
               <Card key={job.id} className="p-5 border-gray-200">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-11 h-11 bg-white border border-gray-200 rounded-lg flex items-center justify-center shrink-0">
+                  <div
+                    className="w-11 h-11 border border-gray-200 rounded-lg flex items-center justify-center shrink-0"
+                    style={!job.employer.logo_url ? { backgroundColor: job.employer.brand_primary_color ?? "#f5f5f5" } : undefined}
+                  >
                     {job.employer.logo_url ? (
                       <img
                         src={job.employer.logo_url}
@@ -133,7 +176,7 @@ export default function CandidateMyJobsPage() {
                         className="w-full h-full object-cover rounded-lg"
                       />
                     ) : (
-                      <Building2 className="w-5 h-5 text-blue-600" />
+                      <Building2 className="w-5 h-5 text-white" />
                     )}
                   </div>
                   <div className="min-w-0">
@@ -171,11 +214,39 @@ export default function CandidateMyJobsPage() {
                     </Badge>
                   )}
                 </div>
+                <div className="mt-4 flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => navigate("/candidate/jobs", { state: { selectedJobId: job.id } })}
+                  >
+                    View
+                  </Button>
+                  {activeTab === "saved" ? (
+                    <Button
+                      className="flex-1 !border-emerald-700 !bg-emerald-600 !bg-none !text-white hover:!bg-emerald-700 disabled:!border-emerald-200 disabled:!bg-emerald-100 disabled:!text-emerald-700 dark:disabled:!border-emerald-400/20 dark:disabled:!bg-emerald-500/10 dark:disabled:!text-emerald-300"
+                      onClick={() => void handleApply(job)}
+                      disabled={appliedJobIds.includes(job.id) || applyingJobId === job.id || job.status !== "open"}
+                    >
+                      {appliedJobIds.includes(job.id)
+                        ? "Applied"
+                        : applyingJobId === job.id
+                          ? "Applying..."
+                          : "Apply"}
+                    </Button>
+                  ) : null}
+                </div>
               </Card>
             ))}
           </div>
         )}
       </div>
+      <FeedbackDialog
+        open={feedback.open}
+        title={feedback.title}
+        description={feedback.description}
+        onOpenChange={setFeedbackOpen}
+      />
     </div>
   );
 }

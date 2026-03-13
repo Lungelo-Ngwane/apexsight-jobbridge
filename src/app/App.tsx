@@ -13,6 +13,7 @@ import { EmployerProfile } from "@/app/components/EmployerProfile";
 import { useAuth } from './context/AuthContext';
 import CandidateJobsPage from "./components/CandidateJobsPage";
 import CandidateMyJobsPage from "./components/CandidateMyJobsPage";
+import { EmployerPublicProfilePage } from "./components/EmployerPublicProfilePage";
 import { EmployerApp } from "./components/EmployerApp";
 import { EmployerJobsPage } from "./components/employer/EmployerJobsPage";
 import { EmployerJobReportPage } from "./components/employer/EmployerJobReportPage";
@@ -274,6 +275,7 @@ export default function App() {
         <Route path="/candidate/my-jobs" element={<CandidateMyJobsPage />} />
         <Route path="/candidate/messages" element={<MessagesPage />} />
         <Route path="/candidate/profile" element={<CandidateProfile />} />
+        <Route path="/companies/:employerId" element={<EmployerPublicProfilePage />} />
 
         <Route path="/employer" element={<EmployerApp />}>
           <Route path="dashboard" element={<EmployerDashboard />} />

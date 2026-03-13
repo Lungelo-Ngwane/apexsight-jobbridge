@@ -134,6 +134,17 @@ export interface EmployerTeamMember {
   isCurrentUser: boolean;
 }
 
+export interface EmployerIntegrationRequest {
+  id: string;
+  employerId: string;
+  createdBy: string;
+  title: string;
+  description: string | null;
+  status: "requested" | "planned" | "in_progress" | "completed" | "declined";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ResolvedSkillCatalogItem {
   id: string;
   name: string;
@@ -502,6 +513,67 @@ export async function getEmployerProfile() {
   }
 
   return data;
+}
+
+export async function getEmployerIntegrationRequests(): Promise<EmployerIntegrationRequest[]> {
+  const context = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin", "recruiter"] });
+
+  const { data, error } = await supabase
+    .from("employer_integration_requests")
+    .select("id, employer_id, created_by, title, description, status, created_at, updated_at")
+    .eq("employer_id", context.employerId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    employerId: String(row.employer_id),
+    createdBy: String(row.created_by),
+    title: String(row.title ?? "").trim(),
+    description: row.description ? String(row.description) : null,
+    status: String(row.status ?? "requested") as EmployerIntegrationRequest["status"],
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  }));
+}
+
+export async function createEmployerIntegrationRequest(input: {
+  title: string;
+  description?: string | null;
+}) {
+  const context = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin"] });
+  const title = String(input.title ?? "").trim();
+  const description = String(input.description ?? "").trim();
+
+  if (!title) {
+    throw new Error("Integration title is required.");
+  }
+
+  const { data, error } = await supabase
+    .from("employer_integration_requests")
+    .insert({
+      employer_id: context.employerId,
+      created_by: context.user.id,
+      title,
+      description: description || null,
+      status: "requested",
+    })
+    .select("id, employer_id, created_by, title, description, status, created_at, updated_at")
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: String(data.id),
+    employerId: String(data.employer_id),
+    createdBy: String(data.created_by),
+    title: String(data.title ?? "").trim(),
+    description: data.description ? String(data.description) : null,
+    status: String(data.status ?? "requested") as EmployerIntegrationRequest["status"],
+    createdAt: String(data.created_at),
+    updatedAt: String(data.updated_at),
+  } satisfies EmployerIntegrationRequest;
 }
 
 export async function getEmployerTeamMembers(): Promise<EmployerTeamMember[]> {
@@ -2818,6 +2890,16 @@ export async function updateEmployerProfile(payload: {
   logo_url?: string | null;
   show_on_platform?: boolean;
   public_company_page?: boolean;
+  enterprise_account_manager_name?: string | null;
+  enterprise_account_manager_email?: string | null;
+  white_label_enabled?: boolean;
+  brand_primary_color?: string | null;
+  banner_image_url?: string | null;
+  custom_domain?: string | null;
+  careers_page_headline?: string | null;
+  sla_tier?: string | null;
+  sla_uptime_target?: string | null;
+  sla_response_time_hours?: number | null;
   onboarding_step?: number;
   plan?: string;
   selected_plan?: string | null;
@@ -2843,6 +2925,14 @@ export async function updateEmployerProfile(payload: {
 }
 
 export async function uploadEmployerLogo(file: File): Promise<string> {
+  return uploadEmployerBrandImage(file, "logo");
+}
+
+export async function uploadEmployerBanner(file: File): Promise<string> {
+  return uploadEmployerBrandImage(file, "banner");
+}
+
+async function uploadEmployerBrandImage(file: File, kind: "logo" | "banner"): Promise<string> {
   const {
     data: { user },
     error: authError,
@@ -2853,7 +2943,7 @@ export async function uploadEmployerLogo(file: File): Promise<string> {
   }
 
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
-  const path = `${user.id}/logo.${ext}`;
+  const path = `${user.id}/${kind}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("employer-logos")
@@ -2868,6 +2958,6 @@ export async function uploadEmployerLogo(file: File): Promise<string> {
   const publicUrl = String(publicUrlData?.publicUrl ?? "").trim();
   if (!publicUrl) throw new Error("Failed to resolve logo URL.");
 
-  await updateEmployerProfile({ logo_url: publicUrl });
+  await updateEmployerProfile(kind === "logo" ? { logo_url: publicUrl } : { banner_image_url: publicUrl });
   return publicUrl;
 }

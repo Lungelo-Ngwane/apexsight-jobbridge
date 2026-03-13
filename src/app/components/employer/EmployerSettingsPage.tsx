@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
+import { Badge } from "@/app/components/ui/badge";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -42,6 +43,7 @@ import {
   revokeEmployerTeamMember,
   updateEmployerProfile,
   updateEmployerTeamMember,
+  uploadEmployerBanner,
   uploadEmployerLogo,
   type EmployerMembershipRole,
   type EmployerTeamMember,
@@ -68,7 +70,18 @@ export function EmployerSettingsPage() {
   const [showOnPlatform, setShowOnPlatform] = useState(true);
   const [publicCompanyPage, setPublicCompanyPage] = useState(true);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [bannerImageUrl, setBannerImageUrl] = useState<string | null>(null);
+  const [enterpriseAccountManagerName, setEnterpriseAccountManagerName] = useState("");
+  const [enterpriseAccountManagerEmail, setEnterpriseAccountManagerEmail] = useState("");
+  const [whiteLabelEnabled, setWhiteLabelEnabled] = useState(false);
+  const [brandPrimaryColor, setBrandPrimaryColor] = useState("#111111");
+  const [customDomain, setCustomDomain] = useState("");
+  const [careersPageHeadline, setCareersPageHeadline] = useState("");
+  const [slaTier, setSlaTier] = useState("Enterprise");
+  const [slaUptimeTarget, setSlaUptimeTarget] = useState("99.9%");
+  const [slaResponseTimeHours, setSlaResponseTimeHours] = useState("4");
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [teamMembers, setTeamMembers] = useState<EmployerTeamMember[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
@@ -103,6 +116,16 @@ export function EmployerSettingsPage() {
     setShowOnPlatform(profile.show_on_platform ?? true);
     setPublicCompanyPage(profile.public_company_page ?? true);
     setLogoUrl(profile.logo_url ?? null);
+    setBannerImageUrl(profile.banner_image_url ?? null);
+    setEnterpriseAccountManagerName(String(profile.enterprise_account_manager_name ?? "").trim());
+    setEnterpriseAccountManagerEmail(String(profile.enterprise_account_manager_email ?? "").trim());
+    setWhiteLabelEnabled(Boolean(profile.white_label_enabled));
+    setBrandPrimaryColor(String(profile.brand_primary_color ?? "#111111").trim() || "#111111");
+    setCustomDomain(String(profile.custom_domain ?? "").trim());
+    setCareersPageHeadline(String(profile.careers_page_headline ?? "").trim());
+    setSlaTier(String(profile.sla_tier ?? "Enterprise").trim() || "Enterprise");
+    setSlaUptimeTarget(String(profile.sla_uptime_target ?? "99.9%").trim() || "99.9%");
+    setSlaResponseTimeHours(String(profile.sla_response_time_hours ?? "4").trim() || "4");
   }, [profile, user?.email]);
 
   async function loadTeamMembers(showLoader = true) {
@@ -142,8 +165,18 @@ export function EmployerSettingsPage() {
         phone: phone.trim() || null,
         address: address.trim() || null,
         logo_url: logoUrl,
+        banner_image_url: bannerImageUrl,
         show_on_platform: showOnPlatform,
         public_company_page: publicCompanyPage,
+        enterprise_account_manager_name: enterpriseAccountManagerName.trim() || null,
+        enterprise_account_manager_email: enterpriseAccountManagerEmail.trim() || null,
+        white_label_enabled: whiteLabelEnabled,
+        brand_primary_color: brandPrimaryColor.trim() || null,
+        custom_domain: customDomain.trim() || null,
+        careers_page_headline: careersPageHeadline.trim() || null,
+        sla_tier: slaTier.trim() || null,
+        sla_uptime_target: slaUptimeTarget.trim() || null,
+        sla_response_time_hours: Number.isFinite(Number(slaResponseTimeHours)) ? Number(slaResponseTimeHours) : null,
       });
 
       showFeedback(
@@ -169,6 +202,20 @@ export function EmployerSettingsPage() {
       showFeedback("Logo upload failed", message);
     } finally {
       setUploadingLogo(false);
+    }
+  }
+
+  async function handleBannerUpload(file: File) {
+    try {
+      setUploadingBanner(true);
+      const url = await uploadEmployerBanner(file);
+      setBannerImageUrl(url);
+      showFeedback("Banner uploaded", "Your employer banner has been uploaded successfully.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We couldn't upload your banner right now.";
+      showFeedback("Banner upload failed", message);
+    } finally {
+      setUploadingBanner(false);
     }
   }
 
@@ -218,6 +265,25 @@ export function EmployerSettingsPage() {
     }
   }
 
+  const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
+  const planSeatLimit =
+    normalizedPlan === "starter" ? 2 :
+    normalizedPlan === "professional" ? 5 :
+    normalizedPlan === "enterprise" ? 50 :
+    1;
+  const showTeamTab = normalizedPlan !== "free";
+  const isEnterprisePlan = normalizedPlan === "enterprise";
+  const seatsUsed = teamMembers.filter((member) => member.status === "active" || member.status === "invited").length;
+  const seatsAvailable = Math.max(planSeatLimit - seatsUsed, 0);
+  const currentMember = teamMembers.find((member) => member.isCurrentUser) ?? null;
+  const canManageTeam = currentMember?.role === "owner" || currentMember?.role === "admin";
+
+  useEffect(() => {
+    if (!showTeamTab && activeTab === "team") {
+      setActiveTab("company");
+    }
+  }, [activeTab, showTeamTab]);
+
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
@@ -225,17 +291,6 @@ export function EmployerSettingsPage() {
       </div>
     );
   }
-
-  const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
-  const planSeatLimit =
-    normalizedPlan === "starter" ? 2 :
-    normalizedPlan === "professional" ? 5 :
-    normalizedPlan === "enterprise" ? 50 :
-    1;
-  const seatsUsed = teamMembers.filter((member) => member.status === "active" || member.status === "invited").length;
-  const seatsAvailable = Math.max(planSeatLimit - seatsUsed, 0);
-  const currentMember = teamMembers.find((member) => member.isCurrentUser) ?? null;
-  const canManageTeam = currentMember?.role === "owner" || currentMember?.role === "admin";
 
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-gray-100/60 to-gray-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900">
@@ -256,9 +311,15 @@ export function EmployerSettingsPage() {
               <Building2 className="w-4 h-4 mr-2" />
               Company Profile
             </TabsTrigger>
-            <TabsTrigger value="team" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
-              <Users className="w-4 h-4 mr-2" />
-              Team
+            {showTeamTab ? (
+              <TabsTrigger value="team" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
+                <Users className="w-4 h-4 mr-2" />
+                Team
+              </TabsTrigger>
+            ) : null}
+            <TabsTrigger value="enterprise" className="data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">
+              <Shield className="w-4 h-4 mr-2" />
+              Enterprise
             </TabsTrigger>
           </TabsList>
 
@@ -477,6 +538,7 @@ export function EmployerSettingsPage() {
           </TabsContent>
 
           {/* Team Members Tab */}
+          {showTeamTab ? (
           <TabsContent value="team">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
@@ -631,6 +693,167 @@ export function EmployerSettingsPage() {
                   >
                     View Plans
                   </Button>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+          ) : null}
+
+          <TabsContent value="enterprise">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="space-y-6 lg:col-span-2">
+                <Card className="p-6 border-gray-200 shadow-md dark:border-white/10 dark:bg-neutral-900">
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">Enterprise Support</h3>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Store the account management and SLA details tied to this employer workspace.
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className={isEnterprisePlan ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-700 border-gray-200"}>
+                      {isEnterprisePlan ? "Enterprise active" : "Upgrade required"}
+                    </Badge>
+                  </div>
+
+                  {!isEnterprisePlan ? (
+                    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5 dark:border-white/10 dark:bg-neutral-950">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">Enterprise controls are available on the Enterprise plan.</p>
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        Upgrade to manage account-manager details, SLA targets, and white-label settings in one place.
+                      </p>
+                      <Button className="mt-4 bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700" onClick={() => navigate("/employer/plans")}>
+                        View Enterprise Plan
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Account manager name</Label>
+                        <Input className="mt-2 border-gray-300 dark:border-white/10" value={enterpriseAccountManagerName} onChange={(e) => setEnterpriseAccountManagerName(e.target.value)} placeholder="e.g. Sarah Mokoena" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Account manager email</Label>
+                        <Input className="mt-2 border-gray-300 dark:border-white/10" value={enterpriseAccountManagerEmail} onChange={(e) => setEnterpriseAccountManagerEmail(e.target.value)} placeholder="support@apexsight.co.za" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">SLA tier</Label>
+                        <Input className="mt-2 border-gray-300 dark:border-white/10" value={slaTier} onChange={(e) => setSlaTier(e.target.value)} placeholder="Enterprise" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">SLA uptime target</Label>
+                        <Input className="mt-2 border-gray-300 dark:border-white/10" value={slaUptimeTarget} onChange={(e) => setSlaUptimeTarget(e.target.value)} placeholder="99.9%" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Initial response time (hours)</Label>
+                        <Input className="mt-2 border-gray-300 dark:border-white/10" type="number" min="1" value={slaResponseTimeHours} onChange={(e) => setSlaResponseTimeHours(e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+                </Card>
+
+                <Card className="p-6 border-gray-200 shadow-md dark:border-white/10 dark:bg-neutral-900">
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">White-label Options</h3>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Control the brand settings used when your company appears across the product.
+                      </p>
+                    </div>
+                    <Switch checked={whiteLabelEnabled} onCheckedChange={setWhiteLabelEnabled} disabled={!isEnterprisePlan} />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="md:col-span-2">
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Banner image</Label>
+                      <div className="mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-neutral-950">
+                        {bannerImageUrl ? (
+                          <img src={bannerImageUrl} alt="Employer banner preview" className="h-40 w-full object-cover" />
+                        ) : (
+                          <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                            No banner uploaded yet
+                          </div>
+                        )}
+                      </div>
+                      <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-white/10 dark:bg-neutral-950 dark:hover:bg-neutral-900">
+                        <Upload className="h-4 w-4" />
+                        {uploadingBanner ? "Uploading..." : "Upload Banner"}
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          className="hidden"
+                          disabled={!isEnterprisePlan || !whiteLabelEnabled || uploadingBanner}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            void handleBannerUpload(file);
+                            event.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Brand primary color</Label>
+                      <div className="mt-2 flex items-center gap-3">
+                        <Input className="h-11 w-16 border-gray-300 p-1 dark:border-white/10" type="color" value={brandPrimaryColor} onChange={(e) => setBrandPrimaryColor(e.target.value)} disabled={!isEnterprisePlan || !whiteLabelEnabled} />
+                        <Input className="border-gray-300 dark:border-white/10" value={brandPrimaryColor} onChange={(e) => setBrandPrimaryColor(e.target.value)} disabled={!isEnterprisePlan || !whiteLabelEnabled} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Custom domain</Label>
+                      <Input className="mt-2 border-gray-300 dark:border-white/10" value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} placeholder="careers.yourcompany.com" disabled={!isEnterprisePlan || !whiteLabelEnabled} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Careers page headline</Label>
+                      <Input className="mt-2 border-gray-300 dark:border-white/10" value={careersPageHeadline} onChange={(e) => setCareersPageHeadline(e.target.value)} placeholder="Join the team building the future of banking" disabled={!isEnterprisePlan || !whiteLabelEnabled} />
+                    </div>
+                  </div>
+                </Card>
+
+              </div>
+
+              <div className="space-y-6">
+                <Card className="p-6 border-gray-200 shadow-md dark:border-white/10 dark:bg-neutral-900">
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">Enterprise Feature Summary</h4>
+                  <div className="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-neutral-950">
+                      <p className="font-medium text-gray-900 dark:text-white">Dedicated account manager</p>
+                      <p className="mt-1">{enterpriseAccountManagerName || "No manager assigned yet."}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-neutral-950">
+                      <p className="font-medium text-gray-900 dark:text-white">White-label status</p>
+                      <p className="mt-1">{whiteLabelEnabled ? "Brand customization enabled" : "Brand customization disabled"}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-neutral-950">
+                      <p className="font-medium text-gray-900 dark:text-white">SLA target</p>
+                      <p className="mt-1">{slaUptimeTarget} uptime, {slaResponseTimeHours || "4"} hour initial response</p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 bg-gray-50 border-gray-200 shadow-md dark:border-white/10 dark:bg-neutral-900">
+                  <h4 className="text-sm font-bold text-gray-900 mb-2 dark:text-white">Need a higher-touch setup?</h4>
+                  <p className="text-xs text-gray-700 mb-4 dark:text-gray-400">
+                    Use this tab to keep enterprise account details, brand settings, and integration needs in one place.
+                  </p>
+                  {!isEnterprisePlan ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-gray-300 bg-white dark:border-white/10 dark:bg-neutral-950"
+                      onClick={() => navigate("/employer/plans")}
+                    >
+                      Upgrade to Enterprise
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="w-full bg-gradient-to-r from-neutral-950 to-neutral-800 text-white hover:from-neutral-900 hover:to-neutral-700"
+                      onClick={handleSaveCompanySettings}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Save Enterprise Settings"}
+                    </Button>
+                  )}
                 </Card>
               </div>
             </div>

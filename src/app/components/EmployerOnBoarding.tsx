@@ -296,7 +296,7 @@ export function EmployerOnboarding({
                                         features={[
                                             "4 active job postings",
                                             "Dedicated account manager",
-                                            "Custom integrations",
+                                            "White-label options",
                                             "White-label options",
                                             "SLA guarantee"
                                         ]}

@@ -659,19 +659,36 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                     </div>
                   ))}
                 </div> */}
-                {profile?.candidate_assessments?.length === 0 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No assessments started yet</p>
+                {profile?.candidate_certifications?.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No certificates added yet</p>
                 )}
 
                 {profile?.candidate_certifications.map((cert: any, index: number) => (
-                  <div key={cert.id ?? index} className="rounded-xl border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-neutral-950">
-                      <h3 className="font-medium dark:text-white">{cert.name}</h3>
+                  <div
+                    key={cert.id ?? index}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-neutral-950"
+                  >
+                    <div className="min-w-0">
+                      <h3 className="font-medium text-gray-900 dark:text-white">{cert.name}</h3>
                       {cert.issuer ? (
                         <p className="text-xs text-gray-600 dark:text-gray-400">{cert.issuer}</p>
                       ) : null}
-                      <p className="hidden text-xs text-gray-600">
-                      {cert.issuer} · {cert.issued_at}
-                    </p>
+                      {cert.issued_at ? (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(cert.issued_at).toLocaleDateString()}
+                        </p>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                      onClick={() => void handleDeleteCertification(String(cert.id))}
+                      disabled={deletingCertificationId === String(cert.id)}
+                      aria-label={`Delete ${cert.name}`}
+                      title={`Delete ${cert.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 ))}
 
