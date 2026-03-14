@@ -29,6 +29,19 @@ export interface EmployerCreditBalance {
   remaining: number;
 }
 
+interface CheckoutInitializationResponse {
+  authorization_url?: string;
+  authorizationUrl?: string;
+}
+
+export interface ConfirmAddonCheckoutResult {
+  success: boolean;
+  reference: string;
+  creditType: string;
+  creditsAdded: number;
+  alreadyProcessed: boolean;
+}
+
 export interface InterviewScheduleRecord {
   id: string;
   jobApplicationId: string;
@@ -2170,7 +2183,7 @@ export async function startSubscriptionCheckout(
     throw new Error("Not authenticated.");
   }
 
-  const { data, error } = await supabase.functions.invoke(
+  const { data, error } = await supabase.functions.invoke<CheckoutInitializationResponse>(
     "initialize-subscription",
     {
       body: {
@@ -2404,7 +2417,7 @@ function normalizeAddonReturnTo(returnTo?: string | null) {
 }
 
 export async function startAddonCheckout(addonId: string, returnTo?: string) {
-  const { data, error } = await invokeAuthedFunction("buy-addon", {
+  const { data, error } = await invokeAuthedFunction<CheckoutInitializationResponse>("buy-addon", {
     addonId,
     returnTo: normalizeAddonReturnTo(returnTo),
   });
@@ -2426,8 +2439,8 @@ export async function startAddonCheckout(addonId: string, returnTo?: string) {
   window.location.assign(checkoutUrl);
 }
 
-export async function confirmAddonCheckout(reference: string) {
-  const { data, error } = await invokeAuthedFunction("confirm-addon", { reference });
+export async function confirmAddonCheckout(reference: string): Promise<ConfirmAddonCheckoutResult> {
+  const { data, error } = await invokeAuthedFunction<ConfirmAddonCheckoutResult>("confirm-addon", { reference });
 
   if (error) {
     const message =

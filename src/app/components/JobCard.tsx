@@ -3,7 +3,7 @@ import { MapPin, Briefcase, Clock } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
-import type { Job } from '@/types/job';
+import type { Job } from '@/app/types/job';
 import { applyForJob } from '@/lib/candidate';
 import { formatDistanceToNow } from 'date-fns';
 

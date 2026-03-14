@@ -142,10 +142,10 @@ export function EmployerPlansPage() {
   const candidateViewLimit = usageSnapshot?.candidateViewLimit;
 
   async function handleUpgrade(planName: BillingPlanName) {
-    try {
-      setLoadingPlan(planName);
-      const planId = plans.find((plan) => plan.name === planName)?.id;
-      await startSubscriptionCheckout(planName, planId, "/employer/plans");
+      try {
+        setLoadingPlan(planName);
+        const planId = plans.find((plan) => plan.name === planName)?.id;
+        await startSubscriptionCheckout(planName, planId);
     } catch (error) {
       console.error("Failed to start plan checkout", error);
       showFeedback(
@@ -239,7 +239,10 @@ export function EmployerPlansPage() {
                         <Button
                           className="w-full bg-slate-950 text-white hover:bg-slate-800"
                           disabled={loadingPlan !== null && loadingPlan !== plan.name}
-                          onClick={() => handleUpgrade(plan.name)}
+                          onClick={() => {
+                            if (plan.name === "free") return;
+                            void handleUpgrade(plan.name);
+                          }}
                         >
                           {loadingPlan === plan.name ? "Redirecting..." : `Upgrade to ${plan.label}`}
                         </Button>

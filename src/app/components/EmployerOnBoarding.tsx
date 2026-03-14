@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -39,6 +39,12 @@ export function EmployerOnboarding({
             day: "numeric",
         })
         : null;
+
+    useEffect(() => {
+        const resolvedCompanyName = String(profile?.company_name ?? "").trim();
+        if (!resolvedCompanyName) return;
+        setCompanyName((current) => current || resolvedCompanyName);
+    }, [profile?.company_name]);
 
     async function completeProfile() {
         setSaving(true);

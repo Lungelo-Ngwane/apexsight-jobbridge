@@ -23,7 +23,17 @@ interface JobBridgeLandingProps {
   onGetStarted: () => void;
 }
 
-const pricingPlans = [
+type PricingPlan = {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  icon: typeof Building2;
+  features: readonly string[];
+  featured?: boolean;
+};
+
+const pricingPlans: readonly PricingPlan[] = [
   {
     name: "Free",
     price: "R0",

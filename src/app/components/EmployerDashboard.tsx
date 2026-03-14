@@ -57,8 +57,8 @@ const UpgradeModal = lazy(() =>
 
 
 interface EmployerDashboardProps {
-  onPostJob: () => void;
-  onViewCandidates: () => void;
+  onPostJob?: () => void;
+  onViewCandidates?: () => void;
 }
 
 const RECENT_ACTIVITY_LIMIT = 4;

@@ -33,6 +33,12 @@ const GENDER_OPTIONS = [
     { value: "Prefer not to say", label: "Prefer not to say" },
 ] as const;
 
+const AVAILABILITY_OPTIONS = [
+    { value: "Immediately", label: "Immediately" },
+    { value: "30 days notice", label: "30 days notice" },
+    { value: "1 calendar month", label: "1 calendar month" },
+] as const;
+
 function normalizeExperienceLevel(value?: string | null) {
     const normalized = String(value ?? "").trim().toLowerCase();
     if (!normalized) return "";
@@ -572,11 +578,18 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
                         <div className="space-y-2">
                             <Label>Availability</Label>
-                            <Input
-                                placeholder="e.g. Immediately available"
+                            <select
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 value={profile.availability}
                                 onChange={(e) => setProfile({ ...profile, availability: e.target.value })}
-                            />
+                            >
+                                <option value="">Select availability</option>
+                                {AVAILABILITY_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div className="space-y-2">

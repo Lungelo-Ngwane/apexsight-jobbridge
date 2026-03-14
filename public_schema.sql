@@ -1,0 +1,17 @@
+-- Public schema reference
+-- -----------------------
+-- This repository uses ordered migrations in `supabase/migrations/` as the source of truth.
+-- This file exists as a human-facing entry point so the schema artifact is not empty.
+--
+-- Rebuild the full local schema with:
+--   supabase db reset
+--
+-- Apply only pending changes to an existing project with:
+--   supabase db push
+--
+-- Seeded reference data lives in:
+--   supabase/seed/skills_seed.sql
+--
+-- Historical snapshots retained in this repo:
+--   old_public_schema_backup.sql
+--   prod_before_restore_backup.sql

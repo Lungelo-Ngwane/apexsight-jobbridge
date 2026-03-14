@@ -25,7 +25,7 @@ import { uploadEmployerLogo } from "@/lib/employer";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 
 interface EmployerProfileProps {
-    onBack: () => void;
+    onBack?: () => void;
 }
 
 export function EmployerProfile({ onBack }: EmployerProfileProps) {
@@ -240,7 +240,7 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3 mt-6">
-                    <Button variant="outline" onClick={onBack}>
+                    <Button variant="outline" onClick={onBack ?? handleBack}>
                         Cancel
                     </Button>
                     <Button

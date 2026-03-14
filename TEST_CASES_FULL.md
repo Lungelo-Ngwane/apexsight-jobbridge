@@ -1,5 +1,7 @@
 # Design ApexSight Talent Platform Test Cases
 
+Last updated: `2026-03-14`
+
 ## 1. Scope
 
 This test suite is based on the code currently present in:
@@ -64,6 +66,8 @@ Run these first after every deployment:
 | SMK-08 | Messaging | Employer and candidate can exchange a message | Thread exists, message appears in real time |
 | SMK-09 | AI | Employer can run auto-match on eligible job | Function succeeds and returns match count |
 | SMK-10 | Security | Free employer cannot access paid-only candidates/messages routes | Redirect to employer dashboard |
+| SMK-11 | Candidate Profile | Candidate can select availability from dropdown and save profile | Selected option persists after reload |
+| SMK-12 | Employer Onboarding | Existing company name pre-populates on onboarding step 0 | Company name field loads prior profile value |
 
 ## 4. Authentication And Routing
 
@@ -114,6 +118,11 @@ Run these first after every deployment:
 | CND-PROF-08 | Candidate removes skill | Click remove on a skill chip | Skill row deleted and removed from UI |
 | CND-PROF-09 | Candidate saves profile after edits | Save | Success feedback shown |
 | CND-PROF-10 | Any successful save/add/remove skill | Perform action | Matching refresh pipeline is triggered without blocking save |
+| CND-PROF-11 | Candidate opens availability dropdown | Inspect options | Only `Immediately`, `30 days notice`, and `1 calendar month` are available |
+| CND-PROF-12 | Candidate selects `Immediately` | Save and reload profile | Availability persists as `Immediately` |
+| CND-PROF-13 | Candidate selects `30 days notice` | Save and reload profile | Availability persists as `30 days notice` |
+| CND-PROF-14 | Candidate selects `1 calendar month` | Save and reload profile | Availability persists as `1 calendar month` |
+| CND-PROF-15 | Candidate leaves availability blank | Save profile | Field persists as null/empty without validation failure |
 
 ### 5.3 Candidate Jobs
 
@@ -162,6 +171,9 @@ Run these first after every deployment:
 | EMP-ONB-08 | Step 2 complete | Click "Go to Dashboard" | `onboarding_step` becomes 3 and employer lands on dashboard |
 | EMP-ONB-09 | Free employer finished onboarding | Open `/employer/candidates` or `/employer/messages` | Redirect to `/employer/dashboard` |
 | EMP-ONB-10 | Trial/paid employer finished onboarding | Open `/employer/candidates` or `/employer/messages` | Access allowed |
+| EMP-ONB-11 | Employer profile already has `company_name` | Open onboarding step 0 | Company Name input is pre-populated |
+| EMP-ONB-12 | Employer starts typing before profile finishes loading | Wait for profile load | Typed value is not overwritten by late prefill |
+| EMP-ONB-13 | Employer profile has blank `company_name` | Open onboarding step 0 | Input remains empty and editable |
 
 ### 6.2 Employer Profile And Settings
 
@@ -177,6 +189,16 @@ Run these first after every deployment:
 | EMP-SET-04 | Employer uploads logo from settings | Upload file | Avatar updates and profile row stores URL |
 | EMP-SET-05 | Click cancel on settings company tab | Do not save | No persistence change should occur |
 | EMP-SET-06 | Static tabs present but not wired | Visit team/notifications/security UI | UI renders without crash; no unintended backend mutation |
+
+### 6.2A Employer Public Profile
+
+| ID | Preconditions | Steps | Expected Result |
+|---|---|---|---|
+| EMP-PUB-01 | Employer public profile enabled | Open `/companies/:employerId` | Public company page loads with company identity data |
+| EMP-PUB-02 | Employer has logo and banner | Open public page | Logo and banner render correctly |
+| EMP-PUB-03 | Employer has public page disabled | Open public page directly | Page is hidden, blocked, or falls back according to product rule |
+| EMP-PUB-04 | Employer has branded fields | Open public page | Headline/colors/domain fields render safely without layout break |
+| EMP-PUB-05 | Unknown employer id | Open public page | Not-found or empty-state behavior is handled without crash |
 
 ### 6.3 Employer Jobs
 
@@ -250,6 +272,21 @@ Run these first after every deployment:
 | EMP-ADD-06 | Feature-job add-on callback | Confirm purchase | Messaging explicitly instructs user to feature job from jobs page |
 | EMP-ADD-07 | Job-slot add-on callback | Confirm purchase | Messaging confirms more open jobs available |
 | EMP-ADD-08 | Callback confirm fails | Load callback with backend error | Pending-update feedback shown |
+
+### 6.7 Employer Team Collaboration
+
+| ID | Preconditions | Steps | Expected Result |
+|---|---|---|---|
+| EMP-TEAM-01 | Employer owner/admin on eligible plan | Open settings/team collaboration area | Existing team members load |
+| EMP-TEAM-02 | Employer recruiter role | Attempt to access management-only team actions | Restricted actions are hidden or blocked |
+| EMP-TEAM-03 | Owner/admin invites valid email as recruiter | Submit invite | Invite row is created with `invited` status |
+| EMP-TEAM-04 | Owner/admin invites valid email as admin | Submit invite | Invite row is created with `invited` status and admin role |
+| EMP-TEAM-05 | Invite duplicate active member | Re-invite same email | Duplicate invite is blocked or safely deduplicated |
+| EMP-TEAM-06 | Plan team-member limit reached | Invite additional member | Backend returns `TEAM_MEMBER_LIMIT_REACHED` and UI shows limit feedback |
+| EMP-TEAM-07 | Invited user signs up with matching email | Complete auth flow | User is attached to shared employer workspace |
+| EMP-TEAM-08 | Existing user with invite signs in | Complete auth flow | Invite is claimed and membership becomes active |
+| EMP-TEAM-09 | Owner/admin revokes member | Remove/revoke team member | Membership status changes and access is revoked |
+| EMP-TEAM-10 | Current user is only owner | Attempt destructive owner-removal flow | Guard rails prevent locking workspace with no owner |
 
 ## 7. Messaging
 
@@ -381,6 +418,21 @@ Run these first after every deployment:
 | NOTIF-01 | Candidate applies to job | Complete application | Employer-facing notification flow triggers |
 | NOTIF-02 | Employer shortlists candidate | Update status | Candidate-facing shortlisted email triggers |
 | NOTIF-03 | Email provider temporary failure | Trigger email event | Core business transaction remains consistent; failure logged/surfaced |
+
+## 12A. Recent Regression Suite
+
+Run this focused suite after every candidate/employer UI change:
+
+| ID | Area | Steps | Expected Result |
+|---|---|---|---|
+| REG-01 | Candidate availability | Open candidate profile availability dropdown | Latest options render exactly as configured |
+| REG-02 | Candidate availability persistence | Change availability, save, reload | Selected value remains unchanged |
+| REG-03 | Candidate profile save | Save availability plus another profile field | Both values persist together |
+| REG-04 | Employer onboarding prefill | Open onboarding with stored company name | Company name is auto-populated |
+| REG-05 | Employer onboarding manual override | Replace prefilled company name and continue | Manual edit is persisted, not the original default |
+| REG-06 | Employer onboarding blank state | New employer with no profile name opens onboarding | Company name remains blank and required |
+| REG-07 | Plan gate routing | Free employer tries candidates/messages; paid employer tries same | Free is redirected, paid is allowed |
+| REG-08 | Billing/add-on callbacks | Open billing and add-on success callback URLs | Confirmation flow still succeeds after UI updates |
 
 ## 13. Error Handling And Recovery
 

@@ -1,11 +1,14 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "apexsight-talent-platform",
+  "author": "Lungelo Dlamini",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "validate": "npm run typecheck && npm run build",
     "loadtest:env": "node ./load-tests/generate-loadtest-env.mjs",
     "loadtest:smoke": "k6 run ./load-tests/smoke.js",
     "loadtest:run": "k6 run ./load-tests/supabase-backend.js"
@@ -76,6 +79,7 @@
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "4.7.0",
     "tailwindcss": "4.1.12",
+    "typescript": "^5.9.2",
     "vite": "6.3.5"
   },
   "peerDependencies": {
