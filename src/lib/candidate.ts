@@ -562,6 +562,7 @@ export async function removeCandidateSkill(candidateSkillId: string) {
     .eq("candidate_profile_id", profile.id);
 
   if (deleteError) throw deleteError;
+  invalidateCandidateProfileCaches();
 
   void refreshCandidateEmbedding(String(profile.id)).catch((refreshError) => {
     console.error("Failed to refresh candidate embedding after removing skill", refreshError);
@@ -595,6 +596,7 @@ export async function addCandidateSkillByName(
 
   const profileId = String(data?.profile_id ?? "").trim();
   if (profileId) {
+    invalidateCandidateProfileCaches();
     void refreshCandidateEmbedding(profileId).catch((refreshError) => {
       console.error("Failed to refresh candidate embedding after adding skill", refreshError);
     });
