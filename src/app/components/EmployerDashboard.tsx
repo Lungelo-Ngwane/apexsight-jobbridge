@@ -348,6 +348,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const creditedJobSlotBalance = Number(
     creditBalances.find((credit) => String(credit.creditType ?? "").toLowerCase() === "job_slot")?.remaining ?? 0,
   );
+  const visibleAddonCreditBalances = creditBalances.filter((credit) => Number(credit.remaining ?? 0) > 0);
   const availableJobSlotCredits = Math.max(extraJobSlotCredits, creditedJobSlotBalance);
   const isOverJobLimit = finiteJobLimit !== null && activeJobs >= finiteJobLimit;
   const isPostingLocked = isOverJobLimit && availableJobSlotCredits <= 0;
@@ -599,10 +600,10 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
         <Card className="mb-8 border-gray-200 p-6 dark:border-white/10 dark:bg-neutral-950">
           <h3 className="mb-4 font-semibold text-gray-900 dark:text-gray-100">Add-on Credit Balances</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {creditBalances.length === 0 && (
+            {visibleAddonCreditBalances.length === 0 && (
               <p className="text-sm text-gray-500 dark:text-gray-400">No add-on credits available yet.</p>
             )}
-            {creditBalances.map((credit) => {
+            {visibleAddonCreditBalances.map((credit) => {
               const CreditIcon = getCreditIcon(credit.creditType);
               return (
                 <div

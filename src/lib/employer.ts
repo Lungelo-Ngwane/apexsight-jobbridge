@@ -1281,9 +1281,10 @@ export async function getJobApplicants(jobId: string) {
 
   const { data: matchRows, error: matchError } = await supabase
     .from("job_matches")
-    .select("candidate_id, similarity")
+    .select("candidate_id, similarity, created_at")
     .eq("job_id", jobId)
-    .in("candidate_id", candidateIds.length > 0 ? candidateIds : ["00000000-0000-0000-0000-000000000000"]);
+    .in("candidate_id", candidateIds.length > 0 ? candidateIds : ["00000000-0000-0000-0000-000000000000"])
+    .order("created_at", { ascending: false });
 
   if (matchError) throw matchError;
 
@@ -1292,6 +1293,7 @@ export async function getJobApplicants(jobId: string) {
     const candidateId = String(row.candidate_id ?? "").trim();
     const similarity = Number(row.similarity ?? NaN);
     if (!candidateId || !Number.isFinite(similarity)) continue;
+    if (similarityByCandidate.has(candidateId)) continue;
     similarityByCandidate.set(candidateId, Math.max(0, Math.min(100, Math.round(similarity * 100))));
   }
 

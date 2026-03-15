@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import {
     consumeCandidateViewAccess,
+    getCandidateDeepView,
     getJobSkillSummary,
     getEmployerUsageSnapshot,
     getJobApplicants,
@@ -50,13 +51,72 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
     });
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
+    function getDisplayedMatchScore(application: any) {
+        const finalScore = Number(application?.final_match_score);
+        if (Number.isFinite(finalScore)) return finalScore;
+
+        const hybridScore = Number(application?.hybrid_score);
+        if (Number.isFinite(hybridScore)) return hybridScore;
+
+        const ruleScore = Number(application?.score);
+        if (Number.isFinite(ruleScore)) return ruleScore;
+
+        return null;
+    }
+
+    function mergeApplicantWithDeepView(application: any, deepView: any) {
+        return {
+            ...application,
+            ai_similarity: deepView?.ai_similarity ?? application.ai_similarity,
+            hybrid_score: deepView?.hybrid_score ?? application.hybrid_score,
+            final_match_score: deepView?.final_match_score ?? application.final_match_score,
+            confidence_score: deepView?.confidence_score ?? application.confidence_score,
+        };
+    }
+
+    async function syncCandidateMatchSnapshot(applicationId: string) {
+        const deepView = await getCandidateDeepView(applicationId);
+        setCandidates((prev) =>
+            prev.map((candidate) =>
+                candidate.id === applicationId
+                    ? mergeApplicantWithDeepView(candidate, deepView)
+                    : candidate,
+            ),
+        );
+    }
+
+    const hydrateApplicantScores = useCallback(async (applications: any[]) => {
+        const hydrated = await Promise.all(
+            applications.map(async (application) => {
+                try {
+                    const deepView = await getCandidateDeepView(String(application.id));
+                    return mergeApplicantWithDeepView(application, deepView);
+                } catch (error) {
+                    console.warn("Failed to hydrate applicant score", application.id, error);
+                    return application;
+                }
+            }),
+        );
+
+        setCandidates(hydrated);
+    }, []);
+
+    const loadApplicants = useCallback(async () => {
+        setLoading(true);
+        try {
+            const applicants = await getJobApplicants(jobId);
+            setCandidates(applicants ?? []);
+            void hydrateApplicantScores(applicants ?? []);
+        } finally {
+            setLoading(false);
+        }
+    }, [hydrateApplicantScores, jobId]);
+
 
 
     useEffect(() => {
-        getJobApplicants(jobId)
-            .then(setCandidates)
-            .finally(() => setLoading(false));
-    }, [jobId]);
+        void loadApplicants();
+    }, [loadApplicants]);
 
     useEffect(() => {
         getJobSkillSummary(jobId)
@@ -89,13 +149,12 @@ async function handleInterviewScheduled() {
     }
 }
 
-async function handleViewProfile(appId: string) {
+    async function handleViewProfile(appId: string) {
     try {
         setRefreshingMatchId(appId);
         try {
             await runAutoMatch(jobId);
-            const refreshedApplicants = await getJobApplicants(jobId);
-            setCandidates(refreshedApplicants ?? []);
+            await syncCandidateMatchSnapshot(appId);
         } catch (matchError) {
             console.warn("Auto-match refresh failed before opening profile", matchError);
         } finally {
@@ -136,7 +195,7 @@ async function handleViewProfile(appId: string) {
 
     const filteredCandidates = candidates
         .filter((c) => c.status === activeStage)
-        .sort((a, b) => (Number(b.hybrid_score ?? b.score ?? 0)) - (Number(a.hybrid_score ?? a.score ?? 0)));
+        .sort((a, b) => (Number(getDisplayedMatchScore(b) ?? 0)) - (Number(getDisplayedMatchScore(a) ?? 0)));
     const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
     const canShowScores = normalizedPlan === "professional" || normalizedPlan === "enterprise";
     function getMatchColor(score: number) {
@@ -213,13 +272,13 @@ async function handleViewProfile(appId: string) {
                                     <Badge className="mt-1">{app.status}</Badge>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    {canShowScores && typeof (app.hybrid_score ?? app.score) === "number" && (
+                                    {canShowScores && getDisplayedMatchScore(app) !== null && (
                                         <span
                                             className={`text-sm font-semibold px-2 py-1 rounded-full ${getMatchColor(
-                                                Number(app.hybrid_score ?? app.score ?? 0)
+                                                Number(getDisplayedMatchScore(app) ?? 0)
                                             )}`}
                                         >
-                                            {Number(app.hybrid_score ?? app.score)}%
+                                            {Number(getDisplayedMatchScore(app))}%
                                         </span>
                                     )}
                                 </div>
