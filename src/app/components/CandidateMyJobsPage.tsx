@@ -111,14 +111,17 @@ export default function CandidateMyJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">My Jobs</h1>
-            <p className="text-sm text-slate-600">Track jobs you applied for and jobs you saved.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">My Jobs</h1>
+            <p className="text-sm text-slate-600 dark:text-gray-400">Track jobs you applied for and jobs you saved.</p>
           </div>
-          <Button onClick={() => navigate("/candidate/jobs")} className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button
+            onClick={() => navigate("/candidate/jobs")}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+          >
             Browse Jobs
           </Button>
         </div>
@@ -127,7 +130,11 @@ export default function CandidateMyJobsPage() {
           <Button
             variant={activeTab === "applied" ? "default" : "outline"}
             onClick={() => setActiveTab("applied")}
-            className={activeTab === "applied" ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+            className={
+              activeTab === "applied"
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "dark:border-white/10 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
+            }
           >
             <Briefcase className="w-4 h-4 mr-2" />
             Applied ({appliedJobs.length})
@@ -135,7 +142,11 @@ export default function CandidateMyJobsPage() {
           <Button
             variant={activeTab === "saved" ? "default" : "outline"}
             onClick={() => setActiveTab("saved")}
-            className={activeTab === "saved" ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+            className={
+              activeTab === "saved"
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "dark:border-white/10 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
+            }
           >
             <BookmarkCheck className="w-4 h-4 mr-2" />
             Saved ({savedJobs.length})
@@ -147,27 +158,35 @@ export default function CandidateMyJobsPage() {
             <CircularLoader size="md" label="Loading your jobs..." />
           </div>
         ) : visibleJobs.length === 0 ? (
-          <Card className="p-8 text-center border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          <Card className="border-gray-200 p-8 text-center dark:border-white/10 dark:bg-neutral-900">
+            <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
               {activeTab === "applied" ? "No applied jobs yet" : "No saved jobs yet"}
             </h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
               {activeTab === "applied"
                 ? "When you apply to jobs, they will appear here."
                 : "Save roles from the Jobs page to keep a shortlist here."}
             </p>
-            <Button onClick={() => navigate("/candidate/jobs")} variant="outline">
+            <Button
+              onClick={() => navigate("/candidate/jobs")}
+              variant="outline"
+              className="dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800"
+            >
               Go to Jobs
             </Button>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleJobs.map((job) => (
-              <Card key={job.id} className="p-5 border-gray-200">
+              <Card key={job.id} className="border-gray-200 p-5 dark:border-white/10 dark:bg-neutral-900">
                 <div className="flex items-start gap-3 mb-3">
                   <div
-                    className="w-11 h-11 border border-gray-200 rounded-lg flex items-center justify-center shrink-0"
-                    style={!job.employer.logo_url ? { backgroundColor: job.employer.brand_primary_color ?? "#f5f5f5" } : undefined}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-white/10"
+                    style={
+                      !job.employer.logo_url
+                        ? { backgroundColor: job.employer.brand_primary_color ?? "#f5f5f5" }
+                        : undefined
+                    }
                   >
                     {job.employer.logo_url ? (
                       <img
@@ -180,26 +199,26 @@ export default function CandidateMyJobsPage() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{job.title}</p>
-                    <p className="text-sm text-gray-600 truncate">{job.employer.company_name}</p>
+                    <p className="truncate font-semibold text-gray-900 dark:text-white">{job.title}</p>
+                    <p className="truncate text-sm text-gray-600 dark:text-gray-400">{job.employer.company_name}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-3">
+                <div className="mb-3 flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                   {job.location && (
                     <span className="inline-flex items-center gap-1">
-                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       {job.location}
                     </span>
                   )}
                   {job.employment_type && (
                     <span className="inline-flex items-center gap-1">
-                      <Briefcase className="w-4 h-4 text-gray-400" />
+                      <Briefcase className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       {job.employment_type}
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1">
-                    <Clock3 className="w-4 h-4 text-gray-400" />
+                    <Clock3 className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                     {new Date(job.created_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -217,7 +236,7 @@ export default function CandidateMyJobsPage() {
                 <div className="mt-4 flex items-center gap-2">
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800"
                     onClick={() => navigate("/candidate/jobs", { state: { selectedJobId: job.id } })}
                   >
                     View

@@ -153,7 +153,7 @@ export function Header({
             <button
               type="button"
               onClick={handleBrandClick}
-              className="flex min-w-0 items-center gap-2.5 rounded-2xl px-1 py-1 text-left transition"
+              className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-2xl px-1 py-1 text-left transition"
               aria-label="Go to dashboard"
             >
               <img
@@ -177,7 +177,7 @@ export function Header({
               <button
                 type="button"
                 onClick={() => onProductSwitch?.(role === "candidate" ? "skilllink" : "jobbridge")}
-                className="hidden items-center gap-3 text-sm font-bold text-neutral-700 transition hover:text-neutral-950 md:inline-flex"
+                className="hidden cursor-pointer items-center gap-3 text-sm font-bold text-neutral-700 transition hover:text-neutral-950 md:inline-flex"
               >
                 <span className="text-neutral-300">|</span>
                 <span className="dark:text-neutral-200">
@@ -224,7 +224,7 @@ export function Header({
                     <button
                       type="button"
                       onClick={toggleTheme}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/80 text-neutral-700 transition hover:bg-white hover:text-neutral-950 dark:border-white/12 dark:bg-white/6 dark:text-neutral-200 dark:hover:bg-white/10 dark:hover:text-white"
+                      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-black/8 bg-white/80 text-neutral-700 transition hover:bg-white hover:text-neutral-950 dark:border-white/12 dark:bg-white/6 dark:text-neutral-200 dark:hover:bg-white/10 dark:hover:text-white"
                       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                       title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
                     >
@@ -234,7 +234,7 @@ export function Header({
                   {role === "candidate" && (
                     <button
                       onClick={() => setInboxOpen(true)}
-                      className={`relative inline-flex h-10 items-center gap-2 rounded-full border px-3 transition ${
+                      className={`relative inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border px-3 transition ${
                         location.pathname === "/candidate/messages"
                           ? "border-neutral-900 bg-neutral-950 text-white"
                           : "border-black/8 bg-white/80 text-neutral-700 hover:bg-white"
@@ -253,7 +253,7 @@ export function Header({
                   {role === "candidate" && (
                     <button
                       onClick={() => navigate("/candidate/my-jobs")}
-                      className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 transition ${
+                      className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border px-3 transition ${
                         location.pathname === "/candidate/my-jobs"
                           ? "border-neutral-900 bg-neutral-950 text-white"
                           : "border-black/8 bg-white/80 text-neutral-700 hover:bg-white"
@@ -266,7 +266,7 @@ export function Header({
                   )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-2 rounded-full border border-black/5 bg-white/80 px-3 py-2 shadow-[0_8px_24px_rgba(15,15,15,0.05)] hover:bg-white">
+                      <button className="flex cursor-pointer items-center gap-2 rounded-full border border-black/5 bg-white/80 px-3 py-2 shadow-[0_8px_24px_rgba(15,15,15,0.05)] hover:bg-white">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src="" />
                           <AvatarFallback className="bg-neutral-950 text-sm text-white">
@@ -323,7 +323,7 @@ export function Header({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/80 text-neutral-700 transition hover:bg-white hover:text-neutral-950 md:hidden"
+              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-black/8 bg-white/80 text-neutral-700 transition hover:bg-white hover:text-neutral-950 md:hidden"
               aria-label="Open navigation menu"
             >
               <Menu className="h-5 w-5" />
@@ -540,7 +540,7 @@ export function Header({
                       setInboxOpen(false);
                       navigate("/candidate/messages");
                     }}
-                    className="w-full rounded-xl border border-gray-200 p-3 text-left transition hover:bg-gray-50"
+                    className="w-full cursor-pointer rounded-xl border border-gray-200 p-3 text-left transition hover:bg-gray-50"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
