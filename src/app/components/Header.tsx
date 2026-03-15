@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck, Moon, Sun, Menu, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck, Moon, Sun, Menu, LayoutDashboard, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
@@ -24,6 +24,7 @@ import {
 import whiteLogo from "../assets/apexsight_white_logo_transparent.png";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import {
   type ConversationThread,
   getCandidateUnreadMessageCount,
@@ -51,6 +52,7 @@ export function Header({
 }: HeaderProps) {
   const { user, role, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isAdmin } = useAdminAccess();
   const navigate = useNavigate();
   const location = useLocation();
   const [candidateUnreadCount, setCandidateUnreadCount] = useState(0);
@@ -298,6 +300,13 @@ export function Header({
                         </DropdownMenuItem>
                       )}
 
+                      {isAdmin && (
+                        <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </DropdownMenuItem>
+                      )}
+
                       <DropdownMenuItem onClick={onProfileClick}>
                         <Settings className="mr-2 h-4 w-4" />
                         Profile Settings
@@ -451,6 +460,20 @@ export function Header({
                     >
                       <Briefcase className="h-4 w-4" />
                       My Jobs
+                    </Button>
+                  )}
+
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/admin/dashboard");
+                      }}
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin Dashboard
                     </Button>
                   )}
 
