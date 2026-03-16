@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { updateEmployerProfile } from "../../lib/employer";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
-import { isActiveEmployerTrial } from "@/lib/subscriptionAccess";
 
 export function EmployerOnboarding({
     initialStep
@@ -31,14 +30,6 @@ export function EmployerOnboarding({
     const pendingPlan =
         selectedPlanIntent ??
         (String(profile?.selected_plan ?? "").toLowerCase() || null);
-    const trialActive = isActiveEmployerTrial(profile);
-    const trialEndsLabel = profile?.trial_ends_at
-        ? new Date(profile.trial_ends_at).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        })
-        : null;
 
     useEffect(() => {
         const resolvedCompanyName = String(profile?.company_name ?? "").trim();
@@ -61,11 +52,7 @@ export function EmployerOnboarding({
 
     async function selectPlan(plan: string) {
         setSelectedPlanIntent(plan);
-        if (trialActive) {
-            await updateEmployerProfile({
-                onboarding_step: 2,
-            });
-        } else if (plan === "free") {
+        if (plan === "free") {
             await updateEmployerProfile({
                 plan: "free",
                 selected_plan: null,
@@ -81,14 +68,6 @@ export function EmployerOnboarding({
             });
         }
 
-        setStep(2);
-    }
-
-    async function continueWithTrial() {
-        setSelectedPlanIntent(null);
-        await updateEmployerProfile({
-            onboarding_step: 2,
-        });
         setStep(2);
     }
 
@@ -213,37 +192,14 @@ export function EmployerOnboarding({
                                     <Crown className="w-8 h-8 text-white" />
                                 </div>
                                 <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                                    {trialActive ? "You Have a Free Trial" : "Choose Your Plan"}
+                                    Choose Your Plan
                                 </h1>
                                 <p className="text-lg text-gray-600">
-                                    {trialActive
-                                        ? `You have full premium access during your 15-day trial${trialEndsLabel ? ` until ${trialEndsLabel}` : ""}. No payment is needed now.`
-                                        : "Start free, upgrade anytime. No credit card required."}
+                                    Start free, upgrade anytime. No credit card required.
                                 </p>
                             </div>
 
-                            {trialActive ? (
-                                <Card className="border-emerald-200 bg-emerald-50 p-6">
-                                    <div className="flex items-start gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center">
-                                            <Sparkles className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-emerald-900">Trial benefits unlocked</h3>
-                                            <p className="text-sm text-emerald-800 mt-1">
-                                                Post jobs, browse candidates, message applicants, and use premium analytics.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        onClick={continueWithTrial}
-                                        className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
-                                    >
-                                        Continue with Free Trial
-                                    </Button>
-                                </Card>
-                            ) : (
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 2xl:gap-8">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 2xl:gap-8">
                                     <PlanCard
                                         title="Free"
                                         price="R0"
@@ -309,7 +265,6 @@ export function EmployerOnboarding({
                                         onSelect={() => selectPlan("enterprise")}
                                     />
                                 </div>
-                            )}
                         </div>
                     )}
 
@@ -323,7 +278,7 @@ export function EmployerOnboarding({
                                     You're All Set! 🚀
                                 </h1>
                                 <p className="text-lg text-gray-600 mb-8">
-                                    {pendingPlan && pendingPlan !== "free" && !isActiveEmployerTrial(profile)
+                                    {pendingPlan && pendingPlan !== "free"
                                         ? `Your account is ready. Complete payment for the ${pendingPlan} plan from your dashboard to unlock premium features.`
                                         : "Your JobBridge™ account is ready. Start posting jobs and discover South Africa's best skill-verified talent."}
                                 </p>

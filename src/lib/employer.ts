@@ -1934,7 +1934,7 @@ export async function getEmployerPremiumDashboardInsights(): Promise<EmployerPre
   const employerContext = await getCurrentEmployerContext();
   const { data: employer, error: employerError } = await supabase
     .from("employer_profiles")
-    .select("id, plan, subscription_status, trial_granted, trial_started_at, trial_ends_at")
+    .select("id, plan, subscription_status")
     .eq("id", employerContext.employerId)
     .single();
 
@@ -2768,7 +2768,6 @@ export async function updateEmployerProfile(payload: {
     | "active"
     | "past_due"
     | "cancelled"
-    | "trialing"
     | "pending_payment";
 }) {
   const employer = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin"] });
