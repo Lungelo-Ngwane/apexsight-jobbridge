@@ -267,7 +267,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 </div>
                 <div className="flex flex-col gap-3 sm:min-w-[220px]">
                   <Button
-                    className="bg-[#f5f5f7] text-neutral-950 hover:bg-[#ededf0]"
+                    className="bg-[#f5f5f7] text-neutral-950 hover:bg-[#ededf0] dark:border dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800"
                     onClick={() => navigate("/candidate/profile")}
                   >
                     Complete Profile
@@ -285,7 +285,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                   key={item.label}
                   className={`flex items-center gap-3 rounded-xl border p-4 ${
                     item.done
-                      ? "border-emerald-200 bg-emerald-50"
+                      ? "border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10"
                       : "border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-neutral-950"
                   }`}
                 >

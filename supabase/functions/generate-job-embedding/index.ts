@@ -1,7 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import OpenAI from "https://esm.sh/openai@4.28.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -203,26 +202,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "").trim();
     const { job_id, skip_credit = false } = await req.json();
-
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Missing access token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    let employer;
-    try {
-      employer = await resolveEmployerContext(supabase, token);
-    } catch {
-      return new Response(JSON.stringify({ error: "Employer profile not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     const { data: job, error: jobError } = await supabase
       .from("jobs")
@@ -230,8 +210,8 @@ Deno.serve(async (req) => {
       .eq("id", job_id)
       .maybeSingle();
 
-    if (jobError || !job || String(job.employer_id) !== String(employer.employerId)) {
-      return new Response(JSON.stringify({ error: "Job not found for this employer" }), {
+    if (jobError || !job) {
+      return new Response(JSON.stringify({ error: "Job not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -244,7 +224,7 @@ Deno.serve(async (req) => {
       const { data: creditRow } = await supabase
         .from("employer_credits")
         .select("id, remaining")
-        .eq("employer_id", employer.employerId)
+        .eq("employer_id", job.employer_id)
         .eq("credit_type", "ai_credit")
         .maybeSingle();
 
@@ -325,12 +305,11 @@ Optional Skills: ${optionalSkills}
       .update({
         embedding: embedding.data[0].embedding,
       })
-      .eq("id", job_id)
-      .eq("employer_id", employer.employerId);
+      .eq("id", job_id);
 
     if (!skip_credit) {
       await supabase.from("employer_credit_usage").insert({
-        employer_id: employer.employerId,
+        employer_id: job.employer_id,
         credit_type: "ai_credit",
         amount: 1,
         context_type: "job",

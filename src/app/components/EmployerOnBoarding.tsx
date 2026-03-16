@@ -80,7 +80,7 @@ export function EmployerOnboarding({
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 relative dark:from-neutral-950 dark:via-neutral-950 dark:to-slate-950">
             {/* Decorative background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 -right-40 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
@@ -96,7 +96,7 @@ export function EmployerOnboarding({
                         className="h-12 w-auto mx-auto mb-4"
                     /> */}
                     <div className="flex items-center justify-center gap-2">
-                        <h2 className="text-xl font-semibold text-gray-900">ApexSight</h2>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">ApexSight</h2>
                         <span className="text-gray-400">•</span>
                         <span className="text-blue-600 font-semibold">JobBridge™</span>
                     </div>
@@ -115,20 +115,20 @@ export function EmployerOnboarding({
                             />
                         ))}
                     </div>
-                    <p className="text-center text-sm text-gray-600">
+                    <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                         Step {step + 1} of 3
                     </p>
                 </div>
 
                 {/* Main Content Card */}
-                <Card className="w-full mx-auto p-8 md:p-10 xl:p-12 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+                <Card className="w-full mx-auto overflow-visible border-0 bg-white/80 p-8 shadow-2xl backdrop-blur-sm dark:bg-neutral-900/90 md:p-10 xl:p-12">
                     {step === 0 && (
                         <div className="space-y-6">
                             <div className="text-center mb-8">
                                 <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                     <Building2 className="w-8 h-8 text-white" />
                                 </div>
-                                <h1 className="text-xl font-bold text-gray-900 mb-3">
+                                <h1 className="text-xl font-bold text-gray-900 mb-3 dark:text-white">
                                     Welcome to JobBridge™
                                 </h1>
                                 <p className="text-lg text-gray-600">
@@ -138,26 +138,26 @@ export function EmployerOnboarding({
 
                             <div className="space-y-4">
                                 <div>
-                                    <Label htmlFor="companyName" className="text-gray-700 font-medium mb-2 block">
+                                    <Label htmlFor="companyName" className="mb-2 block font-medium text-gray-700 dark:text-gray-200">
                                         Company Name
                                     </Label>
                                     <Input
                                         id="companyName"
                                         placeholder="e.g., Acme Corporation"
-                                        className="h-12 border-gray-300 focus:border-blue-600 focus:ring-blue-600"
+                                        className="h-12 border-gray-300 focus:border-blue-600 focus:ring-blue-600 dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:placeholder:text-gray-500"
                                         value={companyName}
                                         onChange={(e) => setCompanyName(e.target.value)}
                                     />
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="industry" className="text-gray-700 font-medium mb-2 block">
+                                    <Label htmlFor="industry" className="mb-2 block font-medium text-gray-700 dark:text-gray-200">
                                         Industry
                                     </Label>
                                     <Input
                                         id="industry"
                                         placeholder="e.g., Financial Services, Technology"
-                                        className="h-12 border-gray-300 focus:border-blue-600 focus:ring-blue-600"
+                                        className="h-12 border-gray-300 focus:border-blue-600 focus:ring-blue-600 dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:placeholder:text-gray-500"
                                         value={industry}
                                         onChange={(e) => setIndustry(e.target.value)}
                                     />
@@ -167,7 +167,7 @@ export function EmployerOnboarding({
                             <Button
                                 onClick={completeProfile}
                                 disabled={saving || !companyName || !industry}
-                                className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                                className="h-12 w-full !bg-gradient-to-r !from-blue-600 !to-blue-700 text-lg font-semibold text-white shadow-lg transition-all hover:!from-blue-700 hover:!to-blue-800 hover:shadow-xl disabled:!from-blue-300 disabled:!to-blue-300 disabled:!text-white"
                             >
                                 {saving ? (
                                     "Setting up your profile..."
@@ -179,7 +179,7 @@ export function EmployerOnboarding({
                                 )}
                             </Button>
 
-                            <p className="text-center text-sm text-gray-500">
+                            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                                 By continuing, you agree to our Terms of Service
                             </p>
                         </div>
@@ -191,15 +191,15 @@ export function EmployerOnboarding({
                                 <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                     <Crown className="w-8 h-8 text-white" />
                                 </div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                                <h1 className="text-3xl font-bold text-gray-900 mb-3 dark:text-white">
                                     Choose Your Plan
                                 </h1>
-                                <p className="text-lg text-gray-600">
+                                <p className="text-lg text-gray-600 dark:text-gray-300">
                                     Start free, upgrade anytime. No credit card required.
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 2xl:gap-8">
+                            <div className="grid grid-cols-1 gap-6 overflow-visible pt-4 md:grid-cols-2 xl:grid-cols-4 2xl:gap-8">
                                     <PlanCard
                                         title="Free"
                                         price="R0"
@@ -274,17 +274,17 @@ export function EmployerOnboarding({
                                 <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
                                     <CheckCircle2 className="w-10 h-10 text-white" />
                                 </div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                                <h1 className="text-3xl font-bold text-gray-900 mb-3 dark:text-white">
                                     You're All Set! 🚀
                                 </h1>
-                                <p className="text-lg text-gray-600 mb-8">
+                                <p className="text-lg text-gray-600 mb-8 dark:text-gray-300">
                                     {pendingPlan && pendingPlan !== "free"
                                         ? `Your account is ready. Complete payment for the ${pendingPlan} plan from your dashboard to unlock premium features.`
                                         : "Your JobBridge™ account is ready. Start posting jobs and discover South Africa's best skill-verified talent."}
                                 </p>
 
-                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-                                    <h3 className="font-semibold text-gray-900 mb-4">What's Next?</h3>
+                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 dark:border-white/10 dark:bg-neutral-950">
+                                    <h3 className="font-semibold text-gray-900 mb-4 dark:text-white">What's Next?</h3>
                                     <div className="space-y-3 text-left">
                                         {[
                                             "Post your first job in minutes",
@@ -296,7 +296,7 @@ export function EmployerOnboarding({
                                                 <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                                                     <CheckCircle2 className="w-4 h-4 text-white" />
                                                 </div>
-                                                <span className="text-gray-700">{item}</span>
+                                                <span className="text-gray-700 dark:text-gray-300">{item}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -315,7 +315,7 @@ export function EmployerOnboarding({
                 </Card>
 
                 {/* Footer */}
-                <p className="text-center text-sm text-gray-500 mt-6">
+                <p className="text-center text-sm text-gray-500 mt-6 dark:text-gray-400">
                     Need help? <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">Contact Support</a>
                 </p>
             </div>
@@ -349,23 +349,23 @@ function PlanCard({
     return (
         <button
             onClick={onSelect}
-            className={`w-full p-6 rounded-xl text-left transition-all hover:scale-[1.02] relative ${highlight
-                    ? "border-2 border-blue-600 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg"
-                    : "border-2 border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"
+            className={`relative flex h-full w-full flex-col rounded-xl border-2 p-6 text-left transition-all hover:scale-[1.02] ${highlight
+                    ? "border-blue-600 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"
                 }`}
         >
             {badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs font-bold text-white shadow-md">
                         {badge}
                     </span>
                 </div>
             )}
 
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex items-start justify-between">
                 <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${highlight ? "bg-gradient-to-br from-blue-600 to-purple-600" : "bg-gray-100"
+                    <div className="mb-2 flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${highlight ? "bg-neutral-950" : "bg-gray-100"
                             }`}>
                             <Icon className={`w-5 h-5 ${highlight ? "text-white" : "text-gray-600"}`} />
                         </div>
@@ -379,7 +379,7 @@ function PlanCard({
                 </div>
             </div>
 
-            <div className="space-y-2.5 mb-4">
+            <div className="mb-6 space-y-2.5">
                 {features.map((feature, index) => (
                     <div key={index} className="flex items-start gap-2">
                         <CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${highlight ? "text-blue-600" : "text-green-600"
@@ -389,9 +389,9 @@ function PlanCard({
                 ))}
             </div>
 
-            <div className={`text-sm font-semibold text-center py-2 rounded-lg ${highlight
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                    : "bg-gray-100 text-gray-700"
+            <div className={`mt-auto rounded-lg border py-2 text-center text-sm font-semibold ${highlight
+                    ? "border-blue-500 bg-blue-600 text-white shadow-md"
+                    : "border-transparent bg-gray-100 text-gray-700"
                 }`}>
                 Select {title}
             </div>

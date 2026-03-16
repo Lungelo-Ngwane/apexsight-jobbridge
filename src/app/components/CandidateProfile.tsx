@@ -220,6 +220,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         if (skills.some((s) => s.skill.trim().toLowerCase() === normalizedNewSkill)) return;
 
         try {
+            await resolveCandidateProfileId(true);
             const createdSkill = await addCandidateSkillByName(newSkill.trim(), "beginner");
             setSkills((prev) => [...prev, createdSkill]);
             setAllSkills((prev) => {
@@ -364,6 +365,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
         try {
             setCvUploading(true);
+            await resolveCandidateProfileId(true);
             const path = await uploadCandidateCV(file);
             setCvName(path.split("/").pop() ?? null);
             showFeedback(
@@ -392,6 +394,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
         try {
             setSavingCertification(true);
+            await resolveCandidateProfileId(true);
             const createdCertification = await addCandidateCertification({
                 name: newCertification.name.trim(),
                 file: newCertificationFile,
@@ -666,9 +669,10 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                         className="sr-only"
                         disabled={cvUploading}
                         onChange={async (e) => {
-                            const file = e.target.files?.[0] ?? null;
+                            const input = e.currentTarget;
+                            const file = input.files?.[0] ?? null;
                             await handleUploadCv(file);
-                            e.currentTarget.value = "";
+                            input.value = "";
                         }}
                     />
                 </Card>
