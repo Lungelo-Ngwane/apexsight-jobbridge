@@ -60,6 +60,9 @@ const MessagesPage = lazy(() =>
 const AdminDashboardPage = lazy(() =>
   import("./components/admin/AdminDashboardPage").then((module) => ({ default: module.default })),
 );
+const AdminEntityDetailPage = lazy(() =>
+  import("./components/admin/AdminEntityDetailPage").then((module) => ({ default: module.default })),
+);
 
 function RouteLoader({ label = "Loading page..." }: { label?: string }) {
   return (
@@ -313,6 +316,7 @@ export default function App() {
         <Route path="/candidate/messages" element={withRouteSuspense(<MessagesPage />, "Loading messages...")} />
         <Route path="/candidate/profile" element={<CandidateProfile />} />
         <Route path="/admin/dashboard" element={withRouteSuspense(<AdminDashboardPage />, "Loading admin dashboard...")} />
+        <Route path="/admin/entities/:kind/:id" element={withRouteSuspense(<AdminEntityDetailPage />, "Loading admin detail...")} />
         <Route path="/companies/:employerId" element={<EmployerPublicProfilePage />} />
 
         <Route path="/employer" element={withRouteSuspense(<EmployerApp />, "Loading employer workspace...")}>

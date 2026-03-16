@@ -17,6 +17,10 @@ export type AdminMetricSnapshot = {
   signupsInRange: number;
   applicationsInRange: number;
   paidRevenueInRangeKobo: number;
+  adminActionsLast24h: number;
+  adminRetriesLast24h: number;
+  invoiceDownloadsLast24h: number;
+  activeAdminsLast24h: number;
   days: number;
 };
 
@@ -134,6 +138,24 @@ export type AdminAuditLogRecord = {
   createdAt: string;
 };
 
+export type AdminEntityDetail = {
+  kind: string;
+  entity: Record<string, unknown>;
+  metrics?: Record<string, unknown>;
+  recentInvoices?: Array<Record<string, unknown>>;
+  recentApplications?: Array<Record<string, unknown>>;
+  creditBalances?: Array<Record<string, unknown>>;
+  recentAddonPurchases?: Array<Record<string, unknown>>;
+  related?: Record<string, unknown>;
+};
+
+type AuthedFunctionError = {
+  status?: number;
+  code?: number;
+  message?: string;
+  detail?: string | null;
+};
+
 function toNumber(value: unknown): number {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -158,6 +180,10 @@ function normalizeSnapshot(payload: any): AdminDashboardSnapshot {
       signupsInRange: toNumber(payload?.metrics?.signupsInRange),
       applicationsInRange: toNumber(payload?.metrics?.applicationsInRange),
       paidRevenueInRangeKobo: toNumber(payload?.metrics?.paidRevenueInRangeKobo),
+      adminActionsLast24h: toNumber(payload?.metrics?.adminActionsLast24h),
+      adminRetriesLast24h: toNumber(payload?.metrics?.adminRetriesLast24h),
+      invoiceDownloadsLast24h: toNumber(payload?.metrics?.invoiceDownloadsLast24h),
+      activeAdminsLast24h: toNumber(payload?.metrics?.activeAdminsLast24h),
       days: toNumber(payload?.metrics?.days),
     },
     planDistribution: Array.isArray(payload?.planDistribution)
@@ -251,6 +277,69 @@ function normalizeSnapshot(payload: any): AdminDashboardSnapshot {
   };
 }
 
+async function getValidAccessToken(): Promise<string> {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  let accessToken = session?.access_token;
+  const expiresAt = session?.expires_at ?? 0;
+
+  if (!accessToken || expiresAt * 1000 <= Date.now() + 60_000) {
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    accessToken = refreshed.session?.access_token;
+    if (refreshError || !accessToken) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated.");
+  }
+
+  return accessToken;
+}
+
+async function invokeAdminFunction<T = unknown>(
+  functionName: string,
+  body?: Record<string, unknown>,
+): Promise<T> {
+  const token = await getValidAccessToken();
+  const { data, error } = await supabase.functions.invoke<T>(functionName, {
+    body: body ?? {},
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (error) {
+    const parsed = (
+      error as unknown as {
+        context?: { json?: () => Promise<{ error?: string; detail?: string }> };
+      }
+    )?.context?.json
+      ? await (
+          error as unknown as {
+            context: { json: () => Promise<{ error?: string; detail?: string }> };
+          }
+        ).context
+          .json()
+          .catch(() => null)
+      : null;
+
+    const message =
+      parsed?.error ??
+      parsed?.detail ??
+      (error as AuthedFunctionError)?.message ??
+      `Function ${functionName} failed.`;
+
+    throw new Error(String(message));
+  }
+
+  return data as T;
+}
+
 export async function getAdminAccess(): Promise<boolean> {
   const {
     data: { user },
@@ -339,4 +428,56 @@ export async function listAdminAuditLogs(limit = 25): Promise<AdminAuditLogRecor
         createdAt: String(item?.created_at ?? ""),
       }))
     : [];
+}
+
+export async function retryAdminWebhookEvent(eventId: string): Promise<{
+  success: boolean;
+  event: string;
+  employerId: string;
+  retried: boolean;
+}> {
+  return invokeAdminFunction("admin-retry-webhook", { eventId });
+}
+
+export async function getAdminEntityDetail(kind: string, id: string): Promise<AdminEntityDetail> {
+  const { data, error } = await supabase.rpc("get_admin_entity_detail", {
+    p_kind: kind,
+    p_id: id,
+  });
+
+  if (error) throw error;
+
+  return {
+    kind: String(data?.kind ?? kind),
+    entity: typeof data?.entity === "object" && data?.entity !== null ? data.entity : {},
+    metrics: typeof data?.metrics === "object" && data?.metrics !== null ? data.metrics : undefined,
+    recentInvoices: Array.isArray(data?.recentInvoices) ? data.recentInvoices : undefined,
+    recentApplications: Array.isArray(data?.recentApplications) ? data.recentApplications : undefined,
+    creditBalances: Array.isArray(data?.creditBalances) ? data.creditBalances : undefined,
+    recentAddonPurchases: Array.isArray(data?.recentAddonPurchases) ? data.recentAddonPurchases : undefined,
+    related: typeof data?.related === "object" && data?.related !== null ? data.related : undefined,
+  };
+}
+
+export async function getAdminInvoiceDownloadUrl(invoiceId: string): Promise<string> {
+  const result = await invokeAdminFunction<{ url?: string }>("admin-get-invoice-download-url", { invoiceId });
+  const url = String(result?.url ?? "").trim();
+  if (!url) throw new Error("Invoice download URL is unavailable.");
+  return url;
+}
+
+export async function logAdminAction(input: {
+  action: string;
+  targetUserId?: string | null;
+  targetEmail?: string | null;
+  details?: Record<string, unknown>;
+}): Promise<void> {
+  const { error } = await supabase.rpc("write_admin_audit_log", {
+    p_action: input.action,
+    p_target_user_id: input.targetUserId ?? null,
+    p_target_email: input.targetEmail?.trim() || null,
+    p_details: input.details ?? {},
+  });
+
+  if (error) throw error;
 }
