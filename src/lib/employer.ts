@@ -1790,6 +1790,13 @@ export async function getCandidateDeepView(applicationId: string) {
         headline,
         cv_url,
         embedding,
+        candidate_certifications (
+          id,
+          name,
+          issuer,
+          issued_at,
+          certificate_file_path
+        ),
         candidate_skills (
           skill_id,
           skill,
@@ -2073,6 +2080,25 @@ export async function getCandidateCV(cvPath: string) {
   }
 
   throw new Error("Unable to create a secure CV download link.");
+}
+
+export async function getCandidateCertificate(certificatePath: string) {
+  const normalized = String(certificatePath ?? "").trim();
+  if (!normalized) throw new Error("Missing certificate path.");
+
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
+  }
+
+  const { data, error } = await supabase.storage
+    .from("candidate-certifications")
+    .createSignedUrl(normalized, 60 * 10);
+
+  if (error || !data?.signedUrl) {
+    throw new Error("Unable to create a secure certificate download link.");
+  }
+
+  return data.signedUrl;
 }
 
 export async function getAllSkills() {

@@ -1,8 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import OpenAI from "https://esm.sh/openai@4.28.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import JSZip from "https://esm.sh/jszip@3.10.1";
 
-const ANALYZER_VERSION = "2026-03-09-openai-pdf-ingest-v2";
+const ANALYZER_VERSION = "2026-03-16-docx-extraction-v3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +29,17 @@ type ExtractedPayload = {
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function decodeXmlEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(Number.parseInt(code, 16)));
 }
 
 function toLevel(value: unknown): "beginner" | "intermediate" | "advanced" | "expert" | null {
@@ -283,6 +295,48 @@ async function extractPdfText(bytes: Uint8Array): Promise<string> {
   }
 }
 
+function extractTextFromWordXml(xml: string): string {
+  const withBreaks = xml
+    .replace(/<w:tab(?:\s[^>]*)?\/>/g, "\t")
+    .replace(/<w:br(?:\s[^>]*)?\/>/g, "\n")
+    .replace(/<w:cr(?:\s[^>]*)?\/>/g, "\n")
+    .replace(/<\/w:p>/g, "\n")
+    .replace(/<\/w:tr>/g, "\n");
+
+  const textNodes = [...withBreaks.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/g)].map((match) =>
+    decodeXmlEntities(String(match[1] ?? ""))
+  );
+
+  const stripped = decodeXmlEntities(withBreaks.replace(/<[^>]+>/g, " "));
+  const merged = textNodes.length > 0 ? textNodes.join(" ") : stripped;
+  return normalizeWhitespace(merged.replace(/\n\s+/g, "\n"));
+}
+
+async function extractDocxText(bytes: Uint8Array): Promise<string> {
+  try {
+    const zip = await JSZip.loadAsync(bytes);
+    const xmlPaths = Object.keys(zip.files)
+      .filter((path) =>
+        /^word\/(document|header\d+|footer\d+|footnotes|endnotes)\.xml$/i.test(path)
+      )
+      .sort((a, b) => a.localeCompare(b));
+
+    const chunks: string[] = [];
+    for (const path of xmlPaths) {
+      const file = zip.file(path);
+      if (!file) continue;
+      const xml = await file.async("string");
+      const text = extractTextFromWordXml(xml);
+      if (text) chunks.push(text);
+    }
+
+    return normalizeWhitespace(chunks.join("\n")).slice(0, 60000);
+  } catch (error) {
+    console.error("Failed to parse DOCX text", error);
+    return "";
+  }
+}
+
 async function extractReadableTextFallback(bytes: Uint8Array, filePath: string): Promise<string> {
   const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
   const latin1 = new TextDecoder("latin1", { fatal: false }).decode(bytes);
@@ -314,6 +368,14 @@ async function extractReadableText(bytes: Uint8Array, filePath: string): Promise
     if (parsedPdfText.trim().length > 0) {
       return parsedPdfText;
     }
+  }
+
+  if (ext === "docx") {
+    const parsedDocxText = await extractDocxText(bytes);
+    if (parsedDocxText.trim().length > 0) {
+      return parsedDocxText;
+    }
+    return "";
   }
 
   return await extractReadableTextFallback(bytes, filePath);

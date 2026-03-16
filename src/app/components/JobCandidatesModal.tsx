@@ -339,6 +339,11 @@ async function handleInterviewScheduled() {
             {selectedApplicationId && (
                 <CandidateProfileDrawer
                     applicationId={selectedApplicationId}
+                    onStatusChange={(appId, status) => {
+                        setCandidates((prev) => prev.map((candidate) =>
+                            candidate.id === appId ? { ...candidate, status } : candidate
+                        ));
+                    }}
                     onClose={() => setSelectedApplicationId(null)}
                 />
             )}

@@ -365,7 +365,7 @@ export function EmployerJobReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-8">
+      <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-8 dark:from-neutral-950 dark:via-neutral-950 dark:to-slate-950">
         <CircularLoader size="md" label="Loading AI report..." />
       </div>
     );
@@ -373,10 +373,10 @@ export function EmployerJobReportPage() {
 
   if (!data?.job) {
     return (
-      <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-8">
-        <Card className="mx-auto max-w-2xl p-8 text-center">
-          <h1 className="text-xl font-semibold text-gray-900">Report unavailable</h1>
-          <p className="mt-2 text-sm text-gray-600">We couldn't find this job report.</p>
+      <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-8 dark:from-neutral-950 dark:via-neutral-950 dark:to-slate-950">
+        <Card className="mx-auto max-w-2xl border-gray-200 p-8 text-center dark:border-white/10 dark:bg-neutral-900">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Report unavailable</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">We couldn't find this job report.</p>
           <Button className="mt-4" onClick={() => navigate("/employer/jobs")}>
             Back to Jobs
           </Button>
@@ -388,24 +388,24 @@ export function EmployerJobReportPage() {
   const job = data.job as Record<string, unknown>;
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
-      <div className="border-b border-gray-200 bg-white shadow-sm">
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-slate-950">
+      <div className="border-b border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-950">
         <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <Button variant="ghost" size="sm" className="mb-3 -ml-3" onClick={() => navigate("/employer/jobs")}>
+              <Button variant="ghost" size="sm" className="mb-3 -ml-3 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10" onClick={() => navigate("/employer/jobs")}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Jobs
               </Button>
               <div className="mb-2 flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-bold text-gray-900">{String(job.title ?? "AI Hiring Report")}</h1>
-                <Badge className="bg-green-100 text-green-700 border-green-200">{String(job.status ?? "Active")}</Badge>
-                <Badge variant="outline" className="gap-1">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{String(job.title ?? "AI Hiring Report")}</h1>
+                <Badge className="border-green-200 bg-green-100 text-green-700 dark:border-green-500/30 dark:bg-green-500/15 dark:text-green-300">{String(job.status ?? "Active")}</Badge>
+                <Badge variant="outline" className="gap-1 dark:border-white/15 dark:bg-white/5 dark:text-gray-200">
                   <Sparkles className="h-3 w-3" />
                   AI Report
                 </Badge>
               </div>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
                 <span className="flex items-center gap-1">
                   <Briefcase className="h-4 w-4" />
                   {String(job.department ?? "General")}
@@ -419,14 +419,14 @@ export function EmployerJobReportPage() {
                   Posted {formatDate(String(job.published_at ?? job.created_at ?? ""))}
                 </span>
               </div>
-              <p className="mt-3 max-w-3xl text-sm text-gray-600">
+              <p className="mt-3 max-w-3xl text-sm text-gray-600 dark:text-gray-300">
                 {latestReport
                   ? "You are viewing the latest saved AI Hiring Report for this role. Opening this page does not use a credit."
                   : "No saved AI Hiring Report exists yet for this role. Generate one when you are ready to spend a report credit."}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
+              <Button variant="outline" size="sm" className="dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
                 <Share2 className="mr-2 h-4 w-4" />
                 Share
               </Button>
@@ -446,15 +446,15 @@ export function EmployerJobReportPage() {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <Card className="border-blue-200 bg-blue-50/70 p-4 shadow-sm">
+        <Card className="border-blue-200 bg-blue-50/70 p-4 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10 dark:shadow-none">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-900">AI Hiring Report credits are generation-based</p>
-              <p className="text-sm text-blue-800">
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">AI Hiring Report credits are generation-based</p>
+              <p className="text-sm text-blue-800 dark:text-blue-100/80">
                 Viewing a saved report is free. A credit is only used when you generate a new report or refresh this one.
               </p>
             </div>
-            <Badge className="border-blue-200 bg-white text-blue-700">
+            <Badge className="border-blue-200 bg-white text-blue-700 dark:border-blue-400/30 dark:bg-neutral-900 dark:text-blue-200">
               {latestReport ? "Saved report available" : "No saved report yet"}
             </Badge>
           </div>
@@ -462,18 +462,18 @@ export function EmployerJobReportPage() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {overviewStats.map((stat) => (
-            <Card key={stat.label} className="border-gray-200 p-6 shadow-sm">
+            <Card key={stat.label} className="border-gray-200 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="mb-1 text-sm text-gray-600">{stat.label}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  <p className={`mt-2 flex items-center gap-1 text-xs ${stat.trendUp ? "text-green-600" : "text-gray-500"}`}>
+                  <p className="mb-1 text-sm text-gray-600 dark:text-gray-300">{stat.label}</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                  <p className={`mt-2 flex items-center gap-1 text-xs ${stat.trendUp ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
                     {stat.trendUp ? <TrendingUp className="h-3 w-3" /> : null}
                     {stat.trend}
                   </p>
                 </div>
-                <div className="rounded-lg bg-blue-100 p-3">
-                  <stat.icon className="h-5 w-5 text-blue-600" />
+                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-500/15">
+                  <stat.icon className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
             </Card>
@@ -481,45 +481,45 @@ export function EmployerJobReportPage() {
         </div>
 
         <Tabs defaultValue="candidates" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="candidates">Top Candidates</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="insights">Insights</TabsTrigger>
+          <TabsList className="grid w-full max-w-md grid-cols-3 dark:bg-neutral-900 dark:text-gray-300">
+            <TabsTrigger value="candidates" className="dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">Top Candidates</TabsTrigger>
+            <TabsTrigger value="analytics" className="dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">Analytics</TabsTrigger>
+            <TabsTrigger value="insights" className="dark:data-[state=active]:bg-neutral-800 dark:data-[state=active]:text-white">Insights</TabsTrigger>
           </TabsList>
 
           <TabsContent value="candidates" className="space-y-4">
-            <Card className="border-gray-200 p-6 shadow-sm">
+            <Card className="border-gray-200 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Recommended Candidates</h2>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recommended Candidates</h2>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                     {usingLiveFallbackRanking
                       ? "Ranked from current application scores. Generate a fresh AI report for deeper role-fit analysis."
                       : "AI-ranked by current role fit and available pipeline data"}
                   </p>
                 </div>
-                <Badge className="border-gray-300 bg-gray-100 text-gray-800">{topCandidates.length} Ranked</Badge>
+                <Badge className="border-gray-300 bg-gray-100 text-gray-800 dark:border-white/15 dark:bg-white/5 dark:text-gray-200">{topCandidates.length} Ranked</Badge>
               </div>
 
               <div className="space-y-4">
                 {topCandidates.length > 0 ? topCandidates.map((candidate, index) => (
                   <div
                     key={`${candidate.name}-${index}`}
-                    className="rounded-lg border border-gray-300 bg-gradient-to-r from-gray-50 to-white p-5 shadow-sm transition-all hover:border-gray-400 hover:shadow-md"
+                    className="rounded-lg border border-gray-300 bg-gradient-to-r from-gray-50 to-white p-5 shadow-sm transition-all hover:border-gray-400 hover:shadow-md dark:border-white/10 dark:from-neutral-900 dark:to-neutral-900 dark:shadow-none dark:hover:border-white/20"
                   >
                     <div className="mb-4 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-gray-900 text-lg font-bold text-white shadow-sm">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-gray-900 text-lg font-bold text-white shadow-sm dark:border-white/10 dark:bg-blue-950 dark:shadow-none">
                           {candidate.name.split(" ").map((part) => part[0]).join("").slice(0, 2)}
                         </div>
                         <div>
                           <div className="mb-1 flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900">{candidate.name}</h3>
-                            <Badge variant="outline" className={candidate.score >= 85 ? "border-gray-300 bg-gray-100 text-gray-900" : "border-gray-300 bg-white text-gray-700"}>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">{candidate.name}</h3>
+                            <Badge variant="outline" className={candidate.score >= 85 ? "border-gray-300 bg-gray-100 text-gray-900 dark:border-white/15 dark:bg-white/10 dark:text-white" : "border-gray-300 bg-white text-gray-700 dark:border-white/15 dark:bg-white/5 dark:text-gray-200"}>
                               {candidate.status}
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
                             <span className="flex items-center gap-1">
                               <Briefcase className="h-3.5 w-3.5" />
                               {candidate.experience}
@@ -534,15 +534,15 @@ export function EmployerJobReportPage() {
                       <div className="text-right">
                         <div className="mb-1 flex items-center gap-2">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-2xl font-bold text-gray-900">{candidate.score}</span>
-                          <span className="text-sm text-gray-500">/100</span>
+                          <span className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.score}</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">/100</span>
                         </div>
-                        <p className="text-xs text-gray-600">Match Score</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-300">Match Score</p>
                       </div>
                     </div>
 
                     <div className="mb-4">
-                      <div className="mb-1 flex items-center justify-between text-xs text-gray-600">
+                      <div className="mb-1 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
                         <span>Role Fit</span>
                         <span>{candidate.score}%</span>
                       </div>
@@ -551,18 +551,18 @@ export function EmployerJobReportPage() {
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <div>
-                        <p className="mb-1 text-xs text-gray-600">Recommendation</p>
-                        <p className="text-sm font-medium text-gray-900">{candidate.recommendation}</p>
+                        <p className="mb-1 text-xs text-gray-600 dark:text-gray-300">Recommendation</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{candidate.recommendation}</p>
                       </div>
                       <div>
-                        <p className="mb-1 text-xs text-gray-600">Location</p>
-                        <p className="text-sm font-medium text-gray-900">{candidate.location}</p>
+                        <p className="mb-1 text-xs text-gray-600 dark:text-gray-300">Location</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{candidate.location}</p>
                       </div>
                       <div>
-                        <p className="mb-1 text-xs text-gray-600">Top Skills</p>
+                        <p className="mb-1 text-xs text-gray-600 dark:text-gray-300">Top Skills</p>
                         <div className="flex flex-wrap gap-1">
                           {candidate.skills.slice(0, 3).map((skill) => (
-                            <Badge key={`${candidate.name}-${skill}`} variant="outline" className="px-1.5 py-0 text-xs">
+                            <Badge key={`${candidate.name}-${skill}`} variant="outline" className="px-1.5 py-0 text-xs dark:border-white/15 dark:bg-white/5 dark:text-gray-200">
                               {skill}
                             </Badge>
                           ))}
@@ -571,7 +571,7 @@ export function EmployerJobReportPage() {
                     </div>
                   </div>
                 )) : (
-                  <p className="text-sm text-gray-500">No ranked candidates yet. Generate a report to analyze this pipeline.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No ranked candidates yet. Generate a report to analyze this pipeline.</p>
                 )}
               </div>
             </Card>
@@ -579,9 +579,9 @@ export function EmployerJobReportPage() {
 
           <TabsContent value="analytics" className="space-y-4">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <Card className="border-gray-200 p-6 shadow-sm">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">Skills Comparison</h3>
-                <p className="mb-6 text-sm text-gray-600">
+              <Card className="border-gray-200 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Skills Comparison</h3>
+                <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">
                   {requiredSkills.length > 0
                     ? "How ranked candidates line up against required skills"
                     : "No required skills were configured for this job, so this view is inferred from the strongest candidate skills"}
@@ -604,15 +604,15 @@ export function EmployerJobReportPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
+                  <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500 dark:border-white/10 dark:bg-neutral-950 dark:text-gray-400">
                     No candidate skill data available yet.
                   </div>
                 )}
               </Card>
 
-              <Card className="border-gray-200 p-6 shadow-sm">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">Candidate Pool Quality</h3>
-                <p className="mb-6 text-sm text-gray-600">Quality across the current fit dimensions in your pipeline</p>
+              <Card className="border-gray-200 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Candidate Pool Quality</h3>
+                <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">Quality across the current fit dimensions in your pipeline</p>
                 <ResponsiveContainer width="100%" height={300}>
                   <RadarChart data={radarData}>
                     <PolarGrid stroke="#e5e7eb" />
@@ -624,9 +624,9 @@ export function EmployerJobReportPage() {
                 </ResponsiveContainer>
               </Card>
 
-              <Card className="border-gray-200 p-6 shadow-sm">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">Experience Distribution</h3>
-                <p className="mb-6 text-sm text-gray-600">Breakdown of applicants by years of experience</p>
+              <Card className="border-gray-200 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Experience Distribution</h3>
+                <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">Breakdown of applicants by years of experience</p>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -647,9 +647,9 @@ export function EmployerJobReportPage() {
                 </ResponsiveContainer>
               </Card>
 
-              <Card className="border-gray-200 p-6 shadow-sm">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">Geographic Distribution</h3>
-                <p className="mb-6 text-sm text-gray-600">Where your current applicants are based</p>
+              <Card className="border-gray-200 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Geographic Distribution</h3>
+                <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">Where your current applicants are based</p>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={locationData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -665,61 +665,61 @@ export function EmployerJobReportPage() {
 
           <TabsContent value="insights" className="space-y-4">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <Card className="border-gray-200 p-6 shadow-sm lg:col-span-2">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">AI-Generated Insights</h3>
+              <Card className="border-gray-200 p-6 shadow-sm lg:col-span-2 dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">AI-Generated Insights</h3>
                 <div className="space-y-4">
                   {insightStrengths.map((item) => (
-                    <div key={`strength-${item}`} className="rounded-lg border border-green-200 bg-green-50 p-4">
+                    <div key={`strength-${item}`} className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-500/30 dark:bg-green-500/10">
                       <div className="flex gap-3">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-300" />
                         <div>
-                          <h4 className="mb-1 font-semibold text-green-900">Strength</h4>
-                          <p className="text-sm text-green-800">{item}</p>
+                          <h4 className="mb-1 font-semibold text-green-900 dark:text-green-200">Strength</h4>
+                          <p className="text-sm text-green-800 dark:text-green-100/85">{item}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                   {insightRisks.map((item) => (
-                    <div key={`risk-${item}`} className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                    <div key={`risk-${item}`} className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-500/30 dark:bg-yellow-500/10">
                       <div className="flex gap-3">
-                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
+                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-300" />
                         <div>
-                          <h4 className="mb-1 font-semibold text-yellow-900">Risk</h4>
-                          <p className="text-sm text-yellow-800">{item}</p>
+                          <h4 className="mb-1 font-semibold text-yellow-900 dark:text-yellow-200">Risk</h4>
+                          <p className="text-sm text-yellow-800 dark:text-yellow-100/85">{item}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                   {!insightStrengths.length && !insightRisks.length ? (
-                    <p className="text-sm text-gray-500">No AI insights yet. Generate the report to populate this section.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No AI insights yet. Generate the report to populate this section.</p>
                   ) : null}
                 </div>
               </Card>
 
-              <Card className="border-gray-200 p-6 shadow-sm">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">Recommended Actions</h3>
+              <Card className="border-gray-200 p-6 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:shadow-none">
+                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Recommended Actions</h3>
                 <div className="space-y-3">
                   {insightRecommendations.length > 0 ? insightRecommendations.map((item, index) => (
-                    <div key={`recommendation-${item}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div key={`recommendation-${item}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-neutral-950">
                       <div className="mb-2 flex items-start gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                           {index + 1}
                         </div>
-                        <p className="flex-1 text-sm font-medium text-gray-900">{item}</p>
+                        <p className="flex-1 text-sm font-medium text-gray-900 dark:text-white">{item}</p>
                       </div>
                     </div>
                   )) : (
-                    <p className="text-sm text-gray-500">No recommendations yet.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No recommendations yet.</p>
                   )}
                 </div>
 
                 <Separator className="my-4" />
 
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold text-gray-900">Report Generated</h4>
-                  <p className="text-xs text-gray-600">{formatDate(data.latestReportCreatedAt)}</p>
-                  <p className="text-xs text-gray-600">Based on {applicants.length} application{applicants.length === 1 ? "" : "s"}</p>
-                  <p className="text-xs text-gray-600">{formatCompensation(job.salary_min, job.salary_max)}</p>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Report Generated</h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">{formatDate(data.latestReportCreatedAt)}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">Based on {applicants.length} application{applicants.length === 1 ? "" : "s"}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">{formatCompensation(job.salary_min, job.salary_max)}</p>
                 </div>
               </Card>
             </div>
