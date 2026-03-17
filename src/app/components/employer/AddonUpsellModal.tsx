@@ -36,6 +36,7 @@ function prettifyAddonType(type: string) {
   }
   if (normalized === "featured_job") return "Featured Job Credits";
   if (normalized === "job_slot") return "Extra Job Slot Credits";
+  if (normalized === "auto_shortlist") return "Auto Shortlisting Credits";
   return type
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -62,6 +63,9 @@ function addonDescription(type: string) {
   }
   if (normalized === "job_slot") {
     return "Add temporary extra active job slots without changing your subscription plan.";
+  }
+  if (normalized === "auto_shortlist") {
+    return "Run auto-shortlisting on a job and move every applied candidate with a 70% or higher final match score into your shortlist in one step.";
   }
 
   return "Top up premium hiring actions on demand when your plan limits are reached.";

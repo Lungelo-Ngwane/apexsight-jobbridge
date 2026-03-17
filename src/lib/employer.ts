@@ -42,6 +42,17 @@ export interface ConfirmAddonCheckoutResult {
   alreadyProcessed: boolean;
 }
 
+export interface AutoShortlistResult {
+  success: boolean;
+  shortlisted_count: number;
+  already_shortlisted_count: number;
+  below_threshold_count: number;
+  credits_consumed: number;
+  credits_remaining: number | null;
+  threshold: number;
+  skipped_reason?: string;
+}
+
 export interface InterviewScheduleRecord {
   id: string;
   jobApplicationId: string;
@@ -2736,6 +2747,30 @@ export async function runAutoMatch(jobId: string) {
       throw new Error("Session expired. Please sign in again.");
     }
     throw new Error(message);
+  }
+
+  return data;
+}
+
+export async function runAutoShortlist(jobId: string, threshold = 70): Promise<AutoShortlistResult> {
+  const { data, error } = await invokeAuthedFunction<AutoShortlistResult>("auto-shortlist", {
+    jobId,
+    threshold,
+  });
+
+  if (error) {
+    const message =
+      (error as { message?: string } | null)?.message ??
+      (error as { detail?: string | null } | null)?.detail ??
+      "Failed to auto-shortlist candidates.";
+    if (String(message).toLowerCase().includes("invalid jwt")) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+    throw new Error(message);
+  }
+
+  if (!data) {
+    throw new Error("Auto-shortlist completed without a response.");
   }
 
   return data;

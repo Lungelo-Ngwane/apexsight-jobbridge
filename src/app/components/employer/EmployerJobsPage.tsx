@@ -17,7 +17,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { featureJob, generateAiReport, getEmployerCredits, getEmployerJobs, getEmployerUsageSnapshot, renewJobVisibility, updateJobStatus, type EmployerCreditBalance, type EmployerUsageSnapshot } from "@/lib/employer";
+import { featureJob, generateAiReport, getEmployerCredits, getEmployerJobs, getEmployerUsageSnapshot, renewJobVisibility, runAutoShortlist, updateJobStatus, type EmployerCreditBalance, type EmployerUsageSnapshot } from "@/lib/employer";
 import { PostJobModal } from "../PostJobModal";
 import { JobCandidatesModal } from "../JobCandidatesModal";
 import { AddonUpsellModal } from "./AddonUpsellModal";
@@ -354,6 +354,42 @@ export function EmployerJobsPage() {
     navigate(`/employer/jobs/${job.id}/report`);
   }
 
+  async function handleAutoShortlist(job: JobRow) {
+    try {
+      setActionLoading(`auto-shortlist-${job.id}`);
+      const result = await runAutoShortlist(job.id, 70);
+      if (result.skipped_reason === "no_applied_candidates") {
+        showFeedback(
+          "No applied candidates",
+          "There are no applied candidates on this job to auto-shortlist yet.",
+        );
+      } else {
+        showFeedback(
+          "Auto-shortlist complete",
+          `${result.shortlisted_count} candidate${result.shortlisted_count === 1 ? "" : "s"} moved to Shortlisted using the 70% final match score rule.`,
+        );
+      }
+      await loadJobs();
+    } catch (error: any) {
+      const message = String(error?.message ?? "").toLowerCase();
+      if (message.includes("insufficient")) {
+        setUpsell({
+          open: true,
+          addonType: "auto_shortlist",
+          actionLabel: "run auto-shortlist on this job",
+        });
+      } else {
+        console.error("Failed to auto-shortlist candidates", error);
+        showFeedback(
+          "Auto-shortlist failed",
+          "We couldn't auto-shortlist candidates for this job right now. Please try again.",
+        );
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
   async function handleRenewJob(job: JobRow) {
     try {
       setActionLoading(`renew-${job.id}`);
@@ -637,6 +673,17 @@ export function EmployerJobsPage() {
                               ? "Featured"
                               : "Feature Job"}
                         </Button>
+
+                        {job.status === "open" && (
+                          <Button
+                            variant="outline"
+                            className="border-gray-300 dark:border-white/15 dark:bg-neutral-950 dark:text-white"
+                            onClick={() => handleAutoShortlist(job)}
+                            disabled={actionLoading === `auto-shortlist-${job.id}`}
+                          >
+                            {actionLoading === `auto-shortlist-${job.id}` ? "Running..." : "Auto Shortlist"}
+                          </Button>
+                        )}
 
                         <Button
                           variant="outline"

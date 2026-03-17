@@ -450,6 +450,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     }
     if (normalized === "featured_job") return "Featured Job Credits";
     if (normalized === "job_slot") return "Extra Job Slot Credits";
+    if (normalized === "auto_shortlist") return "Auto Shortlisting Credits";
     return String(creditType ?? "");
   };
 
@@ -458,6 +459,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     if (normalized === "ai_credit") return Bot;
     if (normalized === "featured_job") return Star;
     if (normalized === "candidate_profile_view" || normalized === "candidate_unlock") return Eye;
+    if (normalized === "auto_shortlist") return CheckCircle;
     return CheckCircle;
   };
 

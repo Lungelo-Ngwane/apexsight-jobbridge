@@ -33,6 +33,7 @@ export function EmployerAddonsPage() {
     }
     if (normalized === "featured_job") return "Featured Job";
     if (normalized === "job_slot") return "Extra Job Slot";
+    if (normalized === "auto_shortlist") return "Auto Shortlisting";
     return String(type ?? "")
       .split("_")
       .filter(Boolean)
@@ -60,6 +61,9 @@ export function EmployerAddonsPage() {
     }
     if (normalized === "job_slot") {
       return "Post an additional job without upgrading your subscription plan. This credit gives you one extra active job listing.";
+    }
+    if (normalized === "auto_shortlist") {
+      return "Run a one-click shortlist pass on a job. Every applied candidate with a 70% or higher final match score is moved to Shortlisted automatically.";
     }
 
     return "Top up premium hiring actions on demand when your plan limits are reached.";
@@ -115,6 +119,15 @@ export function EmployerAddonsPage() {
           showFeedback(
             "Job slot credits added",
             `${creditText} were added. You can now publish more open jobs.`,
+          );
+        } else if (creditType === "auto_shortlist") {
+          if (returnTo && returnTo !== "/employer/addons") {
+            navigate(returnTo, { replace: true });
+            return;
+          }
+          showFeedback(
+            "Auto-shortlist credits added",
+            `${creditText} were added. Go to Jobs and click "Auto Shortlist" on the role you want to process.`,
           );
         } else {
           if (returnTo && returnTo !== "/employer/addons") {
