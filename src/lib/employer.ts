@@ -874,13 +874,16 @@ export async function createJob(data: {
   }
 
   // 5) Ensure new jobs get embeddings without charging AI credits.
-  await supabase.functions
-    .invoke("generate-job-embedding", {
-      body: { job_id: job.id, skip_credit: true },
-    })
-    .catch((error) => {
+  await invokeAuthedFunction("generate-job-embedding", {
+    job_id: job.id,
+    skip_credit: true,
+  }).then(({ error }) => {
+    if (error) {
       console.warn("Failed to auto-generate job embedding", error);
-    });
+    }
+  }).catch((error) => {
+    console.warn("Failed to auto-generate job embedding", error);
+  });
 
   return job;
 }
@@ -1108,13 +1111,16 @@ export async function updateJob(
     }
   }
 
-  await supabase.functions
-    .invoke("generate-job-embedding", {
-      body: { job_id: jobId, skip_credit: true },
-    })
-    .catch((invokeError) => {
-      console.warn("Failed to refresh job embedding after update", invokeError);
-    });
+  await invokeAuthedFunction("generate-job-embedding", {
+    job_id: jobId,
+    skip_credit: true,
+  }).then(({ error }) => {
+    if (error) {
+      console.warn("Failed to refresh job embedding after update", error);
+    }
+  }).catch((invokeError) => {
+    console.warn("Failed to refresh job embedding after update", invokeError);
+  });
 }
 
 /* =========================
