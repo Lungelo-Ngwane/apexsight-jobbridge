@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
 
     const { data: employer, error: employerError } = await supabase
       .from("employer_profiles")
-      .select("id")
+      .select("id, plan, subscription_status")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -173,6 +173,12 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const normalizedPlan = String(employer.plan ?? "").trim().toLowerCase();
+    const normalizedSubscriptionStatus = String(employer.subscription_status ?? "").trim().toLowerCase();
+    const hasIncludedAiAccess =
+      (normalizedPlan === "professional" || normalizedPlan === "enterprise") &&
+      normalizedSubscriptionStatus === "active";
 
     const { data: job, error: jobError } = await supabase
       .from("jobs")
@@ -196,35 +202,38 @@ Deno.serve(async (req) => {
 
     await ensureCandidateEmbeddings(job_id);
 
-    const { data: creditRow } = await supabase
-      .from("employer_credits")
-      .select("id, remaining")
-      .eq("employer_id", employer.id)
-      .eq("credit_type", "ai_credit")
-      .maybeSingle();
+    let current: number | null = null;
+    if (!hasIncludedAiAccess) {
+      const { data: creditRow } = await supabase
+        .from("employer_credits")
+        .select("id, remaining")
+        .eq("employer_id", employer.id)
+        .eq("credit_type", "ai_credit")
+        .maybeSingle();
 
-    const current = Number(creditRow?.remaining ?? 0);
-    if (!creditRow?.id || current < 1) {
-      return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { error: deductError } = await supabase
-      .from("employer_credits")
-      .update({ remaining: current - 1 })
-      .eq("id", creditRow.id)
-      .eq("remaining", current);
-
-    if (deductError) {
-      return new Response(
-        JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
-        {
-          status: 409,
+      current = Number(creditRow?.remaining ?? 0);
+      if (!creditRow?.id || current < 1) {
+        return new Response(JSON.stringify({ error: "Insufficient ai_credit balance" }), {
+          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+        });
+      }
+
+      const { error: deductError } = await supabase
+        .from("employer_credits")
+        .update({ remaining: current - 1 })
+        .eq("id", creditRow.id)
+        .eq("remaining", current);
+
+      if (deductError) {
+        return new Response(
+          JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
+          {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
     }
 
     const { data: matches, error: matchError } = await supabase.rpc(
@@ -264,20 +273,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    await supabase.from("employer_credit_usage").insert({
-      employer_id: employer.id,
-      credit_type: "ai_credit",
-      amount: 1,
-      context_type: "job",
-      context_id: job_id,
-      metadata: { source: "match-candidates" },
-    });
+    if (!hasIncludedAiAccess) {
+      await supabase.from("employer_credit_usage").insert({
+        employer_id: employer.id,
+        credit_type: "ai_credit",
+        amount: 1,
+        context_type: "job",
+        context_id: job_id,
+        metadata: { source: "match-candidates" },
+      });
+    }
 
     return new Response(
       JSON.stringify({
         matches: matches ?? [],
-        ai_credits_consumed: 1,
-        ai_credits_remaining: current - 1,
+        ai_credits_consumed: hasIncludedAiAccess ? 0 : 1,
+        ai_credits_remaining: hasIncludedAiAccess || current === null ? null : current - 1,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

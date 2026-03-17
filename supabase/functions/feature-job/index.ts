@@ -39,6 +39,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    const normalizedPlan = String(employer.plan ?? "").trim().toLowerCase();
+    const normalizedSubscriptionStatus = String(employer.subscriptionStatus ?? "").trim().toLowerCase();
+    const hasIncludedFeaturedAccess =
+      normalizedPlan === "enterprise" && normalizedSubscriptionStatus === "active";
+
     const { data: job, error: jobError } = await supabase
       .from("jobs")
       .select("id, employer_id")
@@ -52,26 +57,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: creditRow, error: creditError } = await supabase
-      .from("employer_credits")
-      .select("id, remaining")
-      .eq("employer_id", employer.employerId)
-      .eq("credit_type", "featured_job")
-      .maybeSingle();
+    const { data: creditRow, error: creditError } = hasIncludedFeaturedAccess
+      ? { data: null, error: null }
+      : await supabase
+          .from("employer_credits")
+          .select("id, remaining")
+          .eq("employer_id", employer.employerId)
+          .eq("credit_type", "featured_job")
+          .maybeSingle();
 
-    if (creditError || !creditRow?.id || Number(creditRow.remaining ?? 0) < 1) {
+    if (!hasIncludedFeaturedAccess && (creditError || !creditRow?.id || Number(creditRow.remaining ?? 0) < 1)) {
       return new Response(JSON.stringify({ error: "Insufficient featured_job credits" }), {
         status: 402,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const current = Number(creditRow.remaining ?? 0);
-    const { error: deductError } = await supabase
-      .from("employer_credits")
-      .update({ remaining: current - 1 })
-      .eq("id", creditRow.id)
-      .eq("remaining", current);
+    const current = Number(creditRow?.remaining ?? 0);
+    const { error: deductError } = hasIncludedFeaturedAccess
+      ? { error: null }
+      : await supabase
+          .from("employer_credits")
+          .update({ remaining: current - 1 })
+          .eq("id", String(creditRow?.id ?? ""))
+          .eq("remaining", current);
 
     if (deductError) {
       return new Response(
@@ -106,20 +115,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    await supabase.from("employer_credit_usage").insert({
-      employer_id: employer.employerId,
-      credit_type: "featured_job",
-      amount: 1,
-      context_type: "job",
-      context_id: jobId,
-      metadata: { featuredUntil, days: safeDays },
-    });
+    if (!hasIncludedFeaturedAccess) {
+      await supabase.from("employer_credit_usage").insert({
+        employer_id: employer.employerId,
+        credit_type: "featured_job",
+        amount: 1,
+        context_type: "job",
+        context_id: jobId,
+        metadata: { featuredUntil, days: safeDays },
+      });
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         featuredUntil,
-        creditsRemaining: current - 1,
+        creditsRemaining: hasIncludedFeaturedAccess ? null : current - 1,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

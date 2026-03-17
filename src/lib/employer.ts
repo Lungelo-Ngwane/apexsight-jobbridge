@@ -1005,36 +1005,13 @@ export async function getEmployerJobReportPageData(jobId: string): Promise<Emplo
 
   if (latestReportError) throw latestReportError;
 
-  const { data: applicants, error: applicantsError } = await supabase
-    .from("job_applications")
-    .select(`
-      id,
-      status,
-      score,
-      created_at,
-      candidate_profile_id,
-      candidate:candidate_profiles (
-        id,
-        full_name,
-        headline,
-        location,
-        years_experience,
-        candidate_skills (
-          level,
-          skills ( name )
-        )
-      )
-    `)
-    .eq("job_id", jobId)
-    .order("created_at", { ascending: false });
-
-  if (applicantsError) throw applicantsError;
+  const applicants = await getJobApplicants(jobId);
 
   return {
     job: (job as Record<string, unknown> | null) ?? null,
     latestReport: (latestReportRow?.report as Record<string, unknown> | null) ?? null,
     latestReportCreatedAt: latestReportRow?.created_at ? String(latestReportRow.created_at) : null,
-    applicants: ((applicants ?? []) as Array<Record<string, unknown>>),
+    applicants: (applicants ?? []) as Array<Record<string, unknown>>,
   };
 }
 

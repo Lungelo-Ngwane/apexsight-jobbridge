@@ -368,6 +368,7 @@ export async function getCandidateDashboardData() {
         gender,
         contact_number,
         cv_url,
+        cv_file_name,
         resume_analysis,
         resume_last_analyzed_at,
         candidate_skills (
@@ -740,7 +741,8 @@ export async function uploadCandidateCV(file: File) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const ext = file.name.split(".").pop();
+  const originalFileName = String(file.name ?? "").trim() || "CV";
+  const ext = originalFileName.includes(".") ? originalFileName.split(".").pop() : "pdf";
   const filePath = `${user.id}/cv.${ext}`;
 
   const { error: uploadError } = await supabase.storage
@@ -751,7 +753,7 @@ export async function uploadCandidateCV(file: File) {
 
   let { data: updatedProfile, error: updateError } = await supabase
     .from("candidate_profiles")
-    .update({ cv_url: filePath })
+    .update({ cv_url: filePath, cv_file_name: originalFileName })
     .eq("user_id", user.id)
     .select("id")
     .maybeSingle();
@@ -765,6 +767,7 @@ export async function uploadCandidateCV(file: File) {
         user_id: user.id,
         full_name: String(user.user_metadata?.full_name ?? user.email ?? "Candidate"),
         cv_url: filePath,
+        cv_file_name: originalFileName,
       })
       .select("id")
       .single();
@@ -789,7 +792,10 @@ export async function uploadCandidateCV(file: File) {
     }
   }
 
-  return filePath;
+  return {
+    fileName: originalFileName,
+    path: filePath,
+  };
 }
 
 export async function getOpenJobs() {

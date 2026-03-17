@@ -37,6 +37,75 @@ function normalizeSkillKey(value: string): string {
     .replace(/[^a-z0-9+#]/g, "");
 }
 
+function clampScore(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function normalizeComparable(value: string) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s+#]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenizeComparable(value: string) {
+  const stopWords = new Set([
+    "the", "and", "for", "with", "role", "job", "level", "senior", "junior", "mid", "developer",
+    "engineer", "specialist", "manager", "lead", "to", "of", "in", "on", "a", "an",
+  ]);
+
+  return normalizeComparable(value)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && !stopWords.has(token));
+}
+
+function computeFinalMatchScore(input: {
+  applicationScore: number | null;
+  aiSimilarity: number | null;
+  scoreBreakdown?: { required?: number; optional?: number; experience?: number; skill_level?: number } | null;
+  job: {
+    title?: string | null;
+    experience_level?: string | null;
+    job_skills?: Array<{ required?: boolean | null }> | null;
+  };
+  candidate: {
+    headline?: string | null;
+    resume_analysis?: { work_experience?: Array<{ title?: string | null }> } | null;
+  };
+}) {
+  const applicationScore = Number.isFinite(Number(input.applicationScore)) ? Number(input.applicationScore) : null;
+  const aiSimilarity = Number.isFinite(Number(input.aiSimilarity)) ? Number(input.aiSimilarity) : null;
+  const baseHybrid =
+    applicationScore === null || aiSimilarity === null
+      ? (applicationScore ?? aiSimilarity ?? null)
+      : clampScore((applicationScore * 0.7) + (aiSimilarity * 0.3));
+
+  let penalty = 0;
+  let recencyBonus = 0;
+
+  const requiredScore = Number(input.scoreBreakdown?.required ?? 0);
+  const experienceScore = Number(input.scoreBreakdown?.experience ?? 0);
+  const requiredJobSkills = (input.job.job_skills ?? []).filter((row) => Boolean(row.required));
+
+  if (requiredJobSkills.length > 0 && requiredScore <= 0) penalty += 20;
+  if (normalizeComparable(String(input.job.experience_level ?? "")) && experienceScore <= 0) penalty += 10;
+
+  const recentRoleTitle = String(input.candidate.resume_analysis?.work_experience?.[0]?.title ?? "").trim();
+  const comparisonPool = `${input.candidate.headline ?? ""} ${recentRoleTitle}`.trim();
+  if (comparisonPool && input.job.title) {
+    const candidateTokens = new Set(tokenizeComparable(comparisonPool));
+    const jobTokens = tokenizeComparable(String(input.job.title));
+    const overlap = jobTokens.filter((token) => candidateTokens.has(token)).length;
+    if (overlap >= 2) recencyBonus += 8;
+    else if (overlap >= 1) recencyBonus += 4;
+  }
+
+  return baseHybrid === null ? 0 : clampScore(baseHybrid + recencyBonus - penalty);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -64,14 +133,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: creditRow, error: creditError } = await supabase
-      .from("employer_credits")
-      .select("id, remaining")
-      .eq("employer_id", employer.employerId)
-      .eq("credit_type", "ai_report")
-      .maybeSingle();
+    const normalizedPlan = String(employer.plan ?? "").trim().toLowerCase();
+    const normalizedSubscriptionStatus = String(employer.subscriptionStatus ?? "").trim().toLowerCase();
+    const hasIncludedAiReportAccess =
+      normalizedPlan === "enterprise" && normalizedSubscriptionStatus === "active";
 
-    if (creditError || !creditRow?.id || Number(creditRow.remaining ?? 0) < 1) {
+    const { data: creditRow, error: creditError } = hasIncludedAiReportAccess
+      ? { data: null, error: null }
+      : await supabase
+          .from("employer_credits")
+          .select("id, remaining")
+          .eq("employer_id", employer.employerId)
+          .eq("credit_type", "ai_report")
+          .maybeSingle();
+
+    if (!hasIncludedAiReportAccess && (creditError || !creditRow?.id || Number(creditRow.remaining ?? 0) < 1)) {
       return new Response(JSON.stringify({ error: "Insufficient ai_report credits" }), {
         status: 402,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -122,6 +198,9 @@ Deno.serve(async (req) => {
           headline,
           location,
           years_experience,
+          preferred_job_type,
+          resume_analysis,
+          cv_url,
           professional_bio_ai,
           resume_summary,
           bio,
@@ -213,6 +292,24 @@ Deno.serve(async (req) => {
       const aiSimilarityPercent = similarityByCandidateId.get(String(candidate?.id ?? "")) ?? 0;
       const ruleBasedScore = toPercent(application.score);
       const hybridScore = Math.round(ruleBasedScore * 0.7 + aiSimilarityPercent * 0.3);
+      const finalMatchScore = computeFinalMatchScore({
+        applicationScore: ruleBasedScore,
+        aiSimilarity: aiSimilarityPercent,
+        scoreBreakdown: (application as {
+          score_breakdown?: { required?: number; optional?: number; experience?: number; skill_level?: number } | null;
+        }).score_breakdown ?? null,
+        job: {
+          title: String(job.title ?? ""),
+          experience_level: String(job.experience_level ?? ""),
+          job_skills: ((job as { job_skills?: Array<{ required?: boolean | null }> }).job_skills ?? []),
+        },
+        candidate: {
+          headline: String(candidate?.headline ?? ""),
+          resume_analysis: (candidate?.resume_analysis ?? null) as {
+            work_experience?: Array<{ title?: string | null }>;
+          } | null,
+        },
+      });
 
       return {
         application_id: String(application.id),
@@ -220,6 +317,7 @@ Deno.serve(async (req) => {
         rule_based_score: ruleBasedScore,
         ai_similarity: aiSimilarityPercent,
         hybrid_score: hybridScore,
+        final_match_score: finalMatchScore,
         candidate: {
           id: String(candidate?.id ?? ""),
           full_name: String(candidate?.full_name ?? "Candidate"),
@@ -239,15 +337,17 @@ Deno.serve(async (req) => {
     });
 
     const topApplicants = [...enrichedApplicants]
-      .sort((a, b) => b.hybrid_score - a.hybrid_score)
+      .sort((a, b) => b.final_match_score - a.final_match_score)
       .slice(0, 5);
 
-    const current = Number(creditRow.remaining ?? 0);
-    const { error: deductError } = await supabase
-      .from("employer_credits")
-      .update({ remaining: current - 1 })
-      .eq("id", creditRow.id)
-      .eq("remaining", current);
+    const current = Number(creditRow?.remaining ?? 0);
+    const { error: deductError } = hasIncludedAiReportAccess
+      ? { error: null }
+      : await supabase
+          .from("employer_credits")
+          .update({ remaining: current - 1 })
+          .eq("id", String(creditRow?.id ?? ""))
+          .eq("remaining", current);
 
     if (deductError) {
       return new Response(
@@ -269,7 +369,7 @@ risks (array of strings),
 recommendations (array of strings),
 score_band,
 confidence,
-top_candidates (array of objects with keys: name, recommendation, hybrid_score, rule_based_score, ai_similarity, matched_required_skills, missing_required_skills, strengths, risks),
+top_candidates (array of objects with keys: name, recommendation, final_match_score, hybrid_score, rule_based_score, ai_similarity, matched_required_skills, missing_required_skills, strengths, risks),
 candidate_comparison (array of strings).
 
 Focus on actual candidate-job fit, not generic pipeline commentary.
@@ -325,12 +425,12 @@ ${JSON.stringify({
     } catch {
       const stackHighlights = requiredSkills.slice(0, 3);
       const topCandidateNames = topApplicants.slice(0, 3).map((candidate) => candidate.candidate.full_name);
-      const applicantsWithStrongFit = topApplicants.filter((candidate) => candidate.hybrid_score >= 75).length;
+      const applicantsWithStrongFit = topApplicants.filter((candidate) => candidate.final_match_score >= 75).length;
       const candidatesMissingSkills = topApplicants.filter((candidate) => candidate.missing_required_skills.length > 0).length;
       report = {
         summary:
           topApplicants.length > 0
-            ? `${topApplicants[0].candidate.full_name} currently leads this pipeline for ${job.title}, with ${topApplicants[0].hybrid_score}% hybrid alignment and ${topApplicants[0].matched_required_skills.length}/${requiredSkills.length || 0} required skills matched.`
+            ? `${topApplicants[0].candidate.full_name} currently leads this pipeline for ${job.title}, with ${topApplicants[0].final_match_score}% final match alignment and ${topApplicants[0].matched_required_skills.length}/${requiredSkills.length || 0} required skills matched.`
             : `No candidate comparison could be generated yet for ${job.title}.`,
         overall_hiring_outlook:
           topApplicants.length >= 3
@@ -362,12 +462,12 @@ ${JSON.stringify({
         ],
         recommendations: topApplicants.length > 0
           ? topApplicants.slice(0, 3).map((candidate, index) =>
-              `${index === 0 ? "Prioritize" : "Consider"} ${candidate.candidate.full_name} for the next interview stage; hybrid score ${candidate.hybrid_score}% and missing skills: ${candidate.missing_required_skills.join(", ") || "none"}.`,
+              `${index === 0 ? "Prioritize" : "Consider"} ${candidate.candidate.full_name} for the next interview stage; final match score ${candidate.final_match_score}% and missing skills: ${candidate.missing_required_skills.join(", ") || "none"}.`,
             )
           : ["Broaden sourcing and review the job requirements to attract more qualified candidates."],
         score_band: toScoreBand(
           topApplicants.length > 0
-            ? Math.round(topApplicants.reduce((sum, candidate) => sum + candidate.hybrid_score, 0) / topApplicants.length)
+            ? Math.round(topApplicants.reduce((sum, candidate) => sum + candidate.final_match_score, 0) / topApplicants.length)
             : averageScore,
         ),
         confidence:
@@ -376,7 +476,8 @@ ${JSON.stringify({
             : "Low",
         top_candidates: topApplicants.map((candidate) => ({
           name: candidate.candidate.full_name,
-          recommendation: candidate.hybrid_score >= 75 ? "Interview now" : candidate.hybrid_score >= 55 ? "Keep warm" : "Do not proceed yet",
+          recommendation: candidate.final_match_score >= 75 ? "Interview now" : candidate.final_match_score >= 55 ? "Keep warm" : "Do not proceed yet",
+          final_match_score: candidate.final_match_score,
           hybrid_score: candidate.hybrid_score,
           rule_based_score: candidate.rule_based_score,
           ai_similarity: candidate.ai_similarity,
@@ -397,9 +498,9 @@ ${JSON.stringify({
         candidate_comparison: topApplicants.length >= 2
           ? topApplicants.slice(0, 3).map((candidate, index, list) => {
               if (index === 0) {
-                return `${candidate.candidate.full_name} leads on combined fit at ${candidate.hybrid_score}%, ahead of ${list[1]?.candidate.full_name ?? "the rest of the shortlist"}.`;
+                return `${candidate.candidate.full_name} leads on combined fit at ${candidate.final_match_score}%, ahead of ${list[1]?.candidate.full_name ?? "the rest of the shortlist"}.`;
               }
-              return `${candidate.candidate.full_name} trails the lead candidate by ${Math.max(0, list[0].hybrid_score - candidate.hybrid_score)} points and is missing ${candidate.missing_required_skills.length} required skill(s).`;
+              return `${candidate.candidate.full_name} trails the lead candidate by ${Math.max(0, list[0].final_match_score - candidate.final_match_score)} points and is missing ${candidate.missing_required_skills.length} required skill(s).`;
             })
           : topApplicants.length === 1
             ? [`${topApplicants[0].candidate.full_name} is the only clearly ranked candidate in the current report.`]
@@ -413,22 +514,24 @@ ${JSON.stringify({
       report,
     });
 
-    await supabase.from("employer_credit_usage").insert({
-      employer_id: employer.employerId,
-      credit_type: "ai_report",
-      amount: 1,
-      context_type: "job",
-      context_id: jobId,
-      metadata: {
-        generatedAt: new Date().toISOString(),
-      },
-    });
+    if (!hasIncludedAiReportAccess) {
+      await supabase.from("employer_credit_usage").insert({
+        employer_id: employer.employerId,
+        credit_type: "ai_report",
+        amount: 1,
+        context_type: "job",
+        context_id: jobId,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+        },
+      });
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         report,
-        creditsRemaining: current - 1,
+        creditsRemaining: hasIncludedAiReportAccess ? null : current - 1,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

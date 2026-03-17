@@ -34,7 +34,7 @@ const PIPELINE_STAGES = [
 
 
 export function JobCandidatesModal({ jobId, onClose }: Props) {
-    const { profile } = useEmployerProfile();
+    const { profile, loading: profileLoading } = useEmployerProfile();
     const [candidates, setCandidates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeStage, setActiveStage] = useState("applied");
@@ -50,6 +50,8 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
         candidateName: "",
     });
     const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
+    const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
+    const canShowScores = normalizedPlan === "professional" || normalizedPlan === "enterprise";
 
     function getDisplayedMatchScore(application: any) {
         const finalScore = Number(application?.final_match_score);
@@ -85,38 +87,30 @@ export function JobCandidatesModal({ jobId, onClose }: Props) {
         );
     }
 
-    const hydrateApplicantScores = useCallback(async (applications: any[]) => {
-        const hydrated = await Promise.all(
-            applications.map(async (application) => {
-                try {
-                    const deepView = await getCandidateDeepView(String(application.id));
-                    return mergeApplicantWithDeepView(application, deepView);
-                } catch (error) {
-                    console.warn("Failed to hydrate applicant score", application.id, error);
-                    return application;
-                }
-            }),
-        );
-
-        setCandidates(hydrated);
-    }, []);
-
     const loadApplicants = useCallback(async () => {
         setLoading(true);
         try {
+            if (canShowScores) {
+                try {
+                    await runAutoMatch(jobId);
+                } catch (error) {
+                    console.warn("Failed to refresh applicant match scores before loading applicants", error);
+                }
+            }
+
             const applicants = await getJobApplicants(jobId);
             setCandidates(applicants ?? []);
-            void hydrateApplicantScores(applicants ?? []);
         } finally {
             setLoading(false);
         }
-    }, [hydrateApplicantScores, jobId]);
+    }, [canShowScores, jobId]);
 
 
 
     useEffect(() => {
+        if (profileLoading) return;
         void loadApplicants();
-    }, [loadApplicants]);
+    }, [loadApplicants, profileLoading]);
 
     useEffect(() => {
         getJobSkillSummary(jobId)
@@ -196,19 +190,11 @@ async function handleInterviewScheduled() {
     const filteredCandidates = candidates
         .filter((c) => c.status === activeStage)
         .sort((a, b) => (Number(getDisplayedMatchScore(b) ?? 0)) - (Number(getDisplayedMatchScore(a) ?? 0)));
-    const normalizedPlan = String(profile?.plan ?? "free").toLowerCase();
-    const canShowScores = normalizedPlan === "professional" || normalizedPlan === "enterprise";
     function getMatchColor(score: number) {
         if (score >= 80) return "bg-green-100 text-green-700";
         if (score >= 60) return "bg-yellow-100 text-yellow-700";
         return "bg-red-100 text-red-700";
     }
-
-    console.log("Candidates for job", jobId, candidates);
-
-
-
-
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <Card className="w-full max-w-2xl p-6">

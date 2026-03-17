@@ -87,6 +87,16 @@ function normalizeSkillKey(value: string) {
     .replace(/[^a-z0-9+#]/g, "");
 }
 
+function getDisplayedCandidateScore(value: Record<string, unknown>) {
+  const finalScore = Number(value.final_match_score ?? NaN);
+  if (Number.isFinite(finalScore)) return finalScore;
+  const hybridScore = Number(value.hybrid_score ?? NaN);
+  if (Number.isFinite(hybridScore)) return hybridScore;
+  const ruleScore = Number(value.score ?? value.rule_based_score ?? NaN);
+  if (Number.isFinite(ruleScore)) return ruleScore;
+  return 0;
+}
+
 function formatCandidateStatus(value: string) {
   const normalized = String(value ?? "").trim().toLowerCase();
   if (normalized === "shortlisted") return "Shortlisted";
@@ -217,7 +227,7 @@ export function EmployerJobReportPage() {
 
         return {
           name,
-          score: Number(candidate.hybrid_score ?? 0),
+          score: getDisplayedCandidateScore(candidate),
           location: String(candidateRow.location ?? "Unknown"),
           experience: `${Number(candidateRow.years_experience ?? 0) || 0} years`,
           status,
@@ -230,7 +240,7 @@ export function EmployerJobReportPage() {
     }
 
     return [...applicants]
-      .sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0))
+      .sort((a, b) => getDisplayedCandidateScore(b) - getDisplayedCandidateScore(a))
       .slice(0, 5)
       .map((applicant) => {
         const candidate = (applicant.candidate as Record<string, unknown> | undefined) ?? {};
@@ -239,7 +249,7 @@ export function EmployerJobReportPage() {
               .map((skill) => String(skill.skills?.name ?? "").trim())
               .filter(Boolean)
           : [];
-        const score = Number(applicant.score ?? 0);
+        const score = getDisplayedCandidateScore(applicant);
 
         return {
           name: String(candidate.full_name ?? "Candidate"),

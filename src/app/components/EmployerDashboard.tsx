@@ -891,9 +891,9 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() => void handleCloseJob(job.id)}
+                      onClick={() => navigate(`/employer/jobs/${job.id}/report`)}
                     >
-                      Close Job
+                      AI Hiring Report
                     </Button>
                   </div>
                 </Card>

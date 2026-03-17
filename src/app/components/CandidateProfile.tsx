@@ -181,7 +181,11 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     gender: normalizeGender(candidateProfile.gender),
                     contact_number: candidateProfile.contact_number || "",
                 });
-                setCvName(String(candidateProfile.cv_url ?? "").trim().split("/").pop() || null);
+                setCvName(
+                    String(candidateProfile.cv_file_name ?? "").trim() ||
+                    String(candidateProfile.cv_url ?? "").trim().split("/").pop() ||
+                    null,
+                );
 
                 // Fetch candidate skills
                 const { data: candidateSkills } = await supabase
@@ -366,8 +370,8 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         try {
             setCvUploading(true);
             await resolveCandidateProfileId(true);
-            const path = await uploadCandidateCV(file);
-            setCvName(path.split("/").pop() ?? null);
+            const uploadedCv = await uploadCandidateCV(file);
+            setCvName(uploadedCv.fileName);
             showFeedback(
                 "CV uploaded",
                 "Your CV was uploaded successfully.",

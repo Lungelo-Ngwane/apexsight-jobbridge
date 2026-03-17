@@ -217,10 +217,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { data: employerProfile } = await supabase
+      .from("employer_profiles")
+      .select("plan, subscription_status")
+      .eq("id", job.employer_id)
+      .maybeSingle();
+
+    const normalizedPlan = String(employerProfile?.plan ?? "").trim().toLowerCase();
+    const normalizedSubscriptionStatus = String(employerProfile?.subscription_status ?? "").trim().toLowerCase();
+    const hasIncludedAiAccess =
+      (normalizedPlan === "professional" || normalizedPlan === "enterprise") &&
+      normalizedSubscriptionStatus === "active";
+
     await ensureStructuredJobSkills(String(job.id), job);
 
     let current: number | null = null;
-    if (!skip_credit) {
+    if (!skip_credit && !hasIncludedAiAccess) {
       const { data: creditRow } = await supabase
         .from("employer_credits")
         .select("id, remaining")
@@ -307,7 +319,7 @@ Optional Skills: ${optionalSkills}
       })
       .eq("id", job_id);
 
-    if (!skip_credit) {
+    if (!skip_credit && !hasIncludedAiAccess) {
       await supabase.from("employer_credit_usage").insert({
         employer_id: job.employer_id,
         credit_type: "ai_credit",
@@ -321,8 +333,9 @@ Optional Skills: ${optionalSkills}
     return new Response(
       JSON.stringify({
         success: true,
-        ai_credits_consumed: skip_credit ? 0 : 1,
-        ai_credits_remaining: skip_credit ? null : (current as number) - 1,
+        ai_credits_consumed: skip_credit || hasIncludedAiAccess ? 0 : 1,
+        ai_credits_remaining:
+          skip_credit || hasIncludedAiAccess ? null : (current as number) - 1,
         skip_credit: Boolean(skip_credit),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

@@ -160,6 +160,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    const normalizedPlan = String(employer.plan ?? "").trim().toLowerCase();
+    const normalizedSubscriptionStatus = String(employer.subscriptionStatus ?? "").trim().toLowerCase();
+    const hasIncludedAiAccess =
+      (normalizedPlan === "professional" || normalizedPlan === "enterprise")
+      && normalizedSubscriptionStatus === "active";
+
     const openai = new OpenAI({
       apiKey: Deno.env.get("OPENAI_API_KEY"),
     });
@@ -186,7 +192,7 @@ Deno.serve(async (req) => {
     }
 
     let currentCredits: number | null = null;
-    if (!skip_credit) {
+    if (!skip_credit && !hasIncludedAiAccess) {
       const { data: aiCreditRow } = await supabase
         .from("employer_credits")
         .select("id, remaining")
@@ -317,8 +323,9 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        ai_credits_consumed: skip_credit ? 0 : 1,
-        ai_credits_remaining: skip_credit || currentCredits === null ? null : currentCredits - 1,
+        ai_credits_consumed: skip_credit || hasIncludedAiAccess ? 0 : 1,
+        ai_credits_remaining:
+          skip_credit || hasIncludedAiAccess || currentCredits === null ? null : currentCredits - 1,
         skip_credit: Boolean(skip_credit),
         matches_found: matches?.length || 0,
         matches: matches ?? [],

@@ -7,6 +7,7 @@ export interface EmployerContext {
   employerId: string;
   membershipRole: EmployerMembershipRole;
   plan: string | null;
+  subscriptionStatus: string | null;
 }
 
 function normalizeRole(value: unknown): EmployerMembershipRole {
@@ -92,7 +93,7 @@ export async function resolveEmployerContext(
   if (membership?.employer_id) {
     const { data: employerProfile, error: employerError } = await supabase
       .from("employer_profiles")
-      .select("id, plan")
+      .select("id, plan, subscription_status")
       .eq("id", membership.employer_id)
       .maybeSingle();
 
@@ -105,6 +106,9 @@ export async function resolveEmployerContext(
       employerId: String(employerProfile.id),
       membershipRole: normalizeRole(membership.role),
       plan: employerProfile.plan ? String(employerProfile.plan) : null,
+      subscriptionStatus: employerProfile.subscription_status
+        ? String(employerProfile.subscription_status)
+        : null,
     } satisfies EmployerContext;
 
     if (
@@ -120,7 +124,7 @@ export async function resolveEmployerContext(
 
   const { data: employer, error: employerError } = await supabase
     .from("employer_profiles")
-    .select("id, plan")
+    .select("id, plan, subscription_status")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -133,6 +137,9 @@ export async function resolveEmployerContext(
     employerId: String(employer.id),
     membershipRole: "owner" as const,
     plan: employer.plan ? String(employer.plan) : null,
+    subscriptionStatus: employer.subscription_status
+      ? String(employer.subscription_status)
+      : null,
   };
 
   if (

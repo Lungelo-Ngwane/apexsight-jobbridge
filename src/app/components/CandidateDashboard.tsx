@@ -66,12 +66,19 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
 
 
   useEffect(() => {
+    const savedCvFileName = String(profile?.cv_file_name ?? "").trim();
+    if (savedCvFileName) {
+      setCvName(savedCvFileName);
+      return;
+    }
+
     if (profile?.cv_url) {
       setCvName(profile.cv_url.split("/").pop() ?? null);
-    } else {
-      setCvName(null);
+      return;
     }
-  }, [profile?.cv_url]);
+
+    setCvName(null);
+  }, [profile?.cv_file_name, profile?.cv_url]);
 
 
 
@@ -746,8 +753,8 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
 
                     try {
                       setCvUploading(true);
-                      const path = await uploadCandidateCV(e.target.files[0]);
-                      setCvName(path.split("/").pop() ?? null);
+                      const uploadedCv = await uploadCandidateCV(e.target.files[0]);
+                      setCvName(uploadedCv.fileName);
                       const data = await getCandidateDashboardData();
                       setProfile(data);
                       setShowCvUploadSuccess(true);
