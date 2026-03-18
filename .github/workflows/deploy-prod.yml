@@ -5,16 +5,21 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
-  deploy-production:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout tagged commit
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to DigitalOcean App Platform
+      - name: Deploy to DigitalOcean
         uses: digitalocean/app_action/deploy@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          app_id: ${{ secrets.DO_PROD_APP_ID }}
+          app_name: apexsight-jobbridge
+          print_build_logs: true
+          print_deploy_logs: true

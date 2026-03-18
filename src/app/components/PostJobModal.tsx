@@ -33,6 +33,11 @@ const EXPERIENCE_LEVEL_OPTIONS = [
   { value: "mid", label: "Intermediate" },
   { value: "senior", label: "Senior" },
 ] as const;
+const STATUS_OPTIONS = [
+  { value: "open", label: "Published" },
+  { value: "archived", label: "Draft" },
+  { value: "closed", label: "Closed" },
+] as const;
 
 function normalizeEmploymentType(value?: string | null) {
   const normalized = String(value ?? "").trim().toLowerCase();
@@ -83,10 +88,15 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
   const [skillSearchLoading, setSkillSearchLoading] = useState(false);
   const [addingCustomSkill, setAddingCustomSkill] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitAction, setSubmitAction] = useState<"draft" | "publish" | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { profile } = useEmployerProfile();
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
   const isEditMode = Boolean(job?.id);
+
+  function statusLabel(value: Status) {
+    return STATUS_OPTIONS.find((option) => option.value === value)?.label ?? value;
+  }
 
   useEffect(() => {
     setStep(1);
@@ -187,12 +197,14 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
     return true;
   }
 
-  async function submit() {
+  async function submit(nextStatus?: Status) {
     const minYearsValue = minYears ? Number(minYears) : null;
     const salaryMinValue = salaryMin ? Number(salaryMin) : null;
     const salaryMaxValue = salaryMax ? Number(salaryMax) : null;
+    setSubmitAction(nextStatus === "archived" ? "draft" : "publish");
     setLoading(true);
     try {
+      const resolvedStatus = nextStatus ?? status;
       const payload = {
         title: title.trim(),
         description: description.trim(),
@@ -204,7 +216,7 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
         salary_min: Number.isFinite(salaryMinValue) ? salaryMinValue : null,
         salary_max: Number.isFinite(salaryMaxValue) ? salaryMaxValue : null,
         benefits: benefits.trim() || null,
-        status,
+        status: resolvedStatus,
         experience_level: experienceLevel,
         skills: skills.map((skill) => ({ skill_id: skill.skill_id, is_required: true, min_score: skill.min_score })),
       };
@@ -220,6 +232,7 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
       }
     } finally {
       setLoading(false);
+      setSubmitAction(null);
     }
   }
 
@@ -307,7 +320,21 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
                   </Select>
                 </div>
                 <div><Label>Minimum Years Experience</Label><Input className="mt-2" type="number" min={0} max={50} value={minYears} onChange={(e) => setMinYears(e.target.value)} /></div>
-                <div><Label>Status</Label><Input className="mt-2" value={status} onChange={(e) => setStatus(e.target.value as Status)} /></div>
+                <div>
+                  <Label>Status</Label>
+                  <Select value={status} onValueChange={(value) => setStatus(value as Status)}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="md:col-span-2"><Label>Job Description *</Label><Textarea className="mt-2 min-h-[160px]" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
               </div>
             )}
@@ -381,6 +408,7 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
                   <div className="space-y-4">
                     <div><Label className="mb-2 block">Required Skills</Label><div className="flex flex-wrap gap-2">{skills.length > 0 ? skills.map((skill) => <Badge key={skill.skill_id}>{skill.name}</Badge>) : <span className="text-sm text-gray-500">No skills selected</span>}</div></div>
                     <div><Label className="mb-2 block">Salary Range</Label><p className="text-sm font-semibold text-gray-900">{salaryPreview}</p></div>
+                    <div><Label className="mb-2 block">Status</Label><p className="text-sm font-semibold text-gray-900">{statusLabel(status)}</p></div>
                     <div><Label className="mb-2 block">Description</Label><p className="whitespace-pre-wrap text-sm text-gray-700">{description || "No description added."}</p></div>
                   </div>
                 </div>
@@ -390,11 +418,20 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
 
           <div className="flex items-center justify-between border-t border-gray-200 px-5 py-4 sm:px-6">
             <Button variant="outline" disabled={step === 1 || loading} onClick={() => setStep((prev) => Math.max(1, prev - 1))}><ArrowLeft className="mr-2 h-4 w-4" />Previous</Button>
-            {step < steps.length ? (
-              <Button onClick={() => validateStep() && setStep((prev) => prev + 1)} className="bg-blue-600 text-white hover:bg-blue-700">Continue<ArrowRight className="ml-2 h-4 w-4" /></Button>
-            ) : (
-              <Button onClick={submit} disabled={loading} className="bg-green-600 text-white hover:bg-green-700"><CheckCircle2 className="mr-2 h-4 w-4" />{loading ? (isEditMode ? "Saving..." : "Publishing...") : (isEditMode ? "Save Job Posting" : "Publish Job Posting")}</Button>
-            )}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => submit("archived")}
+                disabled={loading}
+              >
+                {loading && submitAction === "draft" ? "Saving draft..." : "Save as Draft"}
+              </Button>
+              {step < steps.length ? (
+                <Button onClick={() => validateStep() && setStep((prev) => prev + 1)} disabled={loading} className="bg-blue-600 text-white hover:bg-blue-700">Continue<ArrowRight className="ml-2 h-4 w-4" /></Button>
+              ) : (
+                <Button onClick={() => submit("open")} disabled={loading} className="bg-green-600 text-white hover:bg-green-700"><CheckCircle2 className="mr-2 h-4 w-4" />{loading && submitAction === "publish" ? (isEditMode ? "Saving..." : "Publishing...") : "Publish Job Posting"}</Button>
+              )}
+            </div>
           </div>
         </Card>
       </div>
