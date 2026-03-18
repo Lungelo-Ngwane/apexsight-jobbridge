@@ -64,8 +64,9 @@ Deno.serve(async (req) => {
 
     const origin =
       req.headers.get("origin") ??
+      Deno.env.get("FRONTEND_URL") ??
       Deno.env.get("APP_URL") ??
-      "http://localhost:5173";
+      "https://jobbridge.apexsight.co.za";
     const normalizedReturnTo =
       typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//")
         ? returnTo

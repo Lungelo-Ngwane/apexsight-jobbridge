@@ -1,0 +1,5517 @@
+{
+  "createdAt": "2026-03-18T11:22:11.080Z",
+  "tables": {
+    "auth.users": [
+      {
+        "instance_id": "00000000-0000-0000-0000-000000000000",
+        "id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "lungelongwane17@gmail.com",
+        "encrypted_password": "$2a$10$HYdilCp/LFSDGI3r4CHmgu645PcgzcGUDzijkLO7iEdD15L4l05qG",
+        "email_confirmed_at": "2026-03-07T12:58:04.099Z",
+        "invited_at": null,
+        "confirmation_token": "",
+        "confirmation_sent_at": "2026-03-07T12:57:40.576Z",
+        "recovery_token": "",
+        "recovery_sent_at": null,
+        "email_change_token_new": "",
+        "email_change": "",
+        "email_change_sent_at": null,
+        "last_sign_in_at": "2026-03-14T16:13:05.015Z",
+        "raw_app_meta_data": {
+          "provider": "email",
+          "providers": [
+            "email"
+          ]
+        },
+        "raw_user_meta_data": {
+          "sub": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+          "role": "employer",
+          "email": "lungelongwane17@gmail.com",
+          "full_name": "Lungelo Dlamini",
+          "company_name": "Nedbank",
+          "email_verified": true,
+          "phone_verified": false
+        },
+        "is_super_admin": null,
+        "created_at": "2026-03-07T12:57:40.546Z",
+        "updated_at": "2026-03-14T16:13:05.052Z",
+        "phone": null,
+        "phone_confirmed_at": null,
+        "phone_change": "",
+        "phone_change_token": "",
+        "phone_change_sent_at": null,
+        "confirmed_at": "2026-03-07T12:58:04.099Z",
+        "email_change_token_current": "",
+        "email_change_confirm_status": 0,
+        "banned_until": null,
+        "reauthentication_token": "",
+        "reauthentication_sent_at": null,
+        "is_sso_user": false,
+        "deleted_at": null,
+        "is_anonymous": false
+      }
+    ],
+    "auth.identities": [
+      {
+        "provider_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "identity_data": {
+          "sub": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+          "role": "employer",
+          "email": "lungelongwane17@gmail.com",
+          "full_name": "Lungelo Dlamini",
+          "company_name": "Nedbank",
+          "email_verified": true,
+          "phone_verified": false
+        },
+        "provider": "email",
+        "last_sign_in_at": "2026-03-07T12:57:40.568Z",
+        "created_at": "2026-03-07T12:57:40.568Z",
+        "updated_at": "2026-03-07T12:57:40.568Z",
+        "email": "lungelongwane17@gmail.com",
+        "id": "af0de573-c589-49c6-97b7-225c635dd86d"
+      }
+    ],
+    "auth.sessions": [
+      {
+        "id": "db204db2-73ec-4bd3-924e-5b0c93ee7a9e",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "created_at": "2026-03-07T12:58:04.104Z",
+        "updated_at": "2026-03-07T12:58:04.104Z",
+        "factor_id": null,
+        "aal": "aal1",
+        "not_after": null,
+        "refreshed_at": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0",
+        "ip": "41.121.51.127",
+        "tag": null,
+        "oauth_client_id": null,
+        "refresh_token_hmac_key": null,
+        "refresh_token_counter": null,
+        "scopes": null
+      },
+      {
+        "id": "e163c04c-e9e4-4325-aa41-f76e2c32f93c",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "created_at": "2026-03-14T16:11:03.543Z",
+        "updated_at": "2026-03-14T16:11:03.543Z",
+        "factor_id": null,
+        "aal": "aal1",
+        "not_after": null,
+        "refreshed_at": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0",
+        "ip": "102.203.97.142",
+        "tag": null,
+        "oauth_client_id": null,
+        "refresh_token_hmac_key": null,
+        "refresh_token_counter": null,
+        "scopes": null
+      },
+      {
+        "id": "5d012f7e-2ae8-43de-be36-be512a5dbea9",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "created_at": "2026-03-14T16:11:20.661Z",
+        "updated_at": "2026-03-14T16:11:20.661Z",
+        "factor_id": null,
+        "aal": "aal1",
+        "not_after": null,
+        "refreshed_at": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0",
+        "ip": "102.203.97.142",
+        "tag": null,
+        "oauth_client_id": null,
+        "refresh_token_hmac_key": null,
+        "refresh_token_counter": null,
+        "scopes": null
+      },
+      {
+        "id": "821e681e-194f-4ede-9932-c4bcf264ed72",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "created_at": "2026-03-14T16:13:05.015Z",
+        "updated_at": "2026-03-14T16:13:05.015Z",
+        "factor_id": null,
+        "aal": "aal1",
+        "not_after": null,
+        "refreshed_at": null,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0",
+        "ip": "102.203.97.142",
+        "tag": null,
+        "oauth_client_id": null,
+        "refresh_token_hmac_key": null,
+        "refresh_token_counter": null,
+        "scopes": null
+      }
+    ],
+    "auth.refresh_tokens": [
+      {
+        "instance_id": "00000000-0000-0000-0000-000000000000",
+        "id": "1",
+        "token": "6eeqjkvmc6rm",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "revoked": false,
+        "created_at": "2026-03-07T12:58:04.110Z",
+        "updated_at": "2026-03-07T12:58:04.110Z",
+        "parent": null,
+        "session_id": "db204db2-73ec-4bd3-924e-5b0c93ee7a9e"
+      },
+      {
+        "instance_id": "00000000-0000-0000-0000-000000000000",
+        "id": "2",
+        "token": "7etcmwrjav32",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "revoked": false,
+        "created_at": "2026-03-14T16:11:03.589Z",
+        "updated_at": "2026-03-14T16:11:03.589Z",
+        "parent": null,
+        "session_id": "e163c04c-e9e4-4325-aa41-f76e2c32f93c"
+      },
+      {
+        "instance_id": "00000000-0000-0000-0000-000000000000",
+        "id": "3",
+        "token": "unns2bof6lvz",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "revoked": false,
+        "created_at": "2026-03-14T16:11:20.664Z",
+        "updated_at": "2026-03-14T16:11:20.664Z",
+        "parent": null,
+        "session_id": "5d012f7e-2ae8-43de-be36-be512a5dbea9"
+      },
+      {
+        "instance_id": "00000000-0000-0000-0000-000000000000",
+        "id": "4",
+        "token": "iilwox3mk267",
+        "user_id": "54307b3f-7f79-49c3-aaeb-35910616c1b1",
+        "revoked": false,
+        "created_at": "2026-03-14T16:13:05.039Z",
+        "updated_at": "2026-03-14T16:13:05.039Z",
+        "parent": null,
+        "session_id": "821e681e-194f-4ede-9932-c4bcf264ed72"
+      }
+    ],
+    "public.addons": [
+      {
+        "id": "12f4a201-0bdf-466e-ae6e-45bc8c937584",
+        "name": "AI Report",
+        "price": 14900,
+        "type": "ai_report",
+        "credits": 1,
+        "active": true,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "edd84bd6-e221-4d1e-b69e-7108eb3ca1a0",
+        "name": "Featured Job",
+        "price": 19900,
+        "type": "featured_job",
+        "credits": 1,
+        "active": true,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "91fe86a5-a5cd-475c-acb9-fc9c77d7be55",
+        "name": "Unlock Candidate",
+        "price": 4900,
+        "type": "candidate_unlock",
+        "credits": 1,
+        "active": true,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "676ce8bb-c0d9-434e-93c8-349898bc70fa",
+        "name": "50 AI Credits",
+        "price": 9900,
+        "type": "ai_credit",
+        "credits": 50,
+        "active": true,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "23c1cac6-cfbf-46c5-b01c-5da4774279be",
+        "name": "Extra Job",
+        "price": 99900,
+        "type": "job_slot",
+        "credits": 1,
+        "active": true,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "aeb6f513-7232-499e-a1e9-388b84a93134",
+        "name": "250 AI Matching Credits",
+        "price": 19900,
+        "type": "ai_credit",
+        "credits": 250,
+        "active": true,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "4fffc9c6-9b36-47f6-877b-12f1413d316c",
+        "name": "1000 AI Matching Credits",
+        "price": 149900,
+        "type": "ai_credit",
+        "credits": 1000,
+        "active": true,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "6665c324-c856-4730-b5c4-f12ef81f5ca1",
+        "name": "500 AI Credits",
+        "price": 49900,
+        "type": "ai_credit",
+        "credits": 500,
+        "active": false,
+        "created_at": "2026-03-07T10:46:07.703Z"
+      },
+      {
+        "id": "ce393707-6edf-432d-96ea-b37c35116b89",
+        "name": "Auto Shortlisting",
+        "price": 39900,
+        "type": "auto_shortlist",
+        "credits": 10,
+        "active": true,
+        "created_at": "2026-03-18T09:14:09.228Z"
+      }
+    ],
+    "public.admin_audit_logs": [],
+    "public.admin_users": [],
+    "public.assessments": [],
+    "public.billing_invoices": [],
+    "public.candidate_assessments": [],
+    "public.candidate_certifications": [],
+    "public.candidate_profiles": [],
+    "public.candidate_resumes": [],
+    "public.candidate_skills": [],
+    "public.conversations": [],
+    "public.employer_addon_purchases": [],
+    "public.employer_credit_usage": [],
+    "public.employer_credits": [],
+    "public.employer_integration_requests": [],
+    "public.employer_memberships": [],
+    "public.employer_profiles": [],
+    "public.interviews": [],
+    "public.job_ai_reports": [],
+    "public.job_applications": [],
+    "public.job_matches": [],
+    "public.job_skills": [],
+    "public.job_views": [],
+    "public.jobs": [],
+    "public.messages": [],
+    "public.payment_webhook_events": [],
+    "public.plans": [
+      {
+        "id": "388f503e-e259-48a9-8655-2edceb3913ab",
+        "name": "Starter",
+        "price_monthly": 99900,
+        "job_limit": 2,
+        "user_limit": 2,
+        "candidate_view_limit": 50,
+        "active": true,
+        "created_at": "2026-03-07T12:39:44.014Z",
+        "price_yearly": null,
+        "paystack_plan_code": "PLN_7ajznaro309bnve",
+        "paystack_test_plan_code": "PLN_ov1im0jj6etcszv"
+      },
+      {
+        "id": "6a220e8b-b27e-4816-af8d-8950b3279c21",
+        "name": "Professional",
+        "price_monthly": 299900,
+        "job_limit": 3,
+        "user_limit": 5,
+        "candidate_view_limit": 300,
+        "active": true,
+        "created_at": "2026-03-07T12:39:44.014Z",
+        "price_yearly": null,
+        "paystack_plan_code": "PLN_9mpiqmrpym65vis",
+        "paystack_test_plan_code": "PLN_cpg8hjzxb90hjf2"
+      },
+      {
+        "id": "2a121bf3-52fe-405a-8a9e-9195bcad559d",
+        "name": "Enterprise",
+        "price_monthly": 999900,
+        "job_limit": 4,
+        "user_limit": 50,
+        "candidate_view_limit": 9999,
+        "active": true,
+        "created_at": "2026-03-07T12:39:44.014Z",
+        "price_yearly": null,
+        "paystack_plan_code": "PLN_poa69tv9g6auna5",
+        "paystack_test_plan_code": "PLN_wx191m31z1nrc8j"
+      }
+    ],
+    "public.profiles": [],
+    "public.roles": [
+      {
+        "id": "fd566869-e09c-4d14-82de-c52802c18b8d",
+        "name": "candidate",
+        "description": null
+      },
+      {
+        "id": "ca69a543-bdaa-4d6e-a90a-ddacc7b73d2e",
+        "name": "employer",
+        "description": null
+      },
+      {
+        "id": "91ad1223-9c1b-45c6-a562-fdbcff59e0dc",
+        "name": "admin",
+        "description": null
+      }
+    ],
+    "public.skills": [
+      {
+        "id": "9b3eb4c2-3dcc-47eb-b29f-6e3d39d52739",
+        "name": "HTML",
+        "category": null,
+        "created_at": "2026-01-28T13:02:03.000Z"
+      },
+      {
+        "id": "2b935443-0488-4538-a41e-835f5cfb3efe",
+        "name": "Azure",
+        "category": "Cloud",
+        "created_at": "2026-01-28T11:25:16.492Z"
+      },
+      {
+        "id": "c8507fe8-ab5c-4338-8d22-d89c977dfee0",
+        "name": "git",
+        "category": null,
+        "created_at": "2026-01-28T11:28:16.468Z"
+      },
+      {
+        "id": "36581303-e9cf-44cf-937e-c47a07a93f78",
+        "name": "Internationalization (i18n)",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "382c2947-d31b-4b5d-b557-d6133c238eac",
+        "name": "Responsive Design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "fc7865d7-5195-43fb-9b1f-1e5ed2c91207",
+        "name": "Nuxt.js",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "b91741c1-5b62-4873-bf63-1239952ac022",
+        "name": "Gin (Go)",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2233dde0-2206-4f20-a95a-69bc3409c9e0",
+        "name": "Fiber (Go)",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "e9a6c460-de75-4ab0-b7d9-d1b895203583",
+        "name": "API Design",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "dd1d3507-d05d-4d2b-803d-c2b7b8110278",
+        "name": "Ionic",
+        "category": "Mobile",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "e2c6972a-182b-4904-b5af-18eae5322094",
+        "name": "SQL Server",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "6ee7c4e1-8b4d-48ea-946d-0250a33a9d9f",
+        "name": "NATS",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "89520443-daf3-46eb-b460-4f1b1fcd4d0d",
+        "name": "Redis Streams",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c80d2079-d937-40f6-b63d-7a6e2649b728",
+        "name": "Background Jobs",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d1ffc04e-2984-43b1-a9f1-d590cfaf3cc2",
+        "name": "AWS",
+        "category": "Cloud",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "35514465-bb5c-450b-9e8f-c95a0dc7b398",
+        "name": "Google Cloud Platform",
+        "category": "Cloud",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "4fd28b37-c18c-4b52-8263-581d75db1f43",
+        "name": "Load Balancing",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "bf99e6e7-5276-4c86-ab32-9773216ed55f",
+        "name": "Looker",
+        "category": "Data",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "c72c33b0-e042-4f21-bfe9-f6d925eda845",
+        "name": "HTML5",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "01001c99-54eb-4927-8e19-b1345704bdf8",
+        "name": "CSS",
+        "category": "Frontend",
+        "created_at": "2026-01-28T11:25:37.242Z"
+      },
+      {
+        "id": "08b30ffd-2cac-406c-8299-44eac1a41c0c",
+        "name": "CSS3",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "bfdf3759-f4d6-4dc0-b323-0ab2e3cb2449",
+        "name": "MLOps",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "e0be7dc0-027d-4eeb-9b8b-acd8902b3fbc",
+        "name": "Power BI",
+        "category": "Microsoft",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "d737330c-ce5f-4a41-a9c7-2e4026db447a",
+        "name": "UI/UX Design",
+        "category": "Design",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "86a481b3-1314-4e2a-9256-9bc53a71ba80",
+        "name": "Migrations",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "ef6e5e02-78e6-447a-bd00-132e849e81bc",
+        "name": "Azure Storage",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "9736d61b-47fb-46c2-baf8-d1416b3fffd8",
+        "name": "CDN",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "82815cff-5c2d-43f6-9518-c52d83365ae8",
+        "name": "Git",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "3949533a-344f-4ff4-a217-f9789aea4ac6",
+        "name": "GitHub",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d5a62769-97d9-4a39-b420-36cfd46bd0cf",
+        "name": "GitLab",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "9fdc3050-ca9b-456f-96e5-e093798efc61",
+        "name": "Identity and Access Management",
+        "category": "Security",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "641eb56f-0d45-47fd-85a2-a51c51c6d2ff",
+        "name": "Tableau",
+        "category": "Data",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "d93aa970-a98b-42bb-ade6-b29b266611fe",
+        "name": "Scalable Systems",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "cb5b9939-5c61-4fa7-89c7-728ceaa556e3",
+        "name": "Firewalls",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "6daaae13-5e95-4ebf-9e0c-89bd4b52b464",
+        "name": "ITIL",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "6faad925-c511-4ed4-9550-c5794c6385b4",
+        "name": "Power BI DAX",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "eb184b84-a5a0-44c8-9f9d-6f4791157ef0",
+        "name": "Intune",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "950ed808-7888-43f4-bdf1-b2dcd625e840",
+        "name": "Power BI Data Modeling",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "715abd12-2ff0-4704-8491-cf14db548931",
+        "name": "SharePoint Framework (SPFx)",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "a42d1619-3791-4a30-b965-b5c73b415f3f",
+        "name": "Power Automate",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "6c0797c1-349c-455c-a3dc-46ccc94217df",
+        "name": "OneDrive for Business",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "d324eb96-7b9f-4ef6-9c3d-89c2bac25b03",
+        "name": "Microsoft Teams",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "23f3e76a-7ca0-4fe8-ab4d-d5524b6c9b26",
+        "name": "PivotTables",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "fe8bbbc1-d3fc-4ddf-8c92-c81b8a1ad338",
+        "name": "React",
+        "category": "Frontend",
+        "created_at": "2026-01-28T13:01:26.000Z"
+      },
+      {
+        "id": "dfa3d4dd-e0e6-4009-94c3-aa933eeed544",
+        "name": "React Native",
+        "category": "Mobile",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "b19cc38a-67cb-409c-8904-4ffb0496ecf6",
+        "name": "Next.js",
+        "category": "Frontend",
+        "created_at": "2026-02-16T18:11:12.144Z"
+      },
+      {
+        "id": "10102bd7-58dc-418d-aedf-d6063bcbac6e",
+        "name": "Vue.js",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "0352ceb6-e2a4-4683-845f-cb65c89077c8",
+        "name": "Nuxt",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "10ae5f97-a928-4605-898d-cfcec141c660",
+        "name": "Angular",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "7537ac6c-08dd-4d17-910b-adf786095589",
+        "name": "Svelte",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "fbf0aed1-8212-48e6-af81-b36b3955b4f8",
+        "name": "SvelteKit",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "339f5db0-dfb6-47c2-afab-72e70ba7b5a5",
+        "name": "SolidJS",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "395d12c8-f643-4a0e-ac30-8dc9467734f3",
+        "name": "Ember.js",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "0dc61945-5920-4bf1-b3aa-0f17ff19c117",
+        "name": "Sass",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "33e5f338-7ab7-43be-aa72-5b22afdfa55d",
+        "name": "Less",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "f34c0fc8-96d1-4466-96d4-5c704b43e9a7",
+        "name": "PostCSS",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "ad34a36a-19d4-42fe-88aa-24c9dd77de06",
+        "name": "Tailwind CSS",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "cb139ebb-5c5e-4df7-ba3f-c027fd6726c8",
+        "name": "Bootstrap",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "c7518df4-cf60-4a80-a44e-24b40d365b15",
+        "name": "Material UI",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1fcf27cc-cedd-4815-b700-f4446497e664",
+        "name": "Chakra UI",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "28ed350c-a640-4c50-8919-9040677822aa",
+        "name": "Ant Design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "ddfcd6f6-cb00-470f-a0ef-29e2f3b05e30",
+        "name": "Shadcn UI",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c815273a-a60c-421b-9a5b-2cd44dba42bd",
+        "name": "Radix UI",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "3a327e88-d840-43aa-a1e6-c9a8af226310",
+        "name": "Styled Components",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d487d130-5e42-4af3-a2b2-0f19ce56660e",
+        "name": "Emotion",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "be267c12-ede2-4151-993f-0e48d188f5d4",
+        "name": "Storybook",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "5416e5e3-b71b-41d8-8429-b819841fe698",
+        "name": "Webpack",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "8e94778e-573e-4ebc-908d-7b49841c5f30",
+        "name": "Vite",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "9b6266b7-add2-4196-be4d-7f901b062d47",
+        "name": "Node.js",
+        "category": "Backend",
+        "created_at": "2026-01-28T11:27:27.589Z"
+      },
+      {
+        "id": "1b076682-69d6-4ada-93a0-8c0bac9e3449",
+        "name": "Express.js",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "88d7e038-f5a7-4e24-a1f7-556955747f78",
+        "name": "NestJS",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "77ab2b5c-f107-4a3a-bd15-b702a9e17a2a",
+        "name": "Fastify",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2fbb9e68-7a09-4be0-8345-740fd6f08bc8",
+        "name": "Koa.js",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "4630f488-1554-4bd4-83b1-37d96fdab4c2",
+        "name": "Django",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "134c0d46-a90a-425f-bcdc-375c6c722c4e",
+        "name": "Flask",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "ecbdc98a-8df9-4816-9eb7-7a52a780d86c",
+        "name": "FastAPI",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "4521b120-ffd1-47c8-b502-08bac6f4b5a2",
+        "name": "Ruby on Rails",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "f30a5a00-f0fc-47e1-80d3-886f270b8da1",
+        "name": "Laravel",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "cc242fde-70b7-4f1b-81e7-d39093c91508",
+        "name": "Symfony",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d6fa9a77-d7c2-405d-9589-eb5938fe640b",
+        "name": "Spring Boot",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "b45cf7ad-8b59-4668-9836-82990b1f52b2",
+        "name": "ASP.NET Core",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "bdc00bba-4d34-4139-92ce-7e9a94890fbc",
+        "name": "GraphQL",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "3ba36c41-61b2-4982-86dd-1a1fbe276867",
+        "name": "Apollo GraphQL",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "b3ef040b-9cdc-456a-b068-6777bdc42bba",
+        "name": "Hasura",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "0eb70eba-e454-43ab-8738-8834f19f179c",
+        "name": "tRPC",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "38ffb0ff-8d2b-493a-a13f-062a378b4dc6",
+        "name": "REST API Development",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "7ee9d1fe-4827-4622-930c-278ea11550e6",
+        "name": "gRPC",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "fdf8a90a-a65f-4c3b-930d-c431ff70691c",
+        "name": "WebSockets",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1e9ff9ed-9ff8-4836-a326-3a57b83dee17",
+        "name": "OpenAPI / Swagger",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "259198b9-6955-4434-8ea3-b1b850a6455c",
+        "name": "Microservices",
+        "category": "Backend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "35d2671b-c9b2-420c-9866-a3a279f744c4",
+        "name": "Monolith Architecture",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "36d0d331-8902-4b55-92bf-3da61e513ce2",
+        "name": "Event-Driven Architecture",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "6a7def80-8984-43fd-bc75-357b47c78121",
+        "name": "CQRS",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "09601c3c-09b0-4bb2-bae8-60df68578be7",
+        "name": "Event Sourcing",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1d536fe9-8aa9-4fda-92e8-2ff80f0df6fc",
+        "name": "Serverless Architecture",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2d432fa6-5e8f-4084-b650-48253f5aebda",
+        "name": "Message Queues",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d5bbd81f-cc6d-49c2-a089-91ed888abf53",
+        "name": "RabbitMQ",
+        "category": "Platform",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "e2b607fe-6e44-416c-90f4-3339213094e9",
+        "name": "Apache Kafka",
+        "category": "Platform",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "52b96fdf-e06c-48bc-b019-105a8d6b5404",
+        "name": "Caching",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "f6a7861d-f6cb-4a08-af39-35748ad47d96",
+        "name": "Rate Limiting",
+        "category": "Backend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d2d06bd0-1ad2-438b-941a-8fce670c2ac1",
+        "name": "JavaScript",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "84e14bec-3403-4782-92a0-368e32008232",
+        "name": "TypeScript",
+        "category": "Programming Language",
+        "created_at": "2026-02-16T18:11:12.144Z"
+      },
+      {
+        "id": "322a2894-aa35-4b3c-9694-f9def4598d54",
+        "name": "Python",
+        "category": "Programming Language",
+        "created_at": "2026-01-28T11:26:10.193Z"
+      },
+      {
+        "id": "13fb2849-097e-4dd2-96c0-a53bc4994106",
+        "name": "Java",
+        "category": "Programming Language",
+        "created_at": "2026-01-28T11:26:42.862Z"
+      },
+      {
+        "id": "08cd2f73-7bd3-4026-ad86-7a20c3e8314c",
+        "name": "Kotlin",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "50e1737e-6c79-4fbc-9d6d-d56d584c1d70",
+        "name": "Swift",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "04e684b9-95d9-405a-b27a-9b95b7fd86d1",
+        "name": "Go",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "7ddd37d0-50c1-4495-9451-9775a0cb7990",
+        "name": "Rust",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "b0f96bdb-f89a-4a18-809d-8c914ebf1f3d",
+        "name": "C",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "58f33322-d23a-482e-9e52-86b2c0ecbf2a",
+        "name": "C++",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "c1881e7f-23b5-458c-b025-6b0fede44efa",
+        "name": "C#",
+        "category": "Programming Language",
+        "created_at": "2026-01-28T11:27:01.794Z"
+      },
+      {
+        "id": "1ad132ec-0048-4ffc-abd2-f3001f456c24",
+        "name": "PHP",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "df7c1369-f20e-4d5e-a73c-94abfa3d1c6f",
+        "name": "Ruby",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "56853160-64c4-4ab3-b36a-18c28c4948b9",
+        "name": "Scala",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "5e8f2ac5-c7a5-4bf4-8da1-c2bf1f832989",
+        "name": "R",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "d694311f-f04f-481b-8dae-df6a424d30b0",
+        "name": "Dart",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "af970ec9-38fb-43a7-9998-7ba751281977",
+        "name": "Elixir",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "b2e025d2-78ad-44ba-b6fd-29b47c8b2d70",
+        "name": "Haskell",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "5ecd6cd1-ac15-4aad-ba81-a37586d43db2",
+        "name": "Lua",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "a9a47d9d-8cd6-4ad3-82fa-0b285db66bfe",
+        "name": "Objective-C",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "bae90ba0-c14d-4c49-9801-cf8d1b0ad4dd",
+        "name": "Rollup",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "794bfcb4-b8cc-4273-89a6-970895b26981",
+        "name": "Parcel",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "8ae50bc5-3530-498e-8eb2-84697c415d03",
+        "name": "Babel",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "52bd7f28-c649-49d0-9cdb-f74566bf49d7",
+        "name": "ESBuild",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "0f63cdd1-b6ff-4a48-8b5f-835da13ae5f9",
+        "name": "Redux",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "13da311c-c4a5-49bf-990d-961dde0f65e9",
+        "name": "Redux Toolkit",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2bf96f77-7707-4232-8097-b34d027b9d1e",
+        "name": "Zustand",
+        "category": "Frontend",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "eac64a8a-f50b-419a-b57b-cf0d728d995d",
+        "name": "MobX",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "e0ee81c4-5e11-4b30-a57f-fa989d365d06",
+        "name": "Recoil",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "30e44938-ed2d-4c20-a62c-f3858532e44a",
+        "name": "TanStack Query",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "75d5e744-cf20-4f99-b046-a1bd292aadc5",
+        "name": "React Query",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "37ed6069-b600-4449-b3ea-ef393a3b3799",
+        "name": "RTK Query",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "59173700-fefb-49c1-80c7-cf5b53cb3659",
+        "name": "Formik",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "6df3ca84-36b8-4e1e-8e64-1309c46e8d91",
+        "name": "React Hook Form",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "80980302-1121-473d-bfe7-7aa6f161d845",
+        "name": "Zod",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "11c68d62-7c77-4881-99aa-a3458f157007",
+        "name": "Yup",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "f3116888-dfa4-4a58-9abe-fb262b9f3a92",
+        "name": "Framer Motion",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "bad17ebd-33dd-4157-abc1-bcdd8534885b",
+        "name": "GSAP",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "79c712a8-6bf5-4db1-91d2-9183b270c440",
+        "name": "D3.js",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "ed44ee93-348d-4b15-aece-4988cf4af177",
+        "name": "Three.js",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "68cc5e76-8f87-40dd-aa87-d631e452659b",
+        "name": "WebGL",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "7ca0e8ed-7b88-4619-a2ab-802f84b2aca0",
+        "name": "PWA (Progressive Web Apps)",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "5da55e43-2b4a-4045-934c-1d0c182a7028",
+        "name": "Web Components",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "272ed9c0-7e6e-4dfc-a0b8-c868592c80c4",
+        "name": "Accessibility (a11y)",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "827fefc0-0255-4ce0-a963-526006f7fdff",
+        "name": "Javascript",
+        "category": "Programming Language",
+        "created_at": "2026-01-28T13:24:15.000Z"
+      },
+      {
+        "id": "fb519dcc-70e7-4e70-b928-40a9112e9419",
+        "name": "Typescript",
+        "category": "Programming Language",
+        "created_at": "2026-01-28T11:24:52.137Z"
+      },
+      {
+        "id": "f505bf96-d02c-4fb7-bb54-80de8a551e1c",
+        "name": "dbt",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "f2384da8-ddb5-4734-ba18-e02d2fd7232d",
+        "name": "Deep Learning",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "e5e44ae7-337e-446d-92b1-b8c54b09f4d7",
+        "name": "PyTorch",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "d8f5cdb1-0b91-4183-9a23-cd0d5544bb02",
+        "name": "Computer Vision",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "2ba27012-0feb-414a-959f-040b62d434f5",
+        "name": "ArgoCD automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0167d468-86e8-49ba-a200-d91f8135ba62",
+        "name": "Gatsby",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7cc21c61-fe97-40f5-8eeb-341429db3b27",
+        "name": "Sinatra",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9889a47e-a76b-4652-9273-eca7ea7ba8b9",
+        "name": "Next.js component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8f467d21-e9d5-456c-aaa4-5e7dd7789169",
+        "name": "Jenkins administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bba8c45c-603f-4a3a-8085-50cc6a9c6251",
+        "name": "Prometheus administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5f73bccf-3b63-4e5d-8d58-979ec31711c2",
+        "name": "Vulnerability Management",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1d9ccc58-ac12-433a-b3ce-3024286bf29a",
+        "name": "SQL Server indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "88d2e98c-0af5-417e-a079-a204edb0713a",
+        "name": "OpenID Connect best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "29b1df15-7d1b-4182-b7ae-9ffc01ab8461",
+        "name": "Incident Response best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "78b4b2bb-b6c4-4aaf-999d-df21b99ff54d",
+        "name": "React best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3479c545-9236-4915-bce6-601c579ea934",
+        "name": "Tailwind CSS component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7559c5c5-a581-41d9-a2ca-cf18918dfb31",
+        "name": "Sharding",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6b5b1ca8-21cd-4659-8a02-497187e5e8fc",
+        "name": "Paystack",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3e25735d-eb69-4879-b1f7-ec33ddec3b2f",
+        "name": "OAuth configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7651aac0-b263-44cf-8e1e-57c1d8535191",
+        "name": "Database Design",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "eac0ea78-e2b2-49de-ba56-159806c73274",
+        "name": "Mocha",
+        "category": "QA",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e587468c-239a-4c09-8520-ffbe9a6b9936",
+        "name": "Storybook accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "39190a16-67ed-4d80-a93c-ae37feb86ed2",
+        "name": "BDD",
+        "category": "QA",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "01804b71-3202-4858-af62-b9cdcd6ee374",
+        "name": "Oracle backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7eab0bff-ff71-469f-8dc0-97df7c62a31a",
+        "name": "MongoDB backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "15eb985f-9925-4327-b8ad-f416224f0b23",
+        "name": "Storybook performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "aa8f17ac-3377-4e47-8aad-7e6f22c98681",
+        "name": "CompTIA A+",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9d6b2f2b-06c6-428d-b4f6-74d85ae31c77",
+        "name": "AWS Redshift",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "18136f5b-fbe7-4065-bba1-4eb2f4c584c2",
+        "name": "Storybook architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b8b3c365-2157-4c8e-9e53-44a30f09000d",
+        "name": "AWS CloudTrail",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "cee0c36d-6abd-44a7-87fb-d57b4c70ccb5",
+        "name": "Snowflake replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8c539f4c-1b86-42b9-949a-7af8a8dec845",
+        "name": "GraphQL performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "982443e3-9e68-4e5c-ae7e-69cda844f0b2",
+        "name": "AWS Fargate",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2ac71327-c93a-4f6f-b923-ff5ce4b821a0",
+        "name": "SAML troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2136f94f-09b0-4568-930b-7df5f986d4f0",
+        "name": "Azure Developer Associate",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "04a5adef-a266-4789-af0d-36d672af2708",
+        "name": "SQL Server monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b1850b72-3872-4942-a7b4-0b38af12ad37",
+        "name": ".NET",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9c9451ca-bb18-44be-8c54-86cede16466f",
+        "name": "MySQL indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "004ac49b-783e-4d3a-8632-2bcfb5485ad6",
+        "name": "Grafana administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8105eab8-f800-451e-93ac-36adfde7f6e7",
+        "name": "gRPC API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7efc5920-b620-463f-80d4-0a03e3de4170",
+        "name": "LangChain",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "16900023-ec90-4fd2-a04c-5f5f3688aa72",
+        "name": "Prometheus TSDB",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d203905f-54d7-4d31-ac05-6221f7559367",
+        "name": "Xamarin",
+        "category": "Mobile",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3b3a012d-2807-4f58-9591-64e58103b06c",
+        "name": "Micronaut",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "29936eba-7ee7-42dd-90ed-086ab690bbf5",
+        "name": "FastAPI best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0790308f-6882-435a-8a19-20d43c7932cb",
+        "name": "AWS SNS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ee3313f2-a095-4ab9-8fb0-8ba580cc51fb",
+        "name": "BigQuery replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "53b78eb2-a42c-424d-aa47-7d061400a1f0",
+        "name": "Bash",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "f8879227-e803-45a4-8e2a-64ba9fdc7747",
+        "name": "PowerShell",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "83116262-b0d8-479a-8ea0-6ead62eceaa1",
+        "name": "SQL",
+        "category": "Programming Language",
+        "created_at": "2026-01-28T11:29:36.236Z"
+      },
+      {
+        "id": "55701306-47af-49d1-ba63-364e13a8dea8",
+        "name": "MATLAB",
+        "category": "Programming Language",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "be3685e8-fba1-4b1f-9ec1-57e6573340da",
+        "name": "PostgreSQL",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "d955fa98-547e-4688-b5e2-cc9c7f5e66b2",
+        "name": "MySQL",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "3b1a7007-8ab9-411f-baab-04442d52c2ac",
+        "name": "MariaDB",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "35563b69-e060-470f-89b4-28047e7c20ab",
+        "name": "SQLite",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "516b43fc-6e2d-49bf-96ad-130017a3c53d",
+        "name": "Microsoft SQL Server",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2fbf5de5-0899-4157-aa62-4eacc949040d",
+        "name": "Oracle Database",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "f9fbe6fd-7635-461f-8e5d-551431d8be52",
+        "name": "MongoDB",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "a1a1a684-0810-4793-851a-0706900bc505",
+        "name": "DynamoDB",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "7cda4ca6-f8b0-4fe1-97a6-bbe02c7407c9",
+        "name": "Cassandra",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "e7770c4d-a1a5-4ead-a26a-21998067b776",
+        "name": "Redis",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "0ee96c13-d84f-4ed7-ab45-85845162a24d",
+        "name": "Elasticsearch",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "33b85efd-c430-45c2-b4de-94adddcc8ddf",
+        "name": "OpenSearch",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "48380574-05c8-4d3b-aef2-ba2840342645",
+        "name": "Neo4j",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "3ec5e45f-f17a-4c40-9459-e4205cc7d806",
+        "name": "Firestore",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "3e158a84-2b1b-4155-986a-8a8785bd28cd",
+        "name": "Firebase",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "3d5cc382-488e-42f2-a7f1-14d7975fb3d6",
+        "name": "Supabase",
+        "category": "Database",
+        "created_at": "2026-02-16T18:11:12.144Z"
+      },
+      {
+        "id": "d3935218-2706-4183-b36a-2df80257bd25",
+        "name": "Prisma",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "125ddf34-fe9c-41a5-b8c8-d9040e4740ea",
+        "name": "TypeORM",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "854bf6e6-47df-44d9-a862-a75fc53ecdba",
+        "name": "Sequelize",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "9ab6b344-2150-4f60-b396-e33aa11ef524",
+        "name": "Drizzle ORM",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "dff33790-a5cc-49a1-9df3-8f7e1556be6c",
+        "name": "SQLAlchemy",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "b6a1362c-79e3-4ac8-adca-7e9cd1426956",
+        "name": "Indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c1f74e7c-efbc-40ab-936f-f069d335afbf",
+        "name": "Query Optimization",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "a0626c4e-c064-4e13-80d6-570b5ec98318",
+        "name": "Data Modeling",
+        "category": "Database",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "33486052-e957-4094-94c8-fc5a48653c9b",
+        "name": "Data Warehousing",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "095001a0-71e1-435d-b74a-b9d097d1ac41",
+        "name": "Amazon Web Services (AWS)",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "288c66a2-b7bd-4fda-9f25-ff7080844d75",
+        "name": "Microsoft Azure",
+        "category": "Cloud",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "1e58d8c2-be6f-4d70-bc86-f2d3dfc32a35",
+        "name": "Google Cloud Platform (GCP)",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "a3708219-b9e1-4dff-973f-bdf89d9e3f7a",
+        "name": "DigitalOcean",
+        "category": "Cloud",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "68d47015-287c-4cf6-971e-61668f833faf",
+        "name": "Vercel",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "8c299ffd-e355-4831-bd7e-bbffa4beb66f",
+        "name": "Netlify",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c2a6d28b-f105-4b1f-a49b-e5a6de6c4865",
+        "name": "Render",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "ab1f3502-7411-4a05-bfeb-727ea1a784cf",
+        "name": "Railway",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "767b9cab-9fc9-4fbd-9863-d684c64ff8da",
+        "name": "Heroku",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "e42df6e0-9897-4909-b145-207390c4006d",
+        "name": "Cloudflare",
+        "category": "Cloud",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "a620b581-aaf5-42c9-92c6-f07d377095f0",
+        "name": "AWS Lambda",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2b65d93c-58eb-44d0-a4f9-e5b3cbc05a44",
+        "name": "AWS EC2",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "df2f09f0-e7c1-46fb-9727-a2d8cc9e9af3",
+        "name": "AWS S3",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "6842ae6c-0466-407c-8e81-7d1c9e15fb6d",
+        "name": "AWS RDS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "de3dadcb-1d7c-4fe0-965a-f4aa215b3768",
+        "name": "AWS CloudFront",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1096533f-45d6-4cb9-af1a-5ba155149d88",
+        "name": "AWS IAM",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "f5390f86-4f25-40bf-a2f5-5d2c8e3df2c3",
+        "name": "Azure Functions",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "5d934d3f-c371-4645-b923-5d8cfe1cb322",
+        "name": "Azure App Service",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "a7dcffe1-6bc1-4411-9c8b-974b3d3d78bf",
+        "name": "GCP Cloud Run",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "83a44524-efa4-4efb-98ae-ae654bad2706",
+        "name": "GCP Compute Engine",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2834d8db-68a0-4e3c-9ec7-40c240249316",
+        "name": "GCP Cloud Storage",
+        "category": "Cloud",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c2afd63a-e916-4a9a-b527-58a984b9d0c1",
+        "name": "DNS",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "6810ce08-8690-4f4b-8c64-abf3ff47bb9f",
+        "name": "Docker",
+        "category": "DevOps",
+        "created_at": "2026-01-28T11:28:45.271Z"
+      },
+      {
+        "id": "654dfd60-3160-49d4-9b1b-7d2f5785d4e2",
+        "name": "Docker Compose",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c6f142d5-f01c-498f-b462-9a0a5a1cb3de",
+        "name": "Kubernetes",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "3bd4149d-8fff-4c0e-a3fc-ed5eba31acaa",
+        "name": "Helm",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "d662f50a-eaaf-47cf-b966-7e19d618c01f",
+        "name": "Terraform",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "2d035e81-994a-4119-82e8-8e3069b25023",
+        "name": "Ansible",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "c144b04c-821f-4298-ac06-8b50af730f21",
+        "name": "Linux",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "1d962c60-83af-4e65-a312-42b9b6159a75",
+        "name": "Ubuntu",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "4cbad765-b2ef-4107-854b-03a4b9a9a852",
+        "name": "Nginx",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "b7cf01cd-64f0-469d-a48b-03a54f55b768",
+        "name": "Apache",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "9c8b1bc9-7c79-4217-906b-6c859d1c0ffd",
+        "name": "GitHub Actions",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "30ac2fbf-eac3-4eed-af85-b1ccef7be1f2",
+        "name": "GitLab CI/CD",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "92c650de-910c-44fe-a27a-41c49ce808d5",
+        "name": "Jenkins",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "bbbac74f-f1df-4c7e-b777-e5af88946391",
+        "name": "CI/CD",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "25bd810c-34cb-4a28-8441-e92a01c37835",
+        "name": "ArgoCD",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "9eaec7f7-e053-46e2-9665-27e9df8e5a6a",
+        "name": "Monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "27adb531-c7ed-4c7f-a290-0520203c47ba",
+        "name": "Logging",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "40dc4641-a42a-4557-a2fe-edce3b710dbd",
+        "name": "Observability",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "5b609df5-326f-493f-8328-1c1491893377",
+        "name": "Prometheus",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "c2ee9e62-1184-4ca2-8515-62ee266f7145",
+        "name": "Grafana",
+        "category": "DevOps",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "f574f13a-f3ed-4768-9def-298f39bbc5a9",
+        "name": "Sentry",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "41accea4-1b58-4739-8b5f-9769e1fe3916",
+        "name": "Datadog",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "56ab8047-29e9-4fd7-9c36-40d260ab4b6b",
+        "name": "Load Testing",
+        "category": "DevOps",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "00c31fb7-97c8-40b6-be1f-234d658b2a9b",
+        "name": "Performance Optimization",
+        "category": "Frontend",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "3e93f294-990b-471e-9571-8ff79d16fc09",
+        "name": "Unit Testing",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "248d9f4a-51f3-4c22-b714-fe419441f71a",
+        "name": "Integration Testing",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "3de8d35d-1fbe-4c1d-ba16-8f582ed325f1",
+        "name": "End-to-End Testing",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "1b841e79-d999-437d-b6da-bcf30bcaa210",
+        "name": "Jest",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "1b21eb90-8f18-449f-b99a-af6d1be898b6",
+        "name": "Cypress",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "f82fa801-c0ab-4c72-b2f6-eadf3b87f3e4",
+        "name": "Playwright",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "73c537f1-3e22-46f6-b777-28909ad6e35e",
+        "name": "Vitest",
+        "category": "QA",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "4aa277a0-68ba-4092-9060-d139532391a2",
+        "name": "Selenium",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "3121a3a1-be5c-4382-ad55-b2336d318523",
+        "name": "Postman",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "eadf130f-f48f-4ed7-81a4-ba7d5e7ef555",
+        "name": "Test Automation",
+        "category": "QA",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "80b47d21-e21e-402a-8a92-a24021e6372a",
+        "name": "Cybersecurity",
+        "category": "Security",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "61e4e1fb-7d48-4163-b3aa-2674b3f9e8a7",
+        "name": "OWASP",
+        "category": "Security",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "96e94082-7248-4262-8e70-a5d0cf20b61e",
+        "name": "OAuth 2.0",
+        "category": "Security",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "2dd05793-a2d7-4661-a316-05e2c4a14fd1",
+        "name": "JWT",
+        "category": "Security",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "317b1032-6eec-4ca4-8275-cb1a7cdca1ff",
+        "name": "Encryption",
+        "category": "Security",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "bd104b08-77a8-4481-83c9-da6edcba1fbe",
+        "name": "Application Security",
+        "category": "Security",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "b04656c2-bf79-4c57-99a8-7033f6890c8c",
+        "name": "Penetration Testing",
+        "category": "Security",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "492d6e5f-5fe8-4e1b-bdd6-4a3b371a588f",
+        "name": "SIEM",
+        "category": "Security",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "5d3b3e80-dccb-40ce-aa5a-881c88fd8434",
+        "name": "Threat Modeling",
+        "category": "Security",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "951c770c-abe8-4266-ad67-79dae1e7d110",
+        "name": "Secure Coding",
+        "category": "Security",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "b96c21cf-6c91-4ffd-afed-8b39b6d442ed",
+        "name": "ETL",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "155b0975-a997-488c-bc5c-6d74f235bc0e",
+        "name": "Apache Spark",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "7bc4ac99-2f98-4086-9a8c-3054845dc89c",
+        "name": "Hadoop",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "1eeb2402-4d2d-4a16-b817-efdfe7841326",
+        "name": "BigQuery",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "a6623c80-ac25-45f8-84b4-57a0186f3d63",
+        "name": "Snowflake",
+        "category": "Database",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "7d8600e4-72d0-4a58-a8e6-5dc01242704c",
+        "name": "Pandas",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "cdb4424a-4ef1-4928-9b95-8541c38c2b45",
+        "name": "NumPy",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "31bf20a1-891a-4ee5-bfa5-4481438c69e4",
+        "name": "Data Visualization",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "cfe0b44a-9d3d-4134-94b0-3c3c312845e0",
+        "name": "Business Intelligence",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "2b35b848-955b-4d2a-8e30-30cc4e72c6cc",
+        "name": "Machine Learning",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "1d35733c-2960-4077-b3fa-cf64b53e3bae",
+        "name": "TensorFlow",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "70a52aaf-5f4a-46b7-9e97-3c673bbf77f3",
+        "name": "Scikit-learn",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "479a9c6f-8f35-4883-b174-659245234a8c",
+        "name": "Natural Language Processing",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "32bc9b8b-1dc8-46a9-8a31-d7bc03bbb681",
+        "name": "Prompt Engineering",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "9f4bbe08-f1b6-4e6d-b0df-1cc76c267f60",
+        "name": "Django security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "61651038-da72-46f3-9550-c50e16226451",
+        "name": "Redis high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "30233099-cfea-40a2-9a3c-f982152f5d54",
+        "name": "Chaos Engineering",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0177f04f-e8ab-442c-9d64-81403f712fa8",
+        "name": "gRPC performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2c4e6aa7-10b4-47f7-9bef-26a4eb39c5b7",
+        "name": "PKI troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a2c1cb03-5395-4eb9-8699-7a29ae5c42f0",
+        "name": "Supabase Auth",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "86cb81b5-0a39-49f2-8846-6f6ca25e910d",
+        "name": "Next.js best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d7f6bdd5-7850-4ceb-a5a9-726457cc5646",
+        "name": "Linux hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "079855d0-e94c-4721-a9fa-7d0445c5a02f",
+        "name": "DynamoDB monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9bb216bf-1177-4816-9b02-b9c71ec5b7e3",
+        "name": "OAuth implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "09d63a41-03d0-4d8b-be4b-504ffde2fb6b",
+        "name": "OWASP Top 10",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "765b2e13-8281-4fd2-ac40-b17b81cd7354",
+        "name": "Docker alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "aed1caf8-d578-4c03-a0b1-e45a21b338db",
+        "name": "Airflow",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5287dae6-2207-429b-90fc-355e4ce49517",
+        "name": "Zero Trust implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2e6605ed-bc12-4d90-9ef0-d05b2e39b552",
+        "name": "AWS Route 53",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "cc84431e-7f33-4818-bb9c-d95f400ab36a",
+        "name": "ASP.NET Core best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "80f9caf9-93b6-4309-af5f-73bf59a1fd87",
+        "name": "Zero Trust best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b33599b5-1f4f-49d8-8e70-6f545d8ea06e",
+        "name": "Risk Management",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3c13a0a3-8b51-4611-a5ea-42c4d63197f8",
+        "name": "Vite accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bab55762-6e8d-4c7a-bf2b-1bec08baacb1",
+        "name": "TLS best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ef9c3c77-9c1d-4a34-9799-6507e1c406f6",
+        "name": "Linux troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4d11c12c-b2aa-4c86-9d8d-82a61e7a8825",
+        "name": "Kafka Streams",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8257e58e-81e3-4bc7-85b2-e94fccfb7dd4",
+        "name": "Caching Strategies",
+        "category": "Architecture",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "04371092-a249-4663-b5bd-4609d09e3744",
+        "name": "GraphQL security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bb7c6368-353a-4298-9813-dda26e4d03bc",
+        "name": "Ansible automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "404a96f6-bb20-4a88-a4af-9bb7b7328e6a",
+        "name": "Incident Response troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ea0c3892-7005-445d-bef8-24324e19c5b4",
+        "name": "Redis replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4acc5751-f70a-45cf-94ee-bf313d0b5018",
+        "name": "ELT",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "39282102-e7f2-4eef-bb0c-1970c33d6036",
+        "name": "Group Policy",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5bd5b246-73d7-467c-a50c-93260e667b0e",
+        "name": "Oracle tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "479ccdd3-329b-4800-b023-1a351c29ac78",
+        "name": "PKI implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fe108962-2b5c-4e32-905f-f0af249c5e42",
+        "name": "Oracle monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "835c9f7d-d1ec-498f-adbf-cf102f0dd0d3",
+        "name": "GCP Cloud SQL",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3a8c71d2-45cd-423f-8048-2d57e4914b77",
+        "name": "SAML implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c92333de-48ba-4193-8b83-6b2c1f835269",
+        "name": "TLS troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e41b2faf-d671-4bf2-8c01-48b4c004d264",
+        "name": "Docker setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7d8bf34a-b357-4070-a24e-8cc805a5d5f9",
+        "name": "Grafana monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c46f1ed1-dac1-4b88-ae18-537422abb12f",
+        "name": "Vite testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9451923e-fba2-42fd-8745-fd5f7bda6231",
+        "name": "Qwik",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d9ae9967-77a1-4b54-abd4-ae7e4f559d46",
+        "name": "TypeScript performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "29dbdde0-f141-4a4f-b0b2-e18e0678b974",
+        "name": "Newman",
+        "category": "QA",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "657df6af-cf2e-4ffc-a24a-b1661e928daa",
+        "name": "LLM Engineering",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "65af0252-c714-427f-a6a3-59e7de71ab70",
+        "name": "OpenAI API",
+        "category": "AI/ML",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "16004c83-7321-4162-9095-5273fd0765f1",
+        "name": "Embeddings",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1b06f496-906c-4eca-8622-d0de263b0537",
+        "name": "RAG (Retrieval-Augmented Generation)",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "457b6506-7529-40b9-a969-f23373fab4ca",
+        "name": "Vector Databases",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "cb340a87-bc6e-48c8-9cee-ad84104e7035",
+        "name": "Android Development",
+        "category": "Mobile",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "2cbcf7f9-067e-473d-80e7-c82225da70ce",
+        "name": "iOS Development",
+        "category": "Mobile",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "59d3ee5f-63b0-420d-b6c0-8df2ef9a1761",
+        "name": "Flutter",
+        "category": "Mobile",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "b0423e79-b52a-4ced-a0cc-067f34ab98dd",
+        "name": "SwiftUI",
+        "category": "Mobile",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "24697bd1-c758-4ef3-aebf-9ef33be993a4",
+        "name": "Jetpack Compose",
+        "category": "Mobile",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "5bb7b6f6-6637-4da3-b4d7-b15c032e329e",
+        "name": "Expo",
+        "category": "Mobile",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1e8907f7-70a8-4112-bcc6-138b1d7bf5bf",
+        "name": "Figma",
+        "category": "Design",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "2dd029a7-a8b6-487b-aecf-8556cf6a5599",
+        "name": "UI Design",
+        "category": "Design",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1aa2e7ea-9443-4b26-8f4f-a7ac4756a6c2",
+        "name": "UX Design",
+        "category": "Design",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "19674361-34b8-4692-9b57-48730888c705",
+        "name": "Design Systems",
+        "category": "Design",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "cdf4094e-7b03-482d-83c2-b0d5a7f1a0da",
+        "name": "Wireframing",
+        "category": "Design",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d4b23b3a-a3dd-428d-93b5-835541aeda3c",
+        "name": "Prototyping",
+        "category": "Design",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "215e3b9e-c516-468f-b0e1-5d1e4e560545",
+        "name": "User Research",
+        "category": "Design",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "a5570dbb-d4e0-4392-9357-262207e534bb",
+        "name": "Agile",
+        "category": "Product",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "14eed775-e528-4ea3-a3cc-670ecce118fa",
+        "name": "Scrum",
+        "category": "Product",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "667c13f6-2844-406a-aeb1-2987621c225c",
+        "name": "Kanban",
+        "category": "Product",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "1f4333cb-e248-429c-9831-81bdad2a1795",
+        "name": "Product Management",
+        "category": "Product",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "ecebf9a2-075d-4b0b-8bc0-fb16122421fc",
+        "name": "Stakeholder Management",
+        "category": "Product",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "3a0c429a-dd81-4f8e-b274-72bab1e607e8",
+        "name": "Roadmapping",
+        "category": "Product",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "a8f7aa88-5617-4dfa-adef-7e2d3e8598d2",
+        "name": "Technical Writing",
+        "category": "Product",
+        "created_at": "2026-02-21T15:32:11.967Z"
+      },
+      {
+        "id": "f69e1784-d736-43cf-9e5b-504a5524bf5c",
+        "name": "Documentation",
+        "category": "Product",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "93cdeb08-ab16-4d8a-90bc-128cdcdf9a16",
+        "name": "System Design",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "58cafa87-1561-48c0-98bf-4c77b7931115",
+        "name": "Software Architecture",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "44054012-e63b-4094-822b-b5d53318238f",
+        "name": "PostgreSQL high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "19289526-9d32-4d5e-a07a-8cc93d589546",
+        "name": "Cloudflare CDN",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1cf13d65-5011-494c-aaad-2cbcea10fd06",
+        "name": "Prometheus monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0e3f110b-ca40-4e03-8873-e9d20672e87c",
+        "name": "Database Transactions",
+        "category": "Architecture",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9ecbe7ab-06cb-4de2-9cbc-13d19782f749",
+        "name": "Jenkins troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "eca9c791-2cf8-4c58-955c-e9a1ba2f0442",
+        "name": "Docker administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "83b75078-0370-4a2c-9d2f-bfe5779a3cb8",
+        "name": "XState",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d0cd8c52-b729-4d96-af2d-d7210ec033a5",
+        "name": "GitHub Actions alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a6cc798d-3cdc-4f35-8a53-43e2fcdaca22",
+        "name": "AWS Secrets Manager",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "183ebb1b-1ece-4d3a-8b2b-6eb8b65350d3",
+        "name": "Julia",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8cb05102-1bc2-4a79-bcdc-a39681106189",
+        "name": "MySQL migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4ecd3f7e-121b-492a-88db-baa8d1469a47",
+        "name": "Scalability",
+        "category": "Architecture",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "00806faa-b541-427e-875c-d23e9ab14d4a",
+        "name": "Module Federation",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "95387709-26fe-4a19-ace8-6b843d1f19fa",
+        "name": "Pact",
+        "category": "QA",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "649795bf-1f5d-4c8e-a80d-0c79ea46a418",
+        "name": "Usability Testing",
+        "category": "Design",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4b227ca7-3134-4561-bb32-24863be55b07",
+        "name": "gRPC best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fee55cbf-3383-422d-b6f9-108a8dabffbc",
+        "name": "Docker troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bf02e95d-604b-4320-a1d9-fb88c597599e",
+        "name": "OpenTelemetry",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "89c1c73e-21a7-4b49-b6e6-8b68b31c72da",
+        "name": "Hardware Support",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "773b1a86-34b5-4862-b0ad-bfc93cd4e63b",
+        "name": "SWR",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "62b03842-0611-4e01-92b9-80d826342560",
+        "name": "AWS ElastiCache",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d49c4766-44f5-49e8-aa54-0436385985f4",
+        "name": "ArgoCD setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "09d12df6-14e9-4fc1-ae98-cf7ed949bb37",
+        "name": "AWS SQS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3772a1f0-9780-40b4-9287-7ec04de992d7",
+        "name": "Quarkus",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "908bca6d-1e83-41de-b0ad-7a39802c3c02",
+        "name": "IAM (Identity and Access Management)",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d0d0f739-0716-4d09-bcbb-777c3de26490",
+        "name": "Google Associate Cloud Engineer",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "82b46500-f0ee-4475-9f64-e33ea1c2a195",
+        "name": "XGBoost",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "57042d9d-420d-435c-ad85-5d4863a826ae",
+        "name": "SQL Server migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d414a84f-3e45-42d6-bcb4-f0734a6633ed",
+        "name": "Snowflake high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "59ce1b91-ed8f-450e-a608-444c24c90299",
+        "name": "MongoDB high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4024da72-5ed7-484c-ba5d-8f52c32d7a22",
+        "name": "Storybook testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "116a2473-0029-4e4d-a7a2-a34d18a7ff90",
+        "name": "Django testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7f446b38-6bd9-41b7-a40c-bab90a085d07",
+        "name": "Cloudflare DNS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5336d884-0b39-4a35-8958-e2832bed76a5",
+        "name": "Angular accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9cbe1925-de2b-413a-bfe6-235c2895c28f",
+        "name": "Next.js accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b68a8939-672c-45f7-92a5-a67ded1f3b3f",
+        "name": "Azure Solutions Architect Expert",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8c7c0ba4-aa13-41e6-98f3-b4a1710e16d7",
+        "name": "Kubernetes administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6748078f-4aba-4044-9b3f-6ab986f0b391",
+        "name": "AWS KMS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ed3e6115-c722-48d0-8ca4-7f32f4b09c55",
+        "name": "AWS Athena",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d112e83b-2289-427b-8b89-ef741633b2ea",
+        "name": "SAML",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3189a1c8-b8eb-4a38-8981-f4800ac5ab2c",
+        "name": "React architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "557bacf8-c274-47f7-ad1e-3f2b03380139",
+        "name": ".NET MAUI",
+        "category": "Mobile",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "df39117a-6e94-4761-8bf9-a50f6788c0de",
+        "name": "Project Management",
+        "category": "Product",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a52b479c-f755-4a57-a6fa-aaea35e35bc3",
+        "name": "Grafana hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f629c87b-8c4f-49a9-be77-759ec6437611",
+        "name": "Docker Swarm",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "658459ac-ec1d-416c-9ba2-a1639a1f5662",
+        "name": "SLA/SLO/SLI",
+        "category": "Architecture",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1aadc755-99e9-4d21-a04b-dc79fc8debc1",
+        "name": "Redis tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ec8cc927-9a1f-4653-8e97-e53f889a6587",
+        "name": "Azure Monitor",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1db00fe1-df3d-4a32-ad97-069fa4db8a55",
+        "name": "GCP Pub/Sub",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "92aa1caa-bbab-46f5-b0c0-3e67cdb25fd1",
+        "name": "ArgoCD monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b8f67ebf-ddf3-461c-9d71-6722548149d6",
+        "name": "Prometheus automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7c51613a-0607-4cfb-8050-b4fce0e36671",
+        "name": "Red Hat",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e6b50279-0f17-4a1e-beac-d234b21e446f",
+        "name": "Groovy",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "88d4d413-01a3-46e9-b364-b2c60ed76bcf",
+        "name": "GitHub Actions setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bbac5919-a761-41b6-b326-5459206570be",
+        "name": "Node.js testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a3a23479-3355-47aa-b0db-5216be2bc2ed",
+        "name": "DigitalOcean App Platform",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "862d7e85-1c24-4810-9e57-745745ad212c",
+        "name": "Ansible troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8625b639-6093-4733-b0bd-566e5da83b42",
+        "name": "Azure Fundamentals (AZ-900)",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "41079c24-ccbc-46ed-b216-6f3b59095d03",
+        "name": "GCP Secret Manager",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ea6f4d0d-cee2-4a3f-8717-865dd6a32b28",
+        "name": "Ansible administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1fb667ad-6c3d-447f-8d2f-5efadf9d9611",
+        "name": "SQL Server tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2895be36-2d90-4ce0-a173-ce96efa2fbab",
+        "name": "PKI best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "537d3b9e-5708-4d7a-988a-e0b690d9bedb",
+        "name": "Redshift",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "95222706-0015-43b9-9abc-4f1cdcaf8be5",
+        "name": "FluxCD",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1165084f-e0aa-4980-8e4c-2cba42d8be14",
+        "name": "Grafana alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "337fc313-e3c5-48b4-b75b-36ed7932c40d",
+        "name": "Linux setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c290a821-be7c-422d-98f4-03254e728052",
+        "name": "API Gateway",
+        "category": "Architecture",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d999b681-9891-4eac-aa31-17991577f789",
+        "name": "GraphQL best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c9d1f664-0084-4ca7-87b0-cc329e77e208",
+        "name": "Confluence",
+        "category": "Product",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ab59672f-65c7-4e97-9aca-9008be16c79e",
+        "name": "gRPC security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fb564e95-0979-49b0-87f3-07be04f0a437",
+        "name": "WAF implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1413bfd6-7de6-4461-988a-b4be42664d0c",
+        "name": "Angular state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f8457915-0303-461d-9030-750804f1620e",
+        "name": "OpenID Connect troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4916eb34-5aea-4334-a01c-5355de69ae06",
+        "name": "TLS implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b395b153-1fd0-4030-b493-ea4e8cd4e15a",
+        "name": "CircleCI",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a1c45471-90a8-41bd-8f38-a2267a8cbe8c",
+        "name": "Next.js performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e0198bcb-11cd-4fda-84b2-422141a2a408",
+        "name": "PKI",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0cf0375d-ee99-4cf2-959b-ece57fa24827",
+        "name": "Vite architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "eaa81a91-932c-4519-9d82-2402cd12c340",
+        "name": "Routing",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "db51f14f-e4a8-4e0f-ac73-72c0cd41f2c7",
+        "name": "ArgoCD hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ea58a166-090c-420a-bda1-5f1ef43ad07b",
+        "name": "Vite state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3d137bc7-4d01-4c40-8523-42b3b6ba2e17",
+        "name": "TypeScript architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "20c064b2-bac6-4191-a2ae-b7c196076319",
+        "name": "Azure Cosmos DB",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "09f655ab-ad34-40eb-a32e-cc339f849ea5",
+        "name": "Zero Trust configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f718b760-daf1-43b2-bff7-714fe0c8b561",
+        "name": "VB.NET",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "76b1a9e1-eb96-4891-a95f-b9a9d6aa2db2",
+        "name": "Spring Boot security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "dac042fa-55a9-4125-9487-a9a28ad488e8",
+        "name": "GitLab CI/CD troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7173fac2-fb2b-405d-96f7-d964271d763f",
+        "name": "BigQuery monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9ceaf77c-a43d-440f-bf6e-1be8364f0763",
+        "name": "GraphQL API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0a7511a7-02ce-4796-80b7-22bb841005f2",
+        "name": "Zero Trust troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "13c0abdb-d871-48d9-8d31-589d4edcdaa5",
+        "name": "IAM configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "39882241-346d-43dc-a65b-6c7c647f8a95",
+        "name": "Ansible best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "af530eef-d355-46a1-9c91-80fb4dc31442",
+        "name": "Kubernetes best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b7f67d5d-999d-47a9-a82d-690e5478c66e",
+        "name": "Docker automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "70331dba-9d12-4e62-814e-636a9239a334",
+        "name": "SAML configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5939465c-3f01-4cbe-b5c3-8ad6ea1517fd",
+        "name": "GitLab CI/CD alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9c6038e9-b5ad-4c28-968f-6ea67497729d",
+        "name": "Node.js best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2aa5671d-33f0-487c-9ebe-22ceabc15ab1",
+        "name": "BigQuery backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7668432d-1e8d-4c83-bb9e-d7fbc2b8b0ab",
+        "name": "Snowflake tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "564da31e-3f7e-4540-83c6-4cfdf0deeb58",
+        "name": "MongoDB indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6467ae2a-0bd6-4d5d-bcec-953358fd10ed",
+        "name": "Storybook component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "549291cc-0d47-40de-8686-7ad655c68dc5",
+        "name": "PostgreSQL indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "47adefb0-de17-4fd7-95b2-03f23d8ea0c8",
+        "name": "Apache Pulsar",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "664074e3-6090-49ac-9c87-57277991fbab",
+        "name": "Virtualization",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "edf99345-3219-4590-a5d5-5ce68a2c7ca1",
+        "name": "React testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "922ec241-5ae7-4e9c-8a44-a41448773205",
+        "name": "MongoDB migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f4c1961e-abaf-4db1-9e78-aabdae019b21",
+        "name": "Vite performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2c19e79b-509d-4cad-9e9e-09e1f9d3e840",
+        "name": "Notion",
+        "category": "Product",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "22bbb848-d4ad-4013-9d15-a9efac7ced66",
+        "name": "GCP Cloud Logging",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7b861dbd-188f-4839-9c3a-bc281cd7e2e8",
+        "name": "ASP.NET Core security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1a14d273-39e8-4008-bc47-c0abacb906c9",
+        "name": "CouchDB",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6b29c24b-e3cf-46c9-bd49-cb7309112013",
+        "name": "DHCP",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fa436195-1681-4569-bdbe-fb540df70d68",
+        "name": "Oracle indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "24048463-3949-4196-bc31-f5283551ed6d",
+        "name": "GCP Cloud Build",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9e245874-2c18-41ad-b38c-9c0284b294c4",
+        "name": "Vue.js accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ad0cf768-2bcd-4259-a632-0c818d6c737d",
+        "name": "DynamoDB backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "47046027-4e63-460d-872a-a9e4c3a89c44",
+        "name": "VMware",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c42f3fd7-dafd-4ab2-9b32-db44af7c3007",
+        "name": "Prometheus troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "88669e2a-e37f-4a6c-8d1c-e8ba5df8a57e",
+        "name": "Tailwind CSS testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "834d97c4-06d1-4520-8f82-9121a4397c67",
+        "name": "Spring Boot deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "00617050-0233-4c5c-a535-2200071c300d",
+        "name": "Django deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c0022f54-9671-4c27-8e99-b56b255a8160",
+        "name": "ASP.NET Core performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "db54f340-b156-4aa3-bfa3-d7edd15ae90e",
+        "name": "Backbone.js",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "318b53c6-9cce-4b35-b534-f26d77b8a6d7",
+        "name": "Next.js testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9345b0ff-d2a5-4fb7-b1fa-150d160bf252",
+        "name": "Azure AD (Entra ID)",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ae85df93-0a8b-404f-80b1-8028fdb196b5",
+        "name": "Authentication",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1b1120e8-908e-4645-ad96-d1c3cd100695",
+        "name": "ASP.NET Core API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "017d1460-1430-4da2-8496-f223433a07ab",
+        "name": "MongoDB monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9e87b734-3eef-49a8-8bfb-008bb345db8c",
+        "name": "IAM best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "20669ee7-83a7-42da-9ad0-34b40d3bc9dd",
+        "name": "GitHub Actions monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6ae780b9-a054-4063-bd13-23da353299e9",
+        "name": "Vue.js state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "68158197-20af-4db1-bd22-318b853ffe1a",
+        "name": "PostgreSQL backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1c50146c-d271-4597-abf6-c163a09d1c8f",
+        "name": "ArgoCD administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "86e2f3c3-1bf7-4602-875b-4d3b26672e99",
+        "name": "GitHub Actions best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1e80232f-1638-48cd-a9d0-11ecbcf98888",
+        "name": "Snowflake migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b2a1b9ec-a728-4838-bef0-3811fa1e8888",
+        "name": "Databricks",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7f772e7a-f609-485f-9d62-5b3590bd5609",
+        "name": "Webpack performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "42e54909-ec90-4dd4-930e-019c61d226df",
+        "name": "BigQuery high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5eb18139-d1c6-47fe-b8c7-c99400d2bf0d",
+        "name": "WebRTC",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "732bbb34-a2af-49b5-a7b9-e9ec5a8bb910",
+        "name": "FastAPI deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "011f28e2-62d3-4a7c-9e0d-98aac11a856a",
+        "name": "SOC Operations",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "182ecf9d-3cac-4175-b866-43398e3b90ff",
+        "name": "GitLab CI/CD automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "57e3e2ef-b84b-44b6-8859-fafc40a59a05",
+        "name": "React state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0a875a9c-976a-4af8-9c2e-b2d24e7c4dab",
+        "name": "Prometheus best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d056900f-5f8f-4a6c-ab20-ec20a535750a",
+        "name": "Ansible setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "716839e4-7345-47b2-a105-1dd79c94d4e8",
+        "name": "OpenID Connect implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7d7f3d86-680f-402e-9b33-227ef75bf5af",
+        "name": "FastAPI testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5f35b2fd-55c5-4089-8a2c-c702ea54ea8c",
+        "name": "Network Monitoring",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "16c3c95a-a755-48c2-ae2e-30e69be9583a",
+        "name": "Cloudflare Zero Trust",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "37a65028-799e-4602-b1be-c70303baf433",
+        "name": "TypeScript accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "da3853a1-a799-4f85-a21a-4f5f67d29c0b",
+        "name": "Vue.js component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c890fbf2-c2aa-47c9-a383-e714fb779d08",
+        "name": "Software Support",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7d6fe439-1771-4eb9-bdd3-4e79e07102a9",
+        "name": "ASP.NET Core deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ab2ad683-29d0-4b3d-ac67-42754500e85b",
+        "name": "Cisco CCNP",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "189743fe-1b37-4fb7-99fd-8992fdd8c1a3",
+        "name": "Webpack component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6ee8ae1f-661e-4a77-80ab-b6aef8ecc409",
+        "name": "GitLab CI/CD best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8c0c1540-b702-4cf4-96df-5d399e78e5a7",
+        "name": "BigQuery indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0848df66-dc72-401e-bfe3-4a02b5c88bb1",
+        "name": "Splunk",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c0d1c3e2-5e55-42e1-a791-cf00e35a8a7b",
+        "name": "Cloudflare Pages",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6088dc80-201e-498f-a95f-0e1ccba66fb6",
+        "name": "Prometheus hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "48611fe3-a107-4ac4-8a27-e9cc83480cf7",
+        "name": "Linux monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fc286d7f-2a4d-4a4b-a61a-54eab44d05de",
+        "name": "NestJS security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "aa50ec80-3b1b-4072-9a95-bdf964533e31",
+        "name": "Cloudflare Workers",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "25fa1797-a6ae-4090-8c0a-64c1e935111f",
+        "name": "Oracle high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "35fdd653-f330-4a19-92f1-cd905cccfd2f",
+        "name": "SQL Server replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "89b4f426-c83e-42bd-9f13-e8cd8b3fd7b9",
+        "name": "Terraform alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1dd4b19e-757b-44a5-98b2-dba3716e690c",
+        "name": "Angular testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a40c2e22-cbb7-4769-bd61-a75ec2837bac",
+        "name": "Terraform automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c3dbbc60-0e76-4b6e-8cd5-14e0ad3ad261",
+        "name": "Docker monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f517b464-5d85-4f36-b4fa-3061a8692dca",
+        "name": "Kubernetes automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b857c35c-b3aa-4432-bcca-11bc12a90623",
+        "name": "FastAPI API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "22700425-0da4-421a-a089-8c4be2d5a70b",
+        "name": "Debian",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "692a552a-e7ad-4ff4-b859-c4a33b9555e0",
+        "name": "Redis indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "329c632e-9558-492b-bb0f-ef9599b3b450",
+        "name": "Node.js deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "baa43134-e843-4c10-86fd-d9c095befa88",
+        "name": "PostgreSQL tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2d1c5bdc-510b-40ab-b556-adea3867be52",
+        "name": "Kotlin Multiplatform",
+        "category": "Mobile",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a27a664d-1f54-4d27-9f30-5de3677f7ad3",
+        "name": "Zero Trust",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "86f64600-158a-445b-b9dc-a497d49bbf56",
+        "name": "SIEM troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9265174d-108f-495d-b18d-eb5ec0259eb1",
+        "name": "MySQL backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "479316bd-600b-4167-a8b9-de3c9e2e1773",
+        "name": "DynamoDB replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "eb074505-78f4-4e8d-8be5-87c0e2795b14",
+        "name": "GitLab CI/CD setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8b9a3baf-5032-4fb4-8311-b4e33dee1fa8",
+        "name": "Azure DevOps Pipelines",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6beac09a-211b-439a-adcc-051fa1d42ce4",
+        "name": "Authorization",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "97c7e39d-dab4-467f-915d-a991dee32ae3",
+        "name": "GraphQL Yoga",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e9f35cd2-2622-464e-a0a4-51873b325dc5",
+        "name": "ArgoCD troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "69e5d456-7cf5-4c8c-8081-210bcdb2a397",
+        "name": "Loki",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b7e3b743-44b4-4f1a-9328-37ea98443ad0",
+        "name": "PKI configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "32c3e9e8-0d78-4d41-b526-988b52a78587",
+        "name": "Spring Boot API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5b15f807-d455-48f1-abb2-a5b2c74e1386",
+        "name": "Windows",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f4de9a26-e054-4b0f-8b2b-51c1d83126ec",
+        "name": "WAF",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "597e6c65-57ad-4cf5-9e70-ecb848b6a961",
+        "name": "Jenkins setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5a99aace-95f0-43b0-b60b-a0f48dcc5263",
+        "name": "AWS Aurora",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f8d113b6-3610-48bc-8e13-9b86cd53acd0",
+        "name": "Terraform troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0351fbe0-0ff5-4fa3-a55b-79519e3d715a",
+        "name": "Puppet",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7a99a633-d81f-445b-9869-703f22545532",
+        "name": "Terraform hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f48287df-86cc-4ab1-8d09-3fb97275f4af",
+        "name": "GCP Firestore",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b06447fd-0991-439e-9932-818b87b5a3bb",
+        "name": "Spring Boot testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "55801dda-d7a1-4583-ab1e-ed4f92033c69",
+        "name": "Prometheus setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4547fa49-b875-4920-b36e-4f838f32a666",
+        "name": "AWS ECS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "236b8e95-9698-4b2d-986b-1e606119f745",
+        "name": "Terraform monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "102cacf7-d039-4619-8ddb-f3edd8e48449",
+        "name": "Tailwind CSS accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ddc7fd2a-e290-4afb-aed6-44fabd20b1a2",
+        "name": "Jenkins monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2e738f3a-6196-4583-9634-2694605e9942",
+        "name": "Grafana setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c9113727-2063-42e1-9922-d5a65ef389f2",
+        "name": "Service Workers",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bbad2746-028e-4cb8-a4a9-c74a8aa326f0",
+        "name": "Kustomize",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8c5f9ae7-8826-4101-a00d-dc14e8e92fb4",
+        "name": "GitLab CI/CD monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "80b64877-5592-43c8-bbf8-8f6c27d83b2d",
+        "name": "Vue.js performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "89da2ba7-8047-4a81-bc29-787fe3b9344e",
+        "name": "gRPC deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6678b102-7730-402b-8c7b-f88b46044029",
+        "name": "Prometheus alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6426c68a-c6d0-431d-8762-93f71ad8f7be",
+        "name": "Snowflake indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "cf64f67d-4335-47ca-86e3-7db974b29002",
+        "name": "New Relic",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "aba78c09-c7a8-43aa-ad18-aff5958c313c",
+        "name": "CockroachDB",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ef1f5d19-1fb9-4be8-955a-74c6562fd48f",
+        "name": "Jenkins hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bea2446e-8c71-4148-8fb8-026b0be11ce1",
+        "name": "Resend",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "971bec03-8e4b-4d6b-a9bc-a006efb88dec",
+        "name": "Mongoose",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "47dd5695-ff82-4228-8942-6c08540c199a",
+        "name": "jQuery",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fd3a83cf-bda7-4b39-b113-ffec2f0700db",
+        "name": "Incident Response",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ae4fba75-daf0-4ad9-8f7c-cf73687debdf",
+        "name": "Contract Testing",
+        "category": "QA",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4ff6453f-5831-4976-8ace-ad2d633105ab",
+        "name": "Webpack best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "935ad296-a70b-431e-a190-014f790274f8",
+        "name": "Ansible hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c1971bca-7e77-469a-a358-4e370aee4ee7",
+        "name": "Webpack architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "deaf2f0a-8121-43c1-9f94-9faf1372a05c",
+        "name": "Storybook state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "13bf796a-cfcf-4aed-942c-3c197bf2f58f",
+        "name": "Socket.IO",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "10dd9696-f5d3-4857-a807-c50dd8c75102",
+        "name": "Tailwind CSS state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8ba11615-ba37-4566-83dc-f2e02855e94f",
+        "name": "NestJS API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "910a3eb7-9f16-4a52-86f6-6a34948370d6",
+        "name": "SQL Server high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b186c22b-7b70-4622-ac42-82d255643226",
+        "name": "TypeScript testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "889cb98d-4885-46a5-a41a-7f5ac01c42ad",
+        "name": "Lit",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d2830a45-6f30-452c-8b39-428bd6f29dca",
+        "name": "Grafana best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "49bed30b-9a8d-4501-91a3-6852f1d894a4",
+        "name": "Vite best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e1b7914d-36bc-4598-b409-9a714bda79e7",
+        "name": "MongoDB replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c7a03078-0b51-4259-a467-59246f3ec141",
+        "name": "T-SQL",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c7213d97-6c88-4f5a-94ea-cbde4c0cfd06",
+        "name": "Remix",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "92f8a227-474b-428e-a5fd-9c0f7de26c0e",
+        "name": "Snowflake backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0dab46d2-49af-4fad-a083-0e48bd458b14",
+        "name": "ArgoCD alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f651eda7-d6cf-401b-b70d-72e8679a99c7",
+        "name": "GitHub Actions troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "34fd0b53-45e5-4c3d-832a-ee043cc81fca",
+        "name": "GitHub Actions automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5a25ceb5-cafc-4c95-bcf2-bd7a25352630",
+        "name": "PostgreSQL RLS",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1c5fcee0-58ca-42ee-9fd0-75806a7f03fb",
+        "name": "Linux best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "97feb87e-d32b-430d-8a29-9f57977451b3",
+        "name": "Cloudflare R2",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "59f06614-a609-4b89-884e-59cbf2a8ce78",
+        "name": "Node.js API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f5686c97-b2e0-486c-8aa2-5f8fad36912c",
+        "name": "Ansible monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d841f7ab-5a4a-412a-b253-9a3ad1e8b144",
+        "name": "SAML best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ade031d9-bd62-4b90-ba74-4c2065343339",
+        "name": "React accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ef4311b1-0187-4d93-9aaa-da8b88f358b8",
+        "name": "GraphQL deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d25f266c-b095-4383-aeb4-add2495dd9ad",
+        "name": "Jaeger",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d542e643-5de3-4062-a0ec-299d301842d0",
+        "name": "Kubernetes setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "53198d31-b567-470f-9283-51b37ba62049",
+        "name": "React component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5c044cdd-a116-425e-ac5e-6e7e8224fe43",
+        "name": "Node.js performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "dfe3fcc7-d7d7-4c7d-88e8-22bce376842b",
+        "name": "AWS DynamoDB",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ce93925e-4ebb-4623-919d-9fd5ab606f7a",
+        "name": "Angular architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e72a3a13-b2b6-4992-8451-9b5d0c8996b1",
+        "name": "Replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2ea464e8-7b9e-4b2a-8db6-b9d69af138b7",
+        "name": "Node.js security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "cc1c7170-b2a4-497c-afe9-031e98277176",
+        "name": "Chef",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b0120119-3407-46c8-8745-d1aa97c0bf98",
+        "name": "Redis Pub/Sub",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "72f1f86c-6886-4763-999e-3e2980243b5d",
+        "name": "SIEM configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1e90a9e6-3e88-41aa-b791-de5db10abc83",
+        "name": "Redis backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a4948c1c-8deb-4ce1-a761-84485bc399d7",
+        "name": "IAM troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "46925fc5-b60d-462e-848d-707b2ce1ca1c",
+        "name": "Entity Framework",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "79580a40-9bdc-4f53-8ae0-1f6d8dc17c3a",
+        "name": "Azure Blob Storage",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e26ace7d-61fa-44e0-8254-297d56ae9275",
+        "name": "WAF best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "627d39d1-b6e5-47b0-83da-e01915b7f476",
+        "name": "Linux automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1d5949fd-c4e8-4ad9-9c3e-2ec4443565a0",
+        "name": "ArgoCD best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fe48639e-31a2-4370-a5bf-47a6ef15f8d3",
+        "name": "Azure AKS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8195ddc9-b161-4a9e-a74f-729bb197b8ac",
+        "name": "Key Management",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "98654d9e-63cd-4009-8dd0-3938c041d618",
+        "name": "Vite component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bd0470ca-21d5-46a7-b784-5074af81b9b0",
+        "name": "AWS Certified Developer",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3dd6913e-e0d8-40bd-85cb-4760b8b2791f",
+        "name": "CentOS",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "69fecb5c-d361-47d1-84f1-5d8efec60c27",
+        "name": "GCP BigQuery",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6ca2ccf1-3267-4ad9-9b46-5a2b9ce3d9f5",
+        "name": "Firewall Management",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "11a5b63c-acec-414c-bf3f-dc56f4b3bae9",
+        "name": "NestJS performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "32252fb5-4935-4ea0-8ad0-bc1c73d20c90",
+        "name": "Webpack state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "21da96a2-a503-4ef1-afba-aa5a991c6192",
+        "name": "Ansible alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5dd76863-ed0c-4efe-8c38-b0f98bbe1375",
+        "name": "Vue.js architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a4b30823-1613-463c-bf0c-d35fb1f9d8cf",
+        "name": "NestJS best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e03b5e1f-98c2-4008-ab27-8b1e7f8613e3",
+        "name": "GitHub Actions administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "044605f1-2ccb-4ad9-9981-7d1fc7019f29",
+        "name": "Data Analysis",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a0690736-e17e-4688-b30b-032b39ec46b6",
+        "name": "Spring Boot best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bfa8c09b-4af4-43d9-86ab-3b415b93acf4",
+        "name": "Row Level Security (RLS)",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "78b8445c-3df7-4659-97a8-1946e0d3882a",
+        "name": "Redis monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "523a5470-e91a-4d85-b069-0504ccc97fe7",
+        "name": "Snowflake monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c7583e01-1aa3-41a2-ad71-8f94827197c8",
+        "name": "PostgreSQL replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "548faac8-51aa-4834-b6a3-9d18e9b15568",
+        "name": "GitHub Actions hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8d13fecb-41f2-411b-b20b-1a79c13506ff",
+        "name": "AWS Glue",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d517de95-49a6-4242-956e-2942dcc9408d",
+        "name": "Tailwind CSS architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "62c1002a-91af-47f4-ae63-dcd9bc6486a2",
+        "name": "MySQL high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fa56d1b0-b259-4cc4-9e31-17542c01b559",
+        "name": "Django API development",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4411b70c-962e-410f-8745-9f9878972ecc",
+        "name": "HAProxy",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ce0e30e4-4338-4e62-abe3-3f363dbac8bc",
+        "name": "Docker hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "07f4959c-1300-4e52-97d4-2a5c68450a8c",
+        "name": "Azure SQL Database",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5e86b9a5-5d97-4474-99b4-43beec843664",
+        "name": "GCP IAM",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9d4ee284-81e7-4244-b34c-2cd62c9ca261",
+        "name": "TLS configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5dc34563-11df-408c-883a-df5fa0cc54f8",
+        "name": "CompTIA Security+",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "10c6e706-795e-4738-b26d-521f013e8f51",
+        "name": "Compliance",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5c663604-8ebc-4938-bee8-02c404579ebd",
+        "name": "Azure VMs",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "dd88fee1-585d-4567-9c5f-3deafd4058b2",
+        "name": "TDD",
+        "category": "QA",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1068cc23-c7f6-481d-af2d-574cb49861c2",
+        "name": "Stripe",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "60b4abe2-d9c6-4c00-a2ad-c2ba4ea4d942",
+        "name": "Terraform administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5187fa86-b115-42de-b2ce-e1da87dbc739",
+        "name": "Next.js architecture",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "906d23bf-2881-4a84-ad1f-43d7fae88367",
+        "name": "Azure Application Insights",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "97398177-d44f-4a1c-8311-a24338bbfe1b",
+        "name": "OAuth best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "98941033-09eb-4e9e-9a86-6bebd1497293",
+        "name": "Stencil",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9c467069-04bc-4d8e-acbc-4a62c03e367f",
+        "name": "WAF configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e88db2b2-a57a-4ec0-a087-5069ed05d61c",
+        "name": "Webpack accessibility",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "533eaed9-e795-4e22-99cd-4e587120217d",
+        "name": "PostgreSQL migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "87ea0df3-fbeb-47f6-90ff-0c0ecea43b69",
+        "name": "Chai",
+        "category": "QA",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "346f4f66-c8f0-434f-88cd-807ef0b2e312",
+        "name": "Cisco CCNA",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8dd49c6c-fabd-4a52-af22-9b487b3bf862",
+        "name": "Next.js state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2647cd7d-6156-4c43-bff5-029e40d12171",
+        "name": "SQL Server backup",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "987e4463-ff75-42e9-9d9e-5974a65ee1ae",
+        "name": "Kubernetes troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "52980de4-fa30-4a5e-aaec-b613f2458d99",
+        "name": "AWS Certified Solutions Architect",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d521a6bc-1bbe-4423-94b9-46282e2a7e34",
+        "name": "Linux administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "38218030-c74d-4f60-80c2-e02006ece468",
+        "name": "Linux Administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "14986dae-106d-4dc8-a1ae-8fc0c6244ca2",
+        "name": "TypeScript best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "33b44645-703b-4ce6-966f-1ac78009074c",
+        "name": "MySQL tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6cfe863a-a989-413e-a626-c6d7158b3a38",
+        "name": "gRPC testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d53d2e5a-985a-4f3b-a584-62bc182471b5",
+        "name": "OpenID Connect configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "72bfd0c6-4bbc-42c8-964c-3bff91bda757",
+        "name": "Terraform setup",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d93cba51-baa9-45e2-a1d6-37f9203be427",
+        "name": "SIEM implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0ac14aa3-6060-43f0-8ef7-925e0f73815d",
+        "name": "ECharts",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fccd5051-edf1-4525-9b72-050f585f7838",
+        "name": "Chart.js",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "27549667-0fda-494f-ab9b-c1e488a435f4",
+        "name": "ITIL Foundation",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a5fd1ce5-a947-400f-b4ee-7501bd0604c2",
+        "name": "Data Engineering",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d2c433e5-b372-4166-a960-34d3959bb346",
+        "name": "Core Web Vitals",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bffd3331-003a-425c-83f8-6fec0871cb9f",
+        "name": "Kubernetes hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "cb6c94ea-e8ea-4538-a37f-fcb3e1480d0b",
+        "name": "DynamoDB migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ea251815-e13c-4e70-a4b2-8cf9427084f2",
+        "name": "Webpack testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "71e841c9-409e-4a3c-bd3e-c281841b968a",
+        "name": "Jenkins automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "58051c52-e887-4765-bd79-0ed8cff9f216",
+        "name": "Assembly",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4cd676ae-2e96-465c-b655-da36ffc8fa8d",
+        "name": "Travis CI",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3cef1f54-5669-4e41-91ab-9c8242c1db28",
+        "name": "Django best practices",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6f47c9c9-3a69-458e-b1df-e5f8f0520a1d",
+        "name": "Tempo",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a1a1daef-f08e-4734-a42c-abb4ba3d9b11",
+        "name": "Angular best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1ec53a25-30ba-4430-afee-09e85868afe1",
+        "name": "IAM implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "62f2235b-f837-411f-8662-6b863d842084",
+        "name": "PL/pgSQL",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "06737f84-8ca3-4ed9-afe4-996919851a30",
+        "name": "React performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "11284e56-0c49-4229-8aef-a7115b955682",
+        "name": "WAF troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0b898cdc-678c-4768-9543-8b79373e0ebb",
+        "name": "Kubernetes alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "634aabeb-b52f-409c-9eef-76598c03bb30",
+        "name": "API Security",
+        "category": "Architecture",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "698e3c10-60fc-44fc-8b67-b44a6633a590",
+        "name": "GCP GKE",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a0004086-7359-4997-83fc-7d4223a914ec",
+        "name": "Performance Testing",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1056113f-c81e-4527-ad9e-3c9788fdfb9e",
+        "name": "Vue.js testing",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e98fb29b-8050-4451-981a-8df68cd420ee",
+        "name": "Security Auditing",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fa11ecc0-1a4f-4af6-877f-cd490731c7ef",
+        "name": "AWS CloudFormation",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "48328aaf-3ad6-4752-b8ba-ce1b905c1c77",
+        "name": "Weaviate",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0471db44-5d09-49e3-b6f7-5f88204afbf0",
+        "name": "InfluxDB",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "76e964b2-62ff-4650-9770-423c086ad706",
+        "name": "DDoS Protection",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c978c819-cf5a-4d4d-b9b4-c4d505302617",
+        "name": "GitLab CI/CD hardening",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "334ab019-a554-4e6d-a4b9-2aa3d4f2d545",
+        "name": "DynamoDB indexing",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4f5f4193-0689-4f9d-847c-99f7e9120306",
+        "name": "SIEM best practices",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0f878ce2-c282-41f2-9369-cd146af323da",
+        "name": "ASP.NET Core testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d5bb8375-cd95-4569-b8e1-31dfd7ad2c07",
+        "name": "Angular performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2761b213-32e5-4a69-bdbf-a2ce2b9815fa",
+        "name": "Terraform best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "88ae3a74-d346-4196-8be8-92fc0179c47d",
+        "name": "MySQL replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "54d9070b-3080-4c8f-b2e3-1dcc2e678c27",
+        "name": "Pulumi",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bf7c2b28-c19d-46c9-850a-c569e038e2b8",
+        "name": "AWS API Gateway",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "476e435b-f63f-450b-9393-27d31c77d383",
+        "name": "ClickHouse",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ab90a2a2-f981-406c-b131-a92559505165",
+        "name": "Incident Response implementation",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c11f8796-6042-4140-8299-b83643ad8eed",
+        "name": "Spring Boot performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "728004ce-4068-4577-9b46-834813aff7f4",
+        "name": "AWS Certified Cloud Practitioner",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "6191ebd5-724d-44c2-b028-2280aa0e9687",
+        "name": "Azure Container Apps",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "10c6f53b-5e9a-4fe8-a3c6-340e1d5a141d",
+        "name": "NGINX Ingress",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e00a87ee-eef1-4064-9b6c-e28f69143982",
+        "name": "AWS EKS",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c73761e9-6873-438c-83af-2a3b7e7bb772",
+        "name": "DynamoDB tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4698e678-c12b-4b2a-a378-9ba32c2dd989",
+        "name": "AWS CDK",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b19e8159-1f5a-408e-a2c2-4a3b2623095d",
+        "name": "Vue.js best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "28f6280c-3133-4d3b-9b17-07dd61cf1717",
+        "name": "Storybook best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fc36a2dd-4018-4ec7-a620-7a02b988adec",
+        "name": "Oracle replication",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "53e908e5-6fbe-4129-b2f0-49f126f4c7fd",
+        "name": "FastAPI security",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "14dc2caa-3f62-4f34-94bf-d365b4536bfe",
+        "name": "Perl",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8fbe8f91-77c1-4ea1-a9e6-d85560f358c3",
+        "name": "AWS EMR",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e09c9790-a3d7-41dd-aa0c-93d75784e981",
+        "name": "Network Security",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5a3a0b99-2151-48ad-a6a4-15ca69b562bd",
+        "name": "Information Architecture",
+        "category": "Design",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "889931c1-f64b-48c5-8359-9f2975bd4bd6",
+        "name": "OAuth troubleshooting",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a555b448-7f7f-45b6-8e81-8cb94abb7f52",
+        "name": "Jenkins alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "bc4b0eef-8bd0-452a-b9f3-ffecd964229e",
+        "name": "AWS Cognito",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "31777d15-ede7-43eb-b145-118b112a8117",
+        "name": "Hyper-V",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fc790e0c-d664-4432-ac41-6c872a586084",
+        "name": "Mailgun",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ae1fe689-ec14-418b-96fd-6b321dafb16a",
+        "name": "Jenkins best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0a033455-0454-41cc-8194-4fe6909ac3c8",
+        "name": "MySQL monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "57eb5754-7027-4417-bf9c-078dacd482e3",
+        "name": "Linux alerting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f3964447-1b1b-47f0-a71b-4225a632a205",
+        "name": "GCP Cloud Functions",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "48b80340-c464-4ad8-bc1e-823661649e6f",
+        "name": "Milvus",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0b931c0e-bc83-4ab2-ab33-d768f5c3e6c4",
+        "name": "OpenID Connect",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5ad97ef1-0be5-4813-89f3-d97716548871",
+        "name": "Tailwind CSS best practices",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "3f93f81f-8134-42ba-bf4c-7337e5371878",
+        "name": "Solidity",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "fb37a691-9b8f-45da-a8bc-151c1aab739e",
+        "name": "Jira",
+        "category": "Product",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9f8e113b-ca7b-436b-843d-bb8033dfac73",
+        "name": "Angular component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "675b83e8-1972-42b8-9320-6d96c8bf4507",
+        "name": "NestJS deployment",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "7c3499ca-3655-42ad-b4d7-b0465696b1d9",
+        "name": "FastAPI performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "66735861-a04a-4946-8cd3-d2d9cc0568aa",
+        "name": "MongoDB tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b688c395-8cd5-4418-8178-1d91fef6306c",
+        "name": "SendGrid",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "d5e9b4dd-44de-4c44-8713-13469e30d99f",
+        "name": "Shell Scripting",
+        "category": "Programming Language",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c018ad9a-3da7-41a9-89a0-b989b4d99a48",
+        "name": "Grafana automation",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c61c1b53-2b0f-4e77-b194-0f291fc26331",
+        "name": "Docker best practices",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "860509f2-8661-481d-898b-c8e582773ae8",
+        "name": "VLANs",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "194c96bf-3f79-4ca9-9fc7-896dd758172a",
+        "name": "Chromatic",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ada6a3ee-c8e6-4411-8361-f2ddf16ae09f",
+        "name": "TimescaleDB",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "eb21b00c-ac9d-49cd-bda1-d40cbd54333c",
+        "name": "SSO",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "828a7983-f27f-4e26-a186-a41feff2d982",
+        "name": "CompTIA Network+",
+        "category": "Certification",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "50c17215-3404-4f0d-b005-c87d914ba753",
+        "name": "Oracle migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a70664e6-4555-40ad-9062-d279904e8af6",
+        "name": "GitLab CI/CD administration",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "79574964-faea-4b39-841a-9a770dfe35f8",
+        "name": "Django performance",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "06327641-a00b-4048-98aa-58eedb61cb13",
+        "name": "AWS EventBridge",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "11756195-3669-4b0b-8792-3014f9884018",
+        "name": "Highcharts",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e1827b95-4ebc-4b36-a20f-751da29977ea",
+        "name": "DynamoDB high availability",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "946b9555-b5d0-4673-8131-2faabc0ec03a",
+        "name": "Pinecone",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9f7ad38b-d90f-449e-a819-c175cd206415",
+        "name": "Twilio",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "4ef79e4e-5a39-4e90-ad21-7e49c396cae8",
+        "name": "Performance Engineering",
+        "category": "Architecture",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c82994ff-895e-4182-a7ee-a56022cf73cc",
+        "name": "LlamaIndex",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "23948f26-2fdd-47d9-8ce2-c18b8a5c3d74",
+        "name": "Tailwind CSS performance",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "5f37ee02-5bb4-4965-a4d3-7685f0d40c6a",
+        "name": "BigQuery migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "898717ff-714d-44b1-b9d8-8cdf727826eb",
+        "name": "Cloudflare WAF",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "073c1ee4-76a8-43af-b05d-c8cf38776963",
+        "name": "NestJS testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e4aa6dcb-17ec-4d46-a53b-aa86453e329d",
+        "name": "TLS/SSL",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "f9d82734-f595-44b6-9f9c-9afb5f958bde",
+        "name": "Redis migration",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "8ed637b4-a250-4ffd-83e6-bbcb061d5608",
+        "name": "Switching",
+        "category": "IT",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2e989356-3ced-4791-bea4-b9e58d90d506",
+        "name": "Incident Response configuration",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "9e191af6-691e-40da-9374-5e726a48f13a",
+        "name": "BigQuery tuning",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "e2623f74-676b-4a4a-8c27-dfecca61d6ea",
+        "name": "Kubernetes monitoring",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "0728fe0c-5f17-408f-af6f-d1d20d6e707e",
+        "name": "TypeScript state management",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "10c0cff8-724b-45a5-9291-fd3d4cc07192",
+        "name": "Hapi",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "91d79e5b-0485-48d1-bf32-c0f71361bee9",
+        "name": "GraphQL testing",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "324b9597-c0eb-4488-acb6-8674cd2b6c58",
+        "name": "Chroma",
+        "category": "AI/ML",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "2fe319ce-e841-4682-914b-c10c7c760f14",
+        "name": "TypeScript component design",
+        "category": "Frontend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "b1716f6a-1b4b-4a44-8570-7edb47470d56",
+        "name": "PostgREST",
+        "category": "Backend",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "514a4079-4529-4f28-93b0-29b35230511f",
+        "name": "Grafana troubleshooting",
+        "category": "DevOps",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "acabae05-47ab-4645-af3d-684481541e84",
+        "name": "PostgreSQL monitoring",
+        "category": "Database",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "a387a0d0-f808-4406-aa7d-71ef4cfac437",
+        "name": "SOAR",
+        "category": "Security",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1536cdbf-bc59-48d0-9fde-0030732b3709",
+        "name": "Traefik",
+        "category": "Platform",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "81337e55-5d82-490d-90b4-0e8ae855a091",
+        "name": "GCP Cloud Monitoring",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "c90a8ebe-7171-4893-bd66-937d4b0e70e4",
+        "name": "Azure Key Vault",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "1a54c4b8-6d77-48f6-a2bf-1af295b38f39",
+        "name": "AWS CloudWatch",
+        "category": "Cloud",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "10753e61-94b3-4a0c-a1df-8c582d884237",
+        "name": "Design Patterns",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "e08dacb3-9d03-4698-ac68-5b3f43d1aa49",
+        "name": "Clean Architecture",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "8102a925-8bd0-47f2-9a33-36d3689c6045",
+        "name": "Domain-Driven Design (DDD)",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "976f6164-ae68-41aa-89d1-ef503034d16b",
+        "name": "Distributed Systems",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d5669da1-6632-417c-b212-205ccfc6c0a7",
+        "name": "High Availability",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "b4702d5c-16e6-4930-80de-a940bf305010",
+        "name": "Reliability Engineering",
+        "category": "Architecture",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "74b23558-8409-4ac6-8fcf-57940817a9e2",
+        "name": "IT Support",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "d2710df1-7ed7-4981-b8cf-e33d3396ebd0",
+        "name": "Helpdesk",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "7ade8717-d55e-4797-96a7-15f19d15c9ca",
+        "name": "Service Desk",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "3b4a159b-b670-4410-a8b2-da1ee28a7f01",
+        "name": "Troubleshooting",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "dc669186-cfd1-4b6e-bdd6-909dff62a015",
+        "name": "Windows Server",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "391cdd9d-b30f-4cab-86af-e91eb85b8e43",
+        "name": "Active Directory",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "1bc1d08e-3b77-4f72-b9ec-89ce1c762c05",
+        "name": "Networking",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "ce9e3a70-76bf-4306-a724-e9e15ce89df3",
+        "name": "TCP/IP",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "3812fbab-1841-41e4-8f89-b8cc4bdf9b40",
+        "name": "VPN",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c8a7a081-05d4-4921-a7b9-c96d4e2c1298",
+        "name": "Wi-Fi",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "c10911b4-88cf-4ebb-b86d-8cca5629be25",
+        "name": "Backup and Recovery",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "db1e224d-6c39-48f3-ad2a-eaacab1233cb",
+        "name": "Disaster Recovery",
+        "category": "IT",
+        "created_at": "2026-03-05T11:57:06.288Z"
+      },
+      {
+        "id": "cd28c4fe-31bc-455d-b764-df6cfc03f755",
+        "name": "Dynamics 365",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "8001c4ed-69f3-4399-878f-c300bbc333b1",
+        "name": "SharePoint",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "1c000628-5c26-42cf-8b19-79c84a1930d9",
+        "name": "Microsoft Entra ID",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "268111bf-e232-4122-b983-dd1fc476a7dd",
+        "name": "Exchange Online",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "64563198-c02d-47e5-8c86-f34f6f88c688",
+        "name": "Advanced Excel",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "142bcd9e-da4c-4100-8006-5e6a86cebe3f",
+        "name": "Windows 10",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "06d86d93-859b-4109-9ed0-08e44cfb05d9",
+        "name": "Excel",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "bb731bf1-46df-4585-9d7d-87727a842169",
+        "name": "Microsoft Project",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "06735c2f-ff11-42ae-9d5d-a9a69f89a689",
+        "name": "Azure Active Directory",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "acdc4930-e3cf-4e74-8ebf-dca7771c1ea5",
+        "name": "Azure Synapse Analytics",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "a8c96e7e-e35f-4dcb-a4b8-2cf4a701b119",
+        "name": "Microsoft Fabric",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "09885f8f-6d70-4ce9-930f-c631d46901ac",
+        "name": "Power Query",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "17daf667-b4c3-4e99-92d5-44c31352167d",
+        "name": "Power Platform",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "efae7070-f107-4280-b7eb-031b8dc10d6e",
+        "name": "M365 Compliance",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "37ea7d29-e327-45ee-917c-e465d6e270ab",
+        "name": "Power Pivot",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "87737039-34af-4be4-9348-48003368abfb",
+        "name": "Office 365 Administration",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "ddbf7ef6-5613-4eb8-8aa0-9f518e167244",
+        "name": "Dataverse",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "8dbce562-3548-4b95-9c8f-10ccdf34e7bc",
+        "name": "VBA",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "84e4098c-ddbc-4a46-b1e9-8bdab4607e73",
+        "name": "SharePoint Administration",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "1b8bc8fb-e1ff-4764-91b3-b722d7abd906",
+        "name": "Dynamics 365 CRM",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "a912213c-8f44-4df9-9309-f1dc6c12d9e1",
+        "name": "Dynamics 365 Finance and Operations",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "399e2534-2780-43e8-afd8-b98b47be4cd1",
+        "name": "Microsoft 365",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "5ee24890-ca11-417c-8c7a-2b17b41345d9",
+        "name": "Power Apps",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "9b592ddc-53ba-41c8-ab68-a769143fca97",
+        "name": "Microsoft Visio",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "dd3ea4e1-e068-471b-baf8-7282f28bb003",
+        "name": "Microsoft Sentinel",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "e9b29411-3620-4ac1-880e-c869d80bff20",
+        "name": "SharePoint Online",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "59047d2b-d91f-46a3-bf5c-8263e0783d03",
+        "name": "Microsoft Defender",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "7324a257-df75-4c4a-a611-217af98ef384",
+        "name": "Azure Data Factory",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "a1b5737d-2125-4d8b-9bdd-cb57d4789bc3",
+        "name": "Windows 11",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "ed06d721-aa39-4ef1-aa99-238ecb1c071e",
+        "name": "Planner",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "f5763ac0-b456-4b3c-b367-5c9fc2bc27d4",
+        "name": "M365 Identity Management",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "9e45ad5a-164c-4acc-968e-78af164e8ae0",
+        "name": "Azure Data Lake Storage",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "5ab624e3-8683-49a1-b686-00229570fe71",
+        "name": "M365 Security",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:45:39.105Z"
+      },
+      {
+        "id": "236b1585-2952-457d-b590-13f3cd4e7af1",
+        "name": "Azure Logic Apps",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "ebcba851-b858-45b9-81ae-bf37ba417df6",
+        "name": "Azure Event Grid",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "dd17b07c-54ad-481f-a3da-d8f2128ab172",
+        "name": "Azure Service Bus",
+        "category": "Microsoft",
+        "created_at": "2026-03-05T12:37:55.327Z"
+      },
+      {
+        "id": "01cc4f95-875f-46c4-b15f-8fcff56d17e1",
+        "name": "Visual Studio Code",
+        "category": "Tool",
+        "created_at": "2026-03-18T09:13:55.425Z"
+      }
+    ]
+  }
+}

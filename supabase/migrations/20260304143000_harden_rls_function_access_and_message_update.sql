@@ -55,6 +55,7 @@ execute function public.enforce_messages_read_receipt_update();
 
 -- Tighten update policy to recipients only for unread messages.
 drop policy if exists messages_update_participants on public.messages;
+drop policy if exists messages_update_recipients_read_receipts on public.messages;
 create policy messages_update_recipients_read_receipts
 on public.messages
 for update

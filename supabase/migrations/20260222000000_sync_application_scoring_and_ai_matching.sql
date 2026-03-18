@@ -305,7 +305,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_job_embedding vector;
+  v_job_embedding extensions.vector;
 begin
   select j.embedding
   into v_job_embedding
