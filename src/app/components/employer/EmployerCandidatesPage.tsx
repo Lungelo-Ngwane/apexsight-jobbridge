@@ -6,7 +6,7 @@ import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
-import { getTalentPoolCandidates, type TalentPoolCandidate } from "@/lib/employer";
+import { getCandidateCV, getTalentPoolCandidates, type TalentPoolCandidate } from "@/lib/employer";
 
 type ExperienceFilter = "all" | "junior" | "mid" | "senior";
 type SortKey = "name" | "experience" | "skills" | "location";
@@ -54,6 +54,8 @@ export function EmployerCandidatesPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [page, setPage] = useState(1);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [cvDownloadUrl, setCvDownloadUrl] = useState<string | null>(null);
+  const [cvLoading, setCvLoading] = useState(false);
 
   useEffect(() => {
     getTalentPoolCandidates()
@@ -148,6 +150,34 @@ export function EmployerCandidatesPage() {
       setSelectedCandidateId(selectedCandidate.id);
     }
   }, [selectedCandidate?.id, selectedCandidateId]);
+
+  useEffect(() => {
+    const cvPath = String(selectedCandidate?.cvUrl ?? "").trim();
+    if (!cvPath) {
+      setCvDownloadUrl(null);
+      setCvLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCvLoading(true);
+
+    getCandidateCV(cvPath)
+      .then((url) => {
+        if (!cancelled) setCvDownloadUrl(url);
+      })
+      .catch((error) => {
+        if (!cancelled) setCvDownloadUrl(null);
+        console.error("Failed to prepare candidate CV download URL", error);
+      })
+      .finally(() => {
+        if (!cancelled) setCvLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCandidate?.cvUrl]);
 
   function toggleSort(nextKey: SortKey) {
     if (sortKey === nextKey) {
@@ -364,8 +394,16 @@ export function EmployerCandidatesPage() {
                       Message Candidate
                     </Button>
                     {selectedCandidate.cvUrl ? (
-                      <Button variant="outline" className="w-full dark:border-white/10 dark:bg-transparent dark:text-white dark:hover:bg-neutral-800" onClick={() => window.open(selectedCandidate.cvUrl ?? "", "_blank", "noopener,noreferrer")}>
-                        View CV Path
+                      <Button
+                        variant="outline"
+                        className="w-full dark:border-white/10 dark:bg-transparent dark:text-white dark:hover:bg-neutral-800"
+                        disabled={!cvDownloadUrl || cvLoading}
+                        onClick={() => {
+                          if (!cvDownloadUrl) return;
+                          window.open(cvDownloadUrl, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        {cvLoading ? "Preparing CV..." : "Download CV"}
                       </Button>
                     ) : null}
                   </div>
