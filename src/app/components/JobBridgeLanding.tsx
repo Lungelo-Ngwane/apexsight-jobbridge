@@ -40,7 +40,14 @@ const pricingPlans: readonly PricingPlan[] = [
     period: "forever",
     description: "For testing the workflow and posting your first role.",
     icon: Building2,
-    features: ["1 active job posting", "Up to 10 applicants per job", "Basic candidate filtering", "Email support"],
+    features: [
+      "1 active job posting",
+      "Up to 10 applicants per job",
+      "Basic candidate filtering",
+      "AI-ready structured job setup",
+      "Automatic job embeddings",
+      "Email support",
+    ],
   },
   {
     name: "Starter",
@@ -48,7 +55,14 @@ const pricingPlans: readonly PricingPlan[] = [
     period: "per month",
     description: "For smaller teams that need consistent hiring flow.",
     icon: Zap,
-    features: ["2 active job postings", "50 candidate views / month", "Basic analytics", "2 team users"],
+    features: [
+      "2 active job postings",
+      "50 candidate views / month",
+      "Automatic job embeddings",
+      "AI-assisted job skill extraction",
+      "Basic analytics",
+      "2 team users",
+    ],
   },
   {
     name: "Professional",
@@ -56,7 +70,14 @@ const pricingPlans: readonly PricingPlan[] = [
     period: "per month",
     description: "For teams using JobBridge as a real hiring operating layer.",
     icon: Sparkles,
-    features: ["3 active job postings", "300 candidate views / month", "Advanced skill matching", "5 team users"],
+    features: [
+      "3 active job postings",
+      "300 candidate views / month",
+      "AI candidate scoring and match explanations",
+      "AI hiring reports",
+      "Advanced skill matching",
+      "5 team users",
+    ],
     featured: true,
   },
   {
@@ -65,7 +86,17 @@ const pricingPlans: readonly PricingPlan[] = [
     period: "per month",
     description: "For larger hiring teams with scale and control requirements.",
     icon: Crown,
-    features: ["4 active job postings", "Dedicated account manager", "White-label options", "SLA-backed support"],
+    features: [
+      "4 active job postings",
+      "Unlimited candidate views",
+      "AI candidate scoring and match explanations",
+      "AI hiring reports",
+      "Enterprise AI workflows and auto-shortlisting",
+      "50 team users",
+      "Dedicated account manager",
+      "White-label options",
+      "SLA-backed support",
+    ],
   },
 ] as const;
 
