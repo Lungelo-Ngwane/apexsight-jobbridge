@@ -167,7 +167,7 @@ export function EmployerOnboarding({
                             <Button
                                 onClick={completeProfile}
                                 disabled={saving || !companyName || !industry}
-                                className="h-12 w-full !bg-gradient-to-r !from-blue-600 !to-blue-700 text-lg font-semibold text-white shadow-lg transition-all hover:!from-blue-700 hover:!to-blue-800 hover:shadow-xl disabled:!from-blue-300 disabled:!to-blue-300 disabled:!text-white"
+                                className="h-12 w-full !bg-gradient-to-r !from-blue-600 !to-purple-600 !text-white text-lg font-semibold shadow-lg transition-all hover:!from-blue-700 hover:!to-purple-700 hover:shadow-xl disabled:!from-blue-300 disabled:!to-purple-300 disabled:!text-white"
                             >
                                 {saving ? (
                                     "Setting up your profile..."
@@ -303,7 +303,7 @@ export function EmployerOnboarding({
                                 </div>
 
                                 <Button
-                                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                                    className="h-12 w-full !bg-gradient-to-r !from-blue-600 !to-purple-600 !text-white text-lg font-semibold shadow-lg transition-all hover:!from-blue-700 hover:!to-purple-700 hover:shadow-xl"
                                     onClick={finishOnboarding}
                                 >
                                     Go to Dashboard

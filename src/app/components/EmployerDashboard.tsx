@@ -29,6 +29,7 @@ import {
   getEmployerJobs,
   getEmployerPremiumDashboardInsights,
   getJobApplicants,
+  startSubscriptionCheckout,
   type EmployerRecentActivityItem,
   type EmployerCreditBalance,
   type EmployerPremiumDashboardInsights,
@@ -102,6 +103,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const { profile, loading: profileLoading } = useEmployerProfile();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [pendingCheckoutLoading, setPendingCheckoutLoading] = useState(false);
   const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
   const [usageSnapshot, setUsageSnapshot] = useState<EmployerUsageSnapshot | null>(null);
   const [premiumInsights, setPremiumInsights] = useState<EmployerPremiumDashboardInsights | null>(null);
@@ -359,6 +361,18 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     ]);
   }, [cachePrefix, hasPremiumInsights, loadDashboardMetrics, loadJobs, loadPremiumInsights]);
 
+  const handlePendingPaymentCheckout = useCallback(async () => {
+    if (!selectedPendingPlan || pendingCheckoutLoading) return;
+
+    try {
+      setPendingCheckoutLoading(true);
+      await startSubscriptionCheckout(selectedPendingPlan);
+    } catch (error) {
+      console.error("Failed to start pending plan checkout", error);
+      setPendingCheckoutLoading(false);
+    }
+  }, [pendingCheckoutLoading, selectedPendingPlan]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -518,9 +532,12 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
               <Button
                 variant="outline"
                 className="border-amber-300 bg-white hover:bg-amber-100"
-                onClick={() => navigate("/employer/billing")}
+                disabled={pendingCheckoutLoading}
+                onClick={() => {
+                  void handlePendingPaymentCheckout();
+                }}
               >
-                Complete Payment
+                {pendingCheckoutLoading ? "Redirecting..." : "Complete Payment"}
               </Button>
             </div>
           </Card>
@@ -1055,15 +1072,16 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
               </Card>
             )}
             {!hasPremiumInsights && (
-              <Card className="p-6 border-dashed border-2 border-purple-300 bg-purple-50">
-                <h3 className="font-semibold text-purple-900 mb-2">
+              <Card className="border-2 border-dashed border-purple-300 bg-purple-50 p-6 dark:border-purple-400/20 dark:bg-neutral-900">
+                <h3 className="mb-2 font-semibold text-purple-900 dark:text-purple-200">
                   Talent Insights (Premium)
                 </h3>
-                <p className="text-sm text-purple-700 mb-4">
+                <p className="mb-4 text-sm text-purple-700 dark:text-purple-300">
                   See top skills, candidate trends, and hiring performance.
                 </p>
                 <Button
                   variant="outline"
+                  className="dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800"
                   onClick={() => setShowUpgradeModal(true)}
                 >
                   Upgrade to Unlock
