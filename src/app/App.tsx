@@ -2,16 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { Header } from '@/app/components/Header';
 import { Seo } from '@/app/components/Seo';
-import { HomePage } from '@/app/components/HomePage';
-import { SkillLinkLanding } from '@/app/components/SkillLinkLanding';
-import { JobBridgeLanding } from '@/app/components/JobBridgeLanding';
-import { CandidateDashboard } from '@/app/components/CandidateDashboard';
-import { CandidateProfile } from "@/app/components/CandidateProfile";
-import { EmployerProfile } from "@/app/components/EmployerProfile";
 import { useAuth } from './context/AuthContext';
-import CandidateJobsPage from "./components/CandidateJobsPage";
-import CandidateMyJobsPage from "./components/CandidateMyJobsPage";
-import { EmployerPublicProfilePage } from "./components/EmployerPublicProfilePage";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/app/components/ui/button";
@@ -26,6 +17,29 @@ import {
 } from "@/app/components/ui/dialog";
 // import { useAuth } from '../context/AuthContext'; // adjust path
 
+const HomePage = lazy(() =>
+  import("@/app/components/HomePage").then((module) => ({ default: module.HomePage })),
+);
+const SkillLinkLanding = lazy(() =>
+  import("@/app/components/SkillLinkLanding").then((module) => ({ default: module.SkillLinkLanding })),
+);
+const JobBridgeLanding = lazy(() =>
+  import("@/app/components/JobBridgeLanding").then((module) => ({ default: module.JobBridgeLanding })),
+);
+const CandidateDashboard = lazy(() =>
+  import("@/app/components/CandidateDashboard").then((module) => ({ default: module.CandidateDashboard })),
+);
+const CandidateProfile = lazy(() =>
+  import("@/app/components/CandidateProfile").then((module) => ({ default: module.CandidateProfile })),
+);
+const CandidateJobsPage = lazy(() => import("./components/CandidateJobsPage"));
+const CandidateMyJobsPage = lazy(() => import("./components/CandidateMyJobsPage"));
+const EmployerProfile = lazy(() =>
+  import("@/app/components/EmployerProfile").then((module) => ({ default: module.EmployerProfile })),
+);
+const EmployerPublicProfilePage = lazy(() =>
+  import("./components/EmployerPublicProfilePage").then((module) => ({ default: module.EmployerPublicProfilePage })),
+);
 const Login = lazy(() => import("@/app/components/Login"));
 const EmployerApp = lazy(() =>
   import("./components/EmployerApp").then((module) => ({ default: module.EmployerApp })),
@@ -279,10 +293,10 @@ export default function App() {
         <Route
           path="/"
           element={
-            <HomePage
+            withRouteSuspense(<HomePage
               onSelectSkillLink={() => navigate("/skilllink")}
               onSelectJobBridge={() => navigate("/jobbridge")}
-            />
+            />, "Loading home...")
           }
         />
         <Route
@@ -300,24 +314,24 @@ export default function App() {
         />
         <Route
           path="/skilllink"
-          element={<SkillLinkLanding onGetStarted={() => openRegisterModal("candidate")} />}
+          element={withRouteSuspense(<SkillLinkLanding onGetStarted={() => openRegisterModal("candidate")} />, "Loading SkillLink...")}
         />
         <Route
           path="/jobbridge"
-          element={<JobBridgeLanding onGetStarted={() => openRegisterModal("employer")} />}
+          element={withRouteSuspense(<JobBridgeLanding onGetStarted={() => openRegisterModal("employer")} />, "Loading JobBridge...")}
         />
 
         <Route
           path="/candidate/dashboard"
-          element={<CandidateDashboard onViewJobs={() => navigate("/candidate/jobs")} />}
+          element={withRouteSuspense(<CandidateDashboard onViewJobs={() => navigate("/candidate/jobs")} />, "Loading dashboard...")}
         />
-        <Route path="/candidate/jobs" element={<CandidateJobsPage />} />
-        <Route path="/candidate/my-jobs" element={<CandidateMyJobsPage />} />
+        <Route path="/candidate/jobs" element={withRouteSuspense(<CandidateJobsPage />, "Loading jobs...")} />
+        <Route path="/candidate/my-jobs" element={withRouteSuspense(<CandidateMyJobsPage />, "Loading applications...")} />
         <Route path="/candidate/messages" element={withRouteSuspense(<MessagesPage />, "Loading messages...")} />
-        <Route path="/candidate/profile" element={<CandidateProfile />} />
+        <Route path="/candidate/profile" element={withRouteSuspense(<CandidateProfile />, "Loading profile...")} />
         <Route path="/admin/dashboard" element={withRouteSuspense(<AdminDashboardPage />, "Loading admin dashboard...")} />
         <Route path="/admin/entities/:kind/:id" element={withRouteSuspense(<AdminEntityDetailPage />, "Loading admin detail...")} />
-        <Route path="/companies/:employerId" element={<EmployerPublicProfilePage />} />
+        <Route path="/companies/:employerId" element={withRouteSuspense(<EmployerPublicProfilePage />, "Loading company profile...")} />
 
         <Route path="/employer" element={withRouteSuspense(<EmployerApp />, "Loading employer workspace...")}>
           <Route path="dashboard" element={withRouteSuspense(<EmployerDashboard />, "Loading dashboard...")} />
@@ -331,7 +345,7 @@ export default function App() {
           <Route path="settings" element={withRouteSuspense(<EmployerSettingsPage />, "Loading settings...")} />
         </Route>
 
-        <Route path="/employer/profile" element={<EmployerProfile />} />
+        <Route path="/employer/profile" element={withRouteSuspense(<EmployerProfile />, "Loading employer profile...")} />
       </Routes>
 
 

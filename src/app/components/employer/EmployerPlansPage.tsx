@@ -76,6 +76,8 @@ export function EmployerPlansPage() {
           "1 active job posting",
           "Up to 10 applicants per job",
           "Basic candidate filtering",
+          "AI-ready structured job setup",
+          "Automatic job embeddings",
           "Email support",
         ],
         icon: Briefcase,
@@ -90,6 +92,8 @@ export function EmployerPlansPage() {
         features: [
           `${starter?.jobLimit ?? 2} active job postings`,
           `${starter?.candidateViewLimit ?? 50} candidate views per month`,
+          "Automatic job embeddings",
+          "AI-assisted job skill extraction",
           "Basic analytics",
           "Email support",
           `${starter?.userLimit ?? 2} team users`,
@@ -106,6 +110,8 @@ export function EmployerPlansPage() {
         features: [
           `${professional?.jobLimit ?? 3} active job postings`,
           `${professional?.candidateViewLimit ?? 300} candidate views per month`,
+          "AI candidate scoring and match explanations",
+          "AI hiring reports",
           "Advanced skill matching",
           "Priority support",
           `${professional?.userLimit ?? 5} team users`,
@@ -122,6 +128,11 @@ export function EmployerPlansPage() {
         description: "For larger organizations that need scale, control, and dedicated support.",
         features: [
           `${enterprise?.jobLimit ?? 4} active job postings`,
+          `${enterprise?.candidateViewLimit ?? 9999} candidate views per month`,
+          "AI candidate scoring and match explanations",
+          "AI hiring reports",
+          "Enterprise AI workflows and auto-shortlisting",
+          `${enterprise?.userLimit ?? 50} team users`,
           "Dedicated account manager",
           "White-label options",
           "SLA guarantee",
