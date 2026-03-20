@@ -19,7 +19,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const lastProfileUserIdRef = useRef<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
 
-  const loadUserProfile = async (userId: string) => {
+  const ensureBaseProfile = async (user: {
+    id: string;
+    email?: string | null;
+    user_metadata?: {
+      full_name?: string | null;
+      role?: string | null;
+    } | null;
+  }) => {
+    const normalizedRole = String(user.user_metadata?.role ?? "").trim().toLowerCase();
+    const resolvedRole =
+      normalizedRole === "candidate" || normalizedRole === "employer"
+        ? normalizedRole
+        : null;
+
+    if (!resolvedRole) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        full_name: String(user.user_metadata?.full_name ?? user.email ?? "").trim() || null,
+        role: resolvedRole,
+      })
+      .select("role")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  };
+
+  const loadUserProfile = async (user: {
+    id: string;
+    email?: string | null;
+    user_metadata?: {
+      full_name?: string | null;
+      role?: string | null;
+    } | null;
+  }) => {
+    const userId = user.id;
     const maxAttempts = 8;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -39,6 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (data?.role === "candidate" || data?.role === "employer") {
           setRole(data.role);
           return;
+        } else if (attempt === 1) {
+          const created = await ensureBaseProfile(user).catch((createError) => {
+            console.error("Base profile creation failed:", createError);
+            return null;
+          });
+
+          if (created?.role === "candidate" || created?.role === "employer") {
+            setRole(created.role);
+            return;
+          }
         }
       } catch (err) {
         console.error("Profile load failed:", err);
@@ -77,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       lastProfileUserIdRef.current = currentUser.id;
       currentUserIdRef.current = currentUser.id;
-      await loadUserProfile(currentUser.id);
+      await loadUserProfile(currentUser);
 
       if (mounted) {
         setLoading(false);
@@ -122,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (shouldRefreshRole) {
         setLoading(true);
-        void loadUserProfile(currentUser.id).finally(() => {
+        void loadUserProfile(currentUser).finally(() => {
           if (mounted && currentUserIdRef.current === currentUser.id) {
             setLoading(false);
           }

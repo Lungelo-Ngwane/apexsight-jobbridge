@@ -94,6 +94,40 @@ async function resolveCurrentUserId() {
   return session?.user?.id ?? null;
 }
 
+async function ensureCandidateProfile(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: {
+    full_name?: string | null;
+    role?: string | null;
+  } | null;
+}) {
+  const normalizedRole = String(user.user_metadata?.role ?? "").trim().toLowerCase();
+
+  if (normalizedRole && normalizedRole !== "candidate") {
+    throw new Error("Candidate profile not available for this account");
+  }
+
+  const fullName = String(
+    user.user_metadata?.full_name ?? user.email ?? "",
+  ).trim();
+
+  const { data: createdProfile, error: createError } = await supabase
+    .from("candidate_profiles")
+    .insert({
+      user_id: user.id,
+      full_name: fullName || "Candidate",
+      experience_level: "junior",
+    })
+    .select("id")
+    .single();
+
+  if (createError) throw createError;
+  if (!createdProfile?.id) throw new Error("Candidate profile not found");
+
+  return createdProfile;
+}
+
 async function resolveCandidateProfileContext(options?: { force?: boolean }): Promise<CandidateProfileContext> {
   const force = Boolean(options?.force);
   const now = Date.now();
@@ -117,13 +151,16 @@ async function resolveCandidateProfileContext(options?: { force?: boolean }): Pr
       throw new Error("Not authenticated");
     }
 
-    const { data: profile, error: profileError } = await supabase
+    let { data: profile, error: profileError } = await supabase
       .from("candidate_profiles")
       .select("id")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) throw profileError;
+    if (!profile?.id) {
+      profile = await ensureCandidateProfile(user);
+    }
     if (!profile?.id) throw new Error("Candidate profile not found");
 
     const value = {
