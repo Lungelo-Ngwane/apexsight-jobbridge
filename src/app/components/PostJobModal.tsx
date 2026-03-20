@@ -39,6 +39,24 @@ const STATUS_OPTIONS = [
   { value: "closed", label: "Closed" },
 ] as const;
 
+type PostJobDraft = {
+  step: number;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  workMode: string;
+  experienceLevel: string;
+  minYears: string;
+  description: string;
+  status: Status;
+  salaryMin: string;
+  salaryMax: string;
+  benefits: string;
+  skills: SelectedSkill[];
+  skillSearch: string;
+};
+
 function normalizeEmploymentType(value?: string | null) {
   const normalized = String(value ?? "").trim().toLowerCase();
   if (!normalized) return "";
@@ -68,6 +86,10 @@ function normalizeExperienceLevel(value?: string | null) {
   return "";
 }
 
+function getPostJobDraftKey() {
+  return "employer_post_job_draft";
+}
+
 export function PostJobModal({ onClose, onSuccess, job }: Props) {
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
@@ -94,30 +116,106 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
   const isEditMode = Boolean(job?.id);
 
+  function buildDraft(): PostJobDraft {
+    return {
+      step,
+      title,
+      department,
+      location,
+      employmentType,
+      workMode,
+      experienceLevel,
+      minYears,
+      description,
+      status,
+      salaryMin,
+      salaryMax,
+      benefits,
+      skills,
+      skillSearch,
+    };
+  }
+
+  function applyDraft(draft: PostJobDraft) {
+    setStep(draft.step);
+    setTitle(draft.title);
+    setDepartment(draft.department);
+    setLocation(draft.location);
+    setEmploymentType(draft.employmentType);
+    setWorkMode(draft.workMode);
+    setExperienceLevel(draft.experienceLevel);
+    setMinYears(draft.minYears);
+    setDescription(draft.description);
+    setStatus(draft.status);
+    setSalaryMin(draft.salaryMin);
+    setSalaryMax(draft.salaryMax);
+    setBenefits(draft.benefits);
+    setSkills(draft.skills);
+    setSkillSearch(draft.skillSearch);
+  }
+
   function statusLabel(value: Status) {
     return STATUS_OPTIONS.find((option) => option.value === value)?.label ?? value;
   }
 
   useEffect(() => {
-    setStep(1);
-    setTitle(job?.title ?? "");
-    setDepartment(job?.department ?? "");
-    setLocation(job?.location ?? "");
-    setEmploymentType(normalizeEmploymentType(job?.employment_type));
-    setWorkMode(normalizeWorkMode(job?.work_mode));
-    setExperienceLevel(normalizeExperienceLevel(job?.experience_level));
-    setMinYears(typeof job?.min_years_experience === "number" ? String(job.min_years_experience) : "");
-    setDescription(job?.description ?? "");
-    setStatus(job?.status ?? "open");
-    setSalaryMin(typeof job?.salary_min === "number" ? String(job.salary_min) : "");
-    setSalaryMax(typeof job?.salary_max === "number" ? String(job.salary_max) : "");
-    setBenefits(job?.benefits ?? "");
-    setSkills((job?.job_skills ?? []).map((s) => ({
-      skill_id: s.skill_id,
-      name: String(s.skills?.name ?? "").trim(),
-      min_score: typeof s.min_score === "number" ? s.min_score : 65,
-    })).filter((s) => s.name));
+    if (job?.id) {
+      setStep(1);
+      setTitle(job.title ?? "");
+      setDepartment(job.department ?? "");
+      setLocation(job.location ?? "");
+      setEmploymentType(normalizeEmploymentType(job.employment_type));
+      setWorkMode(normalizeWorkMode(job.work_mode));
+      setExperienceLevel(normalizeExperienceLevel(job.experience_level));
+      setMinYears(typeof job.min_years_experience === "number" ? String(job.min_years_experience) : "");
+      setDescription(job.description ?? "");
+      setStatus(job.status ?? "open");
+      setSalaryMin(typeof job.salary_min === "number" ? String(job.salary_min) : "");
+      setSalaryMax(typeof job.salary_max === "number" ? String(job.salary_max) : "");
+      setBenefits(job.benefits ?? "");
+      setSkills((job.job_skills ?? []).map((s) => ({
+        skill_id: s.skill_id,
+        name: String(s.skills?.name ?? "").trim(),
+        min_score: typeof s.min_score === "number" ? s.min_score : 65,
+      })).filter((s) => s.name));
+      setSkillSearch("");
+      return;
+    }
+
+    const rawDraft = window.localStorage.getItem(getPostJobDraftKey());
+    if (!rawDraft) {
+      setStep(1);
+      return;
+    }
+
+    try {
+      applyDraft(JSON.parse(rawDraft) as PostJobDraft);
+    } catch {
+      setStep(1);
+    }
   }, [job]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    window.localStorage.setItem(getPostJobDraftKey(), JSON.stringify(buildDraft()));
+  }, [
+    benefits,
+    department,
+    description,
+    employmentType,
+    experienceLevel,
+    isEditMode,
+    location,
+    minYears,
+    salaryMax,
+    salaryMin,
+    skillSearch,
+    skills,
+    status,
+    step,
+    title,
+    workMode,
+  ]);
 
   async function searchSkills(query: string) {
     if (!query) return setSkillResults([]);
@@ -222,6 +320,9 @@ export function PostJobModal({ onClose, onSuccess, job }: Props) {
       };
       if (job?.id) await updateJob(job.id, payload);
       else await createJob(payload);
+      if (!isEditMode) {
+        window.localStorage.removeItem(getPostJobDraftKey());
+      }
       onSuccess();
       onClose();
     } catch (error: any) {

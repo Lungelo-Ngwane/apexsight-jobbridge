@@ -803,6 +803,7 @@ export async function uploadCandidateCV(file: File) {
       .insert({
         user_id: user.id,
         full_name: String(user.user_metadata?.full_name ?? user.email ?? "Candidate"),
+        experience_level: "junior",
         cv_url: filePath,
         cv_file_name: originalFileName,
       })

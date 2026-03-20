@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/app/components/ui/textarea";
 import { ArrowLeft, ChevronDown, ChevronUp, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 // import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/app/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -59,9 +59,14 @@ function normalizeGender(value?: string | null) {
     return "";
 }
 
+function getCandidateProfileDraftKey(userId: string) {
+    return `candidate_profile_draft_${userId}`;
+}
+
 export function CandidateProfile({ }: CandidateProfileProps) {
     const { user, role } = useAuth();
     const navigate = useNavigate();
+    const profileDraftHydratedRef = useRef(false);
 
     const [profile, setProfile] = useState({
         full_name: "",
@@ -123,7 +128,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 bio: profile.bio || null,
                 location: profile.location || null,
                 years_experience: Number(profile.years_experience ?? 0),
-                experience_level: normalizeExperienceLevel(profile.experience_level) || null,
+                experience_level: normalizeExperienceLevel(profile.experience_level) || "junior",
                 availability: profile.availability || null,
                 preferred_job_type: profile.preferred_job_type || null,
                 work_mode: profile.work_mode || null,
@@ -161,7 +166,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
             if (candidateProfile) {
                 setCandidateProfileId(String(candidateProfile.id));
-                setProfile({
+                const serverProfile = {
                     full_name: candidateProfile.full_name || "",
                     surname: candidateProfile.surname || "",
                     headline: candidateProfile.headline || "",
@@ -180,7 +185,23 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     id_number: candidateProfile.id_number || "",
                     gender: normalizeGender(candidateProfile.gender),
                     contact_number: candidateProfile.contact_number || "",
-                });
+                };
+                const draftKey = getCandidateProfileDraftKey(user.id);
+                const savedDraft = window.localStorage.getItem(draftKey);
+
+                if (savedDraft) {
+                    try {
+                        const parsedDraft = JSON.parse(savedDraft);
+                        setProfile({
+                            ...serverProfile,
+                            ...parsedDraft,
+                        });
+                    } catch {
+                        setProfile(serverProfile);
+                    }
+                } else {
+                    setProfile(serverProfile);
+                }
                 setCvName(
                     String(candidateProfile.cv_file_name ?? "").trim() ||
                     String(candidateProfile.cv_url ?? "").trim().split("/").pop() ||
@@ -201,15 +222,37 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
                 setSkills(candidateSkills || []);
                 setCertifications(candidateCertifications || []);
+            } else {
+                const draftKey = getCandidateProfileDraftKey(user.id);
+                const savedDraft = window.localStorage.getItem(draftKey);
+                if (savedDraft) {
+                    try {
+                        setProfile((prev) => ({
+                            ...prev,
+                            ...JSON.parse(savedDraft),
+                        }));
+                    } catch {
+                        // Ignore corrupt draft state and continue with defaults.
+                    }
+                }
             }
 
             setAllSkills(skillsData || []);
 
+            profileDraftHydratedRef.current = true;
             setLoading(false);
         };
 
         fetchData();
     }, [user]);
+
+    useEffect(() => {
+        if (!user || !profileDraftHydratedRef.current) return;
+        window.localStorage.setItem(
+            getCandidateProfileDraftKey(user.id),
+            JSON.stringify(profile),
+        );
+    }, [profile, user]);
 
     const handleBack = () => {
         if (role === "candidate") navigate("/candidate/dashboard");
@@ -317,7 +360,11 @@ export function CandidateProfile({ }: CandidateProfileProps) {
             } else {
                 const { data: createdProfile, error: createProfileError } = await supabase
                     .from("candidate_profiles")
-                    .insert({ ...updateData, user_id: user.id })
+                    .insert({
+                        ...updateData,
+                        user_id: user.id,
+                        experience_level: normalizeExperienceLevel(updateData.experience_level) || "junior",
+                    })
                     .select("id")
                     .single();
                 if (createProfileError) throw createProfileError;
@@ -345,6 +392,8 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     console.error("Failed to sync auth user metadata after saving profile", metadataError);
                 }
             }
+
+            window.localStorage.removeItem(getCandidateProfileDraftKey(user.id));
 
             showFeedback(
                 "Profile saved",
