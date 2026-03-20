@@ -18,6 +18,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const lastProfileUserIdRef = useRef<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
+  const roleRef = useRef<UserRole>(null);
+
+  useEffect(() => {
+    roleRef.current = role;
+  }, [role]);
 
   const ensureBaseProfile = async (user: {
     id: string;
@@ -151,6 +156,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         currentUserIdRef.current !== null &&
         currentUserIdRef.current === nextUserId
       ) {
+        return;
+      }
+
+      const sameUser =
+        currentUserIdRef.current !== null &&
+        currentUserIdRef.current === nextUserId;
+
+      if (
+        sameUser &&
+        roleRef.current !== null &&
+        (event === "SIGNED_IN" || event === "INITIAL_SESSION")
+      ) {
+        setUser(currentUser);
+        setLoading(false);
         return;
       }
 
