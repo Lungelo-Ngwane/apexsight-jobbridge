@@ -20,21 +20,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const currentUserIdRef = useRef<string | null>(null);
 
   const loadUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .single();
+    const maxAttempts = 8;
 
-      if (error) {
-        console.error("Profile fetch error:", error);
-        setRole(null);
-      } else {
-        setRole((data?.role as UserRole) ?? null);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (currentUserIdRef.current !== userId) {
+          return;
+        }
+
+        if (error) {
+          console.error("Profile fetch error:", error);
+        } else if (data?.role === "candidate" || data?.role === "employer") {
+          setRole(data.role);
+          return;
+        }
+      } catch (err) {
+        console.error("Profile load failed:", err);
       }
-    } catch (err) {
-      console.error("Profile load failed:", err);
+
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => window.setTimeout(resolve, 400));
+      }
+    }
+
+    if (currentUserIdRef.current === userId) {
       setRole(null);
     }
   };
@@ -86,15 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const sameUser =
-        currentUserIdRef.current !== null &&
-        currentUserIdRef.current === nextUserId;
-
-      if (sameUser) {
-        setLoading(false);
-        return;
-      }
-
       setUser(currentUser);
 
       if (!currentUser) {
@@ -115,7 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUserIdRef.current = nextUserId;
 
       if (shouldRefreshRole) {
-        void loadUserProfile(currentUser.id);
+        setLoading(true);
+        void loadUserProfile(currentUser.id).finally(() => {
+          if (mounted && currentUserIdRef.current === currentUser.id) {
+            setLoading(false);
+          }
+        });
+        return;
       }
 
       setLoading(false);

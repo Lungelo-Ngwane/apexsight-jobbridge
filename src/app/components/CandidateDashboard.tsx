@@ -119,6 +119,14 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
     );
   }
 
+  if (user && role === null) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <CircularLoader size="md" label="Finalizing your account..." />
+      </div>
+    );
+  }
+
   if (!user || role !== 'candidate') {
     return (
       <div className="p-8 text-center text-gray-600">
