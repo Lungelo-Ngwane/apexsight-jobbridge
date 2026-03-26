@@ -139,7 +139,7 @@ function candidateWelcomeEmailHtml(params: {
         <tr>
           <td style="padding:24px 28px;background:linear-gradient(135deg,#0f172a,#1d4ed8 56%,#38bdf8);color:#ffffff;">
             <div style="font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.82;">ApexSight Talent Infrastructure</div>
-            <div style="margin-top:8px;font-size:28px;font-weight:700;line-height:1.2;">Welcome to ApexSight</div>
+            <div style="margin-top:8px;font-size:28px;font-weight:700;line-height:1.2;">Welcome to ApexSight 🎉</div>
             <div style="margin-top:12px;display:inline-block;padding:7px 12px;border:1px solid rgba(255,255,255,.45);border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,.14);">
               Early Candidate Access
             </div>
@@ -147,12 +147,12 @@ function candidateWelcomeEmailHtml(params: {
         </tr>
         <tr>
           <td style="padding:32px 28px 22px 28px;">
-            <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#334155;">Hi ${escapeHtml(params.candidateName)},</p>
+            <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#334155;">Hi ${escapeHtml(params.candidateName)} 👋</p>
             <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">Thanks for creating your profile on ApexSight.</p>
-            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">You are among the first candidates on the platform, which means you will have priority visibility when companies begin posting opportunities.</p>
-            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">Right now we are onboarding talented graduates and interns before opening the platform to employers. This gives early candidates like you a major advantage.</p>
-            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">In the meantime, make sure your profile is complete so companies can easily discover you.</p>
-            <p style="margin:0 0 24px 0;font-size:15px;line-height:1.75;color:#334155;">We’ll notify you as soon as employers start posting opportunities.</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">You are among the first candidates on the platform, which means you will have priority visibility when companies begin posting opportunities. 🚀</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">Right now we are onboarding candidates before opening the platform to employers, which gives early candidates like you a major advantage.</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">In the meantime, make sure your profile is complete so companies can discover you easily and our AI can match you to relevant opportunities. ✨</p>
+            <p style="margin:0 0 24px 0;font-size:15px;line-height:1.75;color:#334155;">We'll notify you as soon as employers start posting opportunities. 🔔</p>
             <a href="${escapeHtml(params.dashboardUrl)}" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:10px;">Complete Your Profile</a>
             <a href="${escapeHtml(params.jobsUrl)}" style="display:inline-block;margin-left:10px;color:#1d4ed8;text-decoration:none;font-size:14px;font-weight:600;padding:12px 2px;">Open Candidate Area -&gt;</a>
             <p style="margin:24px 0 0 0;font-size:15px;line-height:1.75;color:#334155;">ApexSight Talent Infrastructure</p>
