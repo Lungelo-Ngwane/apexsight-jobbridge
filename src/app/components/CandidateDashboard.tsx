@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCandidateDashboardData, getCandidateUpcomingInterviews, getOpenJobs, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
+import { ensureCandidateWelcomeEmailSent, getCandidateDashboardData, getCandidateUpcomingInterviews, getOpenJobs, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
@@ -108,6 +108,21 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   useEffect(() => {
     if (!user || role !== "candidate") return;
     window.localStorage.setItem(`candidate_seen_dashboard_${user.id}`, "1");
+  }, [role, user]);
+
+  useEffect(() => {
+    if (!user || role !== "candidate") return;
+
+    const welcomeEmailKey = `candidate_welcome_email_requested_${user.id}`;
+    if (window.localStorage.getItem(welcomeEmailKey) === "1") return;
+
+    void ensureCandidateWelcomeEmailSent()
+      .then(() => {
+        window.localStorage.setItem(welcomeEmailKey, "1");
+      })
+      .catch((error) => {
+        console.error("Failed to send candidate welcome email", error);
+      });
   }, [role, user]);
 
 

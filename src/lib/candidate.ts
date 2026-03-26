@@ -377,6 +377,31 @@ export async function refreshCandidateEmbedding(profileId?: string) {
   }
 }
 
+export async function ensureCandidateWelcomeEmailSent() {
+  const result = await invokeAuthedFunction<{
+    success?: boolean;
+    skipped?: boolean;
+    message?: string;
+  }>("send-notification-email", {
+    type: "CANDIDATE_WELCOME",
+    data: {},
+  });
+
+  if (result.error) {
+    const message =
+      (result.error as { message?: string } | null)?.message ??
+      (result.error as { detail?: string | null } | null)?.detail ??
+      "Failed to send welcome email.";
+    throw new Error(String(message));
+  }
+
+  return {
+    success: Boolean(result.data?.success),
+    skipped: Boolean(result.data?.skipped),
+    message: String(result.data?.message ?? ""),
+  };
+}
+
 export async function getCandidateDashboardData() {
   const now = Date.now();
   if (candidateDashboardCache && candidateDashboardCache.expiresAt > now) {

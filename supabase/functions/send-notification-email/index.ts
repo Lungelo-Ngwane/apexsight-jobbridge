@@ -26,7 +26,8 @@ const supabase = createClient(supabaseUrl ?? "", supabaseServiceKey ?? "", {
 type SupportedEmailType =
   | "APPLICATION_CREATED"
   | "CANDIDATE_SHORTLISTED"
-  | "CANDIDATE_INTERVIEW_SCHEDULED";
+  | "CANDIDATE_INTERVIEW_SCHEDULED"
+  | "CANDIDATE_WELCOME";
 
 async function sendEmailOrThrow(args: {
   from: string;
@@ -61,6 +62,8 @@ function emailShell(params: {
   secondaryCtaLabel: string;
   secondaryCtaUrl: string;
   supportNote?: string;
+  productLabel?: string;
+  bannerTitle?: string;
 }) {
   const detailsRows =
     params.details && params.details.length > 0
@@ -84,8 +87,8 @@ function emailShell(params: {
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #dbe3f5;border-radius:18px;overflow:hidden;box-shadow:0 16px 50px rgba(15,23,42,.08);">
         <tr>
           <td style="padding:24px 28px;background:linear-gradient(130deg,#0f172a,#1d4ed8 50%,#3b82f6);color:#ffffff;">
-            <div style="font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.82;">ApexSight JobBridge</div>
-            <div style="margin-top:8px;font-size:24px;font-weight:700;line-height:1.2;">Hiring Activity Update</div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.82;">${escapeHtml(params.productLabel ?? "ApexSight JobBridge")}</div>
+            <div style="margin-top:8px;font-size:24px;font-weight:700;line-height:1.2;">${escapeHtml(params.bannerTitle ?? "Hiring Activity Update")}</div>
             <div style="margin-top:12px;display:inline-block;padding:7px 12px;border:1px solid rgba(255,255,255,.45);border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,.14);">
               ${escapeHtml(params.statusLabel)}
             </div>
@@ -120,6 +123,64 @@ function emailShell(params: {
       </table>
     </div>
   `;
+}
+
+function candidateWelcomeEmailHtml(params: {
+  candidateName: string;
+  dashboardUrl: string;
+  jobsUrl: string;
+}) {
+  return `
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;visibility:hidden;">
+      Welcome to ApexSight. Complete your profile early to get priority visibility.
+    </div>
+    <div style="margin:0;padding:24px;background:#f6f7fb;font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;box-shadow:0 16px 50px rgba(15,23,42,.08);">
+        <tr>
+          <td style="padding:24px 28px;background:linear-gradient(135deg,#0f172a,#1d4ed8 56%,#38bdf8);color:#ffffff;">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.82;">ApexSight Talent Infrastructure</div>
+            <div style="margin-top:8px;font-size:28px;font-weight:700;line-height:1.2;">Welcome to ApexSight</div>
+            <div style="margin-top:12px;display:inline-block;padding:7px 12px;border:1px solid rgba(255,255,255,.45);border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,.14);">
+              Early Candidate Access
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 28px 22px 28px;">
+            <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#334155;">Hi ${escapeHtml(params.candidateName)},</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">Thanks for creating your profile on ApexSight.</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">You are among the first candidates on the platform, which means you will have priority visibility when companies begin posting opportunities.</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">Right now we are onboarding talented graduates and interns before opening the platform to employers. This gives early candidates like you a major advantage.</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">In the meantime, make sure your profile is complete so companies can easily discover you.</p>
+            <p style="margin:0 0 24px 0;font-size:15px;line-height:1.75;color:#334155;">We’ll notify you as soon as employers start posting opportunities.</p>
+            <a href="${escapeHtml(params.dashboardUrl)}" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:10px;">Complete Your Profile</a>
+            <a href="${escapeHtml(params.jobsUrl)}" style="display:inline-block;margin-left:10px;color:#1d4ed8;text-decoration:none;font-size:14px;font-weight:600;padding:12px 2px;">Open Candidate Area -&gt;</a>
+            <p style="margin:24px 0 0 0;font-size:15px;line-height:1.75;color:#334155;">ApexSight Talent Infrastructure</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.6;color:#64748b;">
+            This is an automated message from ApexSight. Please do not reply directly.
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+}
+
+async function isAdminUser(userId: string) {
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to resolve admin membership", error);
+    return false;
+  }
+
+  return Boolean(data?.user_id);
 }
 
 serve(async (req) => {
@@ -158,7 +219,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
 
-    let actor: { id: string } | null = null;
+    let actor: { id: string; isAdmin: boolean } | null = null;
     if (token) {
       const {
         data: { user },
@@ -166,7 +227,10 @@ serve(async (req) => {
       } = await supabase.auth.getUser(token);
 
       if (!actorError && user) {
-        actor = { id: user.id };
+        actor = {
+          id: user.id,
+          isAdmin: await isAdminUser(user.id),
+        };
       }
     }
 
@@ -175,6 +239,111 @@ serve(async (req) => {
     const data = payload?.data;
     const applicationId = data?.applicationId as string | undefined;
     const interviewId = data?.interviewId as string | undefined;
+
+    if (type === "CANDIDATE_WELCOME") {
+      if (!actor) {
+        return new Response(JSON.stringify({ error: "Not authenticated" }), {
+          status: 401,
+          headers,
+        });
+      }
+
+      const requestedUserId = String(data?.userId ?? actor.id ?? "").trim();
+      if (!requestedUserId) {
+        return new Response(JSON.stringify({ error: "Missing userId" }), {
+          status: 400,
+          headers,
+        });
+      }
+
+      if (requestedUserId !== actor.id && !actor.isAdmin) {
+        return new Response(JSON.stringify({ error: "Admin access required" }), {
+          status: 403,
+          headers,
+        });
+      }
+
+      const { data: candidateProfile, error: candidateProfileError } = await supabase
+        .from("candidate_profiles")
+        .select("id, user_id, full_name")
+        .eq("user_id", requestedUserId)
+        .maybeSingle();
+
+      if (candidateProfileError || !candidateProfile?.user_id) {
+        return new Response(JSON.stringify({ error: "Candidate profile not found" }), {
+          status: 404,
+          headers,
+        });
+      }
+
+      const { data: existingWelcome } = await supabase
+        .from("candidate_welcome_emails")
+        .select("user_id, sent_at")
+        .eq("user_id", requestedUserId)
+        .maybeSingle();
+
+      if (existingWelcome?.user_id) {
+        return new Response(JSON.stringify({
+          success: true,
+          skipped: true,
+          message: "Welcome email already sent.",
+          userId: requestedUserId,
+          sentAt: existingWelcome.sent_at,
+        }), {
+          status: 200,
+          headers,
+        });
+      }
+
+      const candidateUser = await supabase.auth.admin.getUserById(requestedUserId);
+      if (candidateUser.error) {
+        throw new Error(`Failed to resolve candidate email: ${candidateUser.error.message}`);
+      }
+
+      const candidateEmail = String(candidateUser.data.user?.email ?? "").trim();
+      if (!candidateEmail) {
+        return new Response(JSON.stringify({ error: "Candidate email not found" }), {
+          status: 404,
+          headers,
+        });
+      }
+
+      const candidateName = String(candidateProfile.full_name ?? candidateEmail.split("@")[0] ?? "there").trim() || "there";
+
+      const messageId = await sendEmailOrThrow({
+        from: "ApexSight <notifications@apexsight.co.za>",
+        to: candidateEmail,
+        subject: "Welcome to ApexSight",
+        html: candidateWelcomeEmailHtml({
+          candidateName,
+          dashboardUrl: `${appBaseUrl}/candidate/dashboard`,
+          jobsUrl: `${appBaseUrl}/candidate/jobs`,
+        }),
+      });
+
+      const { error: logError } = await supabase.from("candidate_welcome_emails").insert({
+        user_id: requestedUserId,
+        candidate_profile_id: candidateProfile.id,
+        email: candidateEmail,
+        full_name: candidateName,
+        triggered_by_user_id: actor.id,
+      });
+
+      if (logError) {
+        throw new Error(`Welcome email sent but log write failed: ${logError.message}`);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        skipped: false,
+        userId: requestedUserId,
+        recipient: candidateEmail,
+        messageId,
+      }), {
+        status: 200,
+        headers,
+      });
+    }
 
     if (!applicationId) {
       return new Response(JSON.stringify({ error: "Missing applicationId" }), {
@@ -483,7 +652,8 @@ serve(async (req) => {
     if (
       type !== "APPLICATION_CREATED" &&
       type !== "CANDIDATE_SHORTLISTED" &&
-      type !== "CANDIDATE_INTERVIEW_SCHEDULED"
+      type !== "CANDIDATE_INTERVIEW_SCHEDULED" &&
+      type !== "CANDIDATE_WELCOME"
     ) {
       return new Response(JSON.stringify({ error: "Unsupported notification type" }), {
         status: 400,

@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { useAuth } from "@/app/context/AuthContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
-import { addAdminUser, type AdminAuditLogRecord, type AdminDashboardSnapshot, type AdminPendingPaymentItem, type AdminRecentCandidate, type AdminRecentEmployer, type AdminRecentInvoice, type AdminStalledJobItem, type AdminUserRecord, type AdminWebhookQueueItem, getAdminDashboardSnapshot, listAdminAuditLogs, listAdminUsers, logAdminAction, removeAdminUser, retryAdminWebhookEvent } from "@/lib/admin";
+import { addAdminUser, type AdminAuditLogRecord, type AdminDashboardSnapshot, type AdminPendingPaymentItem, type AdminRecentCandidate, type AdminRecentEmployer, type AdminRecentInvoice, type AdminStalledJobItem, type AdminUserRecord, type AdminWebhookQueueItem, getAdminDashboardSnapshot, listAdminAuditLogs, listAdminUsers, logAdminAction, removeAdminUser, retryAdminWebhookEvent, sendCandidateWelcomeEmail } from "@/lib/admin";
 
 const RANGE_OPTIONS = [{ label: "Last 7 days", value: "7" }, { label: "Last 30 days", value: "30" }, { label: "Last 90 days", value: "90" }] as const;
 type DetailItem =
@@ -79,6 +79,8 @@ export default function AdminDashboardPage() {
   const [newAdminNotes, setNewAdminNotes] = useState("");
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [retryingWebhookId, setRetryingWebhookId] = useState<string | null>(null);
+  const [sendingWelcomeUserId, setSendingWelcomeUserId] = useState<string | null>(null);
+  const [sentWelcomeUserIds, setSentWelcomeUserIds] = useState<string[]>([]);
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
   const selectedDays = Number(rangeDays);
 
@@ -119,6 +121,24 @@ export default function AdminDashboardPage() {
     try { setRetryingWebhookId(eventId); await retryAdminWebhookEvent(eventId); await loadSnapshot(selectedDays, true); await loadManagementData(); showFeedback("Webhook retried", "The event was replayed and the queue has been refreshed."); }
     catch (error: any) { showFeedback("Retry failed", String(error?.message ?? "Please try again.")); }
     finally { setRetryingWebhookId(null); }
+  }
+
+  async function handleSendCandidateWelcome(candidate: AdminRecentCandidate) {
+    try {
+      setSendingWelcomeUserId(candidate.userId);
+      const result = await sendCandidateWelcomeEmail(candidate.userId);
+      setSentWelcomeUserIds((prev) => (prev.includes(candidate.userId) ? prev : [...prev, candidate.userId]));
+      showFeedback(
+        result?.skipped ? "Welcome already sent" : "Welcome email sent",
+        result?.skipped
+          ? `${candidate.fullName || candidate.email} already received the welcome email.`
+          : `The welcome email was sent to ${candidate.email}.`,
+      );
+    } catch (error: any) {
+      showFeedback("Unable to send welcome email", String(error?.message ?? "Please try again."));
+    } finally {
+      setSendingWelcomeUserId(null);
+    }
   }
 
   function openEntityPage(kind: "employer" | "candidate" | "job" | "invoice", id: string) {
@@ -171,7 +191,7 @@ export default function AdminDashboardPage() {
 
           <Card className="border-gray-200 p-6 dark:border-white/10 dark:bg-neutral-900"><h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent signups and billing</h2><p className="mt-1 text-sm text-gray-500 dark:text-gray-400">New employers, candidates, and invoices in range.</p><Tabs defaultValue="employers" className="mt-5"><TabsList><TabsTrigger value="employers">Employers</TabsTrigger><TabsTrigger value="candidates">Candidates</TabsTrigger><TabsTrigger value="invoices">Invoices</TabsTrigger></TabsList>
             <TabsContent value="employers" className="mt-4"><div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">{(snapshot?.recentEmployers ?? []).length === 0 ? <p className="text-sm text-gray-500 dark:text-gray-400">No new employers in this range.</p> : snapshot?.recentEmployers.map((item) => <div key={item.userId} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-950"><p className="font-medium text-gray-900 dark:text-white">{item.companyName}</p><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.email}</p><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" className="dark:border-white/10 dark:bg-transparent dark:text-white dark:hover:bg-neutral-800" onClick={() => setDetailItem({ kind: "employer", title: item.companyName, data: item })}><Eye className="mr-2 h-4 w-4" />View details</Button><Button size="sm" onClick={() => openEntityPage("employer", item.userId)}>Open page</Button></div></div>)}</div></TabsContent>
-            <TabsContent value="candidates" className="mt-4"><div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">{(snapshot?.recentCandidates ?? []).length === 0 ? <p className="text-sm text-gray-500 dark:text-gray-400">No new candidates in this range.</p> : snapshot?.recentCandidates.map((item) => <div key={item.userId} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-950"><p className="font-medium text-gray-900 dark:text-white">{item.fullName}</p><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.email}</p><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" className="dark:border-white/10 dark:bg-transparent dark:text-white dark:hover:bg-neutral-800" onClick={() => setDetailItem({ kind: "candidate", title: item.fullName, data: item })}><Eye className="mr-2 h-4 w-4" />View details</Button><Button size="sm" onClick={() => openEntityPage("candidate", item.userId)}>Open page</Button></div></div>)}</div></TabsContent>
+            <TabsContent value="candidates" className="mt-4"><div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">{(snapshot?.recentCandidates ?? []).length === 0 ? <p className="text-sm text-gray-500 dark:text-gray-400">No new candidates in this range.</p> : snapshot?.recentCandidates.map((item) => <div key={item.userId} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-950"><p className="font-medium text-gray-900 dark:text-white">{item.fullName}</p><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.email}</p><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" className="dark:border-white/10 dark:bg-transparent dark:text-white dark:hover:bg-neutral-800" onClick={() => setDetailItem({ kind: "candidate", title: item.fullName, data: item })}><Eye className="mr-2 h-4 w-4" />View details</Button><Button size="sm" variant="outline" className="dark:border-white/10 dark:bg-transparent dark:text-white dark:hover:bg-neutral-800" onClick={() => void handleSendCandidateWelcome(item)} disabled={sendingWelcomeUserId === item.userId || sentWelcomeUserIds.includes(item.userId)}>{sendingWelcomeUserId === item.userId ? "Sending..." : sentWelcomeUserIds.includes(item.userId) ? "Welcome sent" : "Send welcome"}</Button><Button size="sm" onClick={() => openEntityPage("candidate", item.userId)}>Open page</Button></div></div>)}</div></TabsContent>
             <TabsContent value="invoices" className="mt-4"><div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">{(snapshot?.recentInvoices ?? []).length === 0 ? <p className="text-sm text-gray-500 dark:text-gray-400">No invoices in this range.</p> : snapshot?.recentInvoices.map((item) => <div key={item.invoiceId} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-neutral-950"><div className="flex items-center justify-between gap-3"><p className="font-medium text-gray-900 dark:text-white">{item.invoiceNumber}</p><Badge variant={item.status === "paid" ? "success" : item.status === "failed" ? "destructive" : "secondary"}>{prettifyToken(item.status)}</Badge></div><p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.employerName} • {prettifyToken(item.kind)}</p><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" className="dark:border-white/10 dark:bg-transparent dark:text-white dark:hover:bg-neutral-800" onClick={() => setDetailItem({ kind: "invoice", title: item.invoiceNumber, data: item })}><Eye className="mr-2 h-4 w-4" />View details</Button><Button size="sm" onClick={() => openEntityPage("invoice", item.invoiceId)}>Open page</Button></div></div>)}</div></TabsContent>
           </Tabs></Card>
         </div>

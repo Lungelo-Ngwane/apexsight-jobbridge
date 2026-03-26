@@ -466,6 +466,20 @@ export async function getAdminInvoiceDownloadUrl(invoiceId: string): Promise<str
   return url;
 }
 
+export async function sendCandidateWelcomeEmail(userId: string): Promise<{
+  success: boolean;
+  skipped?: boolean;
+  message?: string;
+  recipient?: string;
+}> {
+  return invokeAdminFunction("send-notification-email", {
+    type: "CANDIDATE_WELCOME",
+    data: {
+      userId,
+    },
+  });
+}
+
 export async function logAdminAction(input: {
   action: string;
   targetUserId?: string | null;
