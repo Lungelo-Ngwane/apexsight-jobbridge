@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
 
+const GOOGLE_SIGN_IN_INTENT_KEY = "pending_google_sign_in";
+
 const APP_BASE_URL = (
   import.meta.env.VITE_APP_URL ??
   "https://jobbridge.apexsight.co.za"
@@ -187,6 +189,10 @@ export async function signInWithGoogle() {
       ? `${window.location.origin}/`
       : `${APP_BASE_URL}/`;
 
+  if (typeof window !== "undefined") {
+    window.sessionStorage.setItem(GOOGLE_SIGN_IN_INTENT_KEY, "1");
+  }
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -198,8 +204,27 @@ export async function signInWithGoogle() {
   });
 
   if (error) {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(GOOGLE_SIGN_IN_INTENT_KEY);
+    }
     throw new Error(error.message);
   }
+}
+
+export function hasPendingGoogleSignInIntent() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.sessionStorage.getItem(GOOGLE_SIGN_IN_INTENT_KEY) === "1";
+}
+
+export function clearPendingGoogleSignInIntent() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(GOOGLE_SIGN_IN_INTENT_KEY);
 }
 
 export async function requestPasswordReset(email: string) {

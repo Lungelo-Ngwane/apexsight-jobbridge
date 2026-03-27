@@ -5,6 +5,7 @@ import { Seo } from '@/app/components/Seo';
 import { useAuth } from './context/AuthContext';
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { supabase } from "@/lib/supabase";
+import { clearPendingGoogleSignInIntent, hasPendingGoogleSignInIntent } from "@/lib/auth";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -111,6 +112,7 @@ export default function App() {
   const [authInitialMode, setAuthInitialMode] = useState<"login" | "register">("login");
   const [authInitialRole, setAuthInitialRole] = useState<"candidate" | "employer">("candidate");
   const [showPasswordRecoveryModal, setShowPasswordRecoveryModal] = useState(false);
+  const [showRegistrationRequiredModal, setShowRegistrationRequiredModal] = useState(false);
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [recoveryPasswordConfirm, setRecoveryPasswordConfirm] = useState("");
   const [recoverySaving, setRecoverySaving] = useState(false);
@@ -152,6 +154,41 @@ export default function App() {
       navigate("/employer/dashboard", { replace: true });
     }
   }, [user, role, loading, navigate, location.pathname]);
+
+  useEffect(() => {
+    if (role === "candidate" || role === "employer") {
+      clearPendingGoogleSignInIntent();
+    }
+  }, [role]);
+
+  useEffect(() => {
+    if (loading || !user || role !== null || !hasPendingGoogleSignInIntent()) {
+      return;
+    }
+
+    let active = true;
+
+    void (async () => {
+      try {
+        clearPendingGoogleSignInIntent();
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.error("Failed to sign out unregistered Google user", error);
+      } finally {
+        if (!active) {
+          return;
+        }
+
+        setShowLoginModal(false);
+        setShowRegistrationRequiredModal(true);
+        navigate("/", { replace: true });
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [user, role, loading, navigate]);
 
   const getCurrentProduct = (): 'skilllink' | 'jobbridge' | 'landing' => {
     if (location.pathname === "/jobbridge") return "jobbridge";
@@ -203,6 +240,7 @@ export default function App() {
 
   const handleLoginSuccess = async (resolvedRole?: "candidate" | "employer" | null) => {
     setShowLoginModal(false);
+    clearPendingGoogleSignInIntent();
 
     let authenticatedUserId: string | null = null;
     try {
@@ -402,6 +440,41 @@ export default function App() {
             </Button>
             <Button onClick={handlePasswordRecoverySubmit} disabled={recoverySaving}>
               {recoverySaving ? "Saving..." : "Update Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showRegistrationRequiredModal} onOpenChange={setShowRegistrationRequiredModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register before using Google sign-in</DialogTitle>
+            <DialogDescription>
+              We found a Google account, but there is no completed ApexSight registration for it
+              yet. Please create your account first, then sign in again.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRegistrationRequiredModal(false);
+                setAuthInitialMode("login");
+                setShowLoginModal(true);
+              }}
+            >
+              Back to Sign In
+            </Button>
+            <Button
+              onClick={() => {
+                setShowRegistrationRequiredModal(false);
+                setAuthInitialMode("register");
+                setAuthInitialRole(
+                  window.location.pathname.toLowerCase() === "/jobbridge" ? "employer" : "candidate",
+                );
+                setShowLoginModal(true);
+              }}
+            >
+              Register First
             </Button>
           </DialogFooter>
         </DialogContent>
