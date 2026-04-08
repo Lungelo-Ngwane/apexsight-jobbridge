@@ -1,9 +1,19 @@
 import { supabase } from "./supabase";
 
+const GOOGLE_SIGN_IN_INTENT_KEY = "pending_google_sign_in";
+
 const APP_BASE_URL = (
   import.meta.env.VITE_APP_URL ??
   "https://jobbridge.apexsight.co.za"
 ).replace(/\/+$/, "");
+
+export type RegistrationRole = "candidate" | "employer";
+
+export interface RegistrationOutcome {
+  status: "confirmation_required" | "signed_in" | "already_exists";
+  role: RegistrationRole;
+  userId: string | null;
+}
 
 export async function checkEmployerInvite(email: string): Promise<boolean> {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
@@ -45,9 +55,9 @@ export async function registerUser(
   email: string,
   password: string,
   fullName: string,
-  role: "candidate" | "employer",
+  role: RegistrationRole,
   company?: string,
-) {
+): Promise<RegistrationOutcome> {
   try {
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
     const invitedEmployer = role === "employer" ? await checkEmployerInvite(normalizedEmail) : false;
@@ -78,11 +88,71 @@ export async function registerUser(
 
     if (authError) throw new Error(authError.message);
 
-    return authData.user?.id || null;
+    const createdUser = authData.user ?? null;
+    const identities = createdUser?.identities ?? [];
+    const hasRealIdentity = identities.length > 0;
+    const requiresConfirmation = !authData.session && hasRealIdentity;
+    const alreadyExists = !authData.session && !hasRealIdentity;
+
+    if (alreadyExists) {
+      return {
+        status: "already_exists",
+        role,
+        userId: createdUser?.id ?? null,
+      };
+    }
+
+    return {
+      status: requiresConfirmation ? "confirmation_required" : "signed_in",
+      role,
+      userId: createdUser?.id ?? null,
+    };
   } catch (err: any) {
     console.error("Registration failed:", err);
     throw err;
   }
+}
+
+export async function signInWithGoogle() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/`
+      : `${APP_BASE_URL}/`;
+
+  if (typeof window !== "undefined") {
+    window.sessionStorage.setItem(GOOGLE_SIGN_IN_INTENT_KEY, "1");
+  }
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: {
+        prompt: "select_account",
+      },
+    },
+  });
+
+  if (error) {
+    clearPendingGoogleSignInIntent();
+    throw new Error(error.message);
+  }
+}
+
+export function hasPendingGoogleSignInIntent() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.sessionStorage.getItem(GOOGLE_SIGN_IN_INTENT_KEY) === "1";
+}
+
+export function clearPendingGoogleSignInIntent() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(GOOGLE_SIGN_IN_INTENT_KEY);
 }
 
 /**
