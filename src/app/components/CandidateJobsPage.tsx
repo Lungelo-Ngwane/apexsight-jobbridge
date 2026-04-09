@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   applyForJob,
   getAppliedJobIds,
@@ -52,6 +52,7 @@ import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-
 import { calculateProfileCompletion, isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 
 export interface Job {
   id: string;
@@ -84,7 +85,9 @@ const JOBS_PER_PAGE = 9;
 export function CandidateJobsPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { jobId: routeJobId } = useParams<{ jobId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user, role } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
@@ -104,22 +107,53 @@ export function CandidateJobsPage() {
   const { feedback, showFeedback, setFeedbackOpen } = useFeedbackDialog();
 
   useEffect(() => {
-    Promise.all([getOpenJobs(), getAppliedJobIds(), getCandidateSavedJobIds(), getCandidateDashboardData()])
-      .then(([jobsData, appliedIds, savedIds, profileData]) => {
+    let active = true;
+
+    void (async () => {
+      try {
+        setLoading(true);
+        const jobsData = await getOpenJobs();
+        if (!active) return;
+
         setJobs((jobsData as Job[]) ?? []);
-        setAppliedJobIds(appliedIds ?? []);
-        setSavedJobs(savedIds ?? []);
-        setProfileCompletion(calculateProfileCompletion(profileData));
-        setProfileReadyForApplication(isCandidateProfileReadyForApplication(profileData));
-      })
-      .catch((error) => {
+
+        if (user && role === "candidate") {
+          const [appliedIds, savedIds, profileData] = await Promise.all([
+            getAppliedJobIds(),
+            getCandidateSavedJobIds(),
+            getCandidateDashboardData(),
+          ]);
+
+          if (!active) return;
+
+          setAppliedJobIds(appliedIds ?? []);
+          setSavedJobs(savedIds ?? []);
+          setProfileCompletion(calculateProfileCompletion(profileData));
+          setProfileReadyForApplication(isCandidateProfileReadyForApplication(profileData));
+          return;
+        }
+
+        setAppliedJobIds([]);
+        setSavedJobs([]);
+        setProfileCompletion(null);
+        setProfileReadyForApplication(null);
+      } catch (error) {
         console.error("Failed to load candidate jobs page data", error);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [user, role]);
 
   useEffect(() => {
     const selectedJobId = String(
+      routeJobId ??
       (location.state as { selectedJobId?: string } | null)?.selectedJobId ??
       searchParams.get("job") ??
       "",
@@ -134,11 +168,11 @@ export function CandidateJobsPage() {
     if ((location.state as { selectedJobId?: string } | null)?.selectedJobId) {
       navigate(location.pathname + (location.search || ""), { replace: true, state: null });
     }
-  }, [jobs, location.pathname, location.search, location.state, navigate, searchParams]);
+  }, [jobs, location.pathname, location.search, location.state, navigate, routeJobId, searchParams]);
 
   useEffect(() => {
     const state = location.state as { selectedJobId?: string; autoApply?: boolean } | null;
-    const selectedJobId = String(state?.selectedJobId ?? searchParams.get("job") ?? "").trim();
+    const selectedJobId = String(routeJobId ?? state?.selectedJobId ?? searchParams.get("job") ?? "").trim();
     const shouldAutoApply = Boolean(state?.autoApply || searchParams.get("autoApply") === "1");
     if (!shouldAutoApply || !selectedJobId || jobs.length === 0) return;
 
@@ -146,14 +180,29 @@ export function CandidateJobsPage() {
     if (!targetJob) return;
 
     void handleApply(targetJob);
+    if (!user || role !== "candidate") return;
+
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set("job", selectedJobId);
       next.delete("autoApply");
       return next;
     }, { replace: true });
-    navigate(location.pathname + `?job=${selectedJobId}`, { replace: true, state: { selectedJobId } });
-  }, [jobs, location.pathname, location.state, navigate, searchParams, setSearchParams]);
+    navigate(`/jobs/${selectedJobId}`, { replace: true, state: { selectedJobId } });
+  }, [jobs, location.state, navigate, role, routeJobId, searchParams, setSearchParams, user]);
+
+  useEffect(() => {
+    const pendingSaveId = String(searchParams.get("save") ?? "").trim();
+    if (!pendingSaveId || !user || role !== "candidate") return;
+
+    void (async () => {
+      await toggleSaveJob(pendingSaveId);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("save");
+        return next;
+      }, { replace: true });
+    })();
+  }, [role, searchParams, setSearchParams, user]);
 
   const employmentTypes = useMemo(
     () => Array.from(new Set(jobs.map((j) => j.employment_type).filter(Boolean))) as string[],
@@ -217,7 +266,39 @@ export function CandidateJobsPage() {
     setCurrentPage(1);
   };
 
+  const requestCandidateAuth = (returnTo: string) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("apexsight:auth-required", {
+        detail: {
+          mode: "login",
+          role: "candidate",
+          returnTo,
+        },
+      }),
+    );
+  };
+
   const toggleSaveJob = async (jobId: string) => {
+    if (!user) {
+      const params = new URLSearchParams(searchParams);
+      params.set("save", jobId);
+      const query = params.toString();
+      requestCandidateAuth(`/jobs/${jobId}${query ? `?${query}` : ""}`);
+      return;
+    }
+
+    if (role !== "candidate") {
+      showFeedback(
+        "Candidate account required",
+        "Sign in with a candidate account to save jobs.",
+      );
+      return;
+    }
+
     const previous = [...savedJobs];
     const optimistic = previous.includes(jobId)
       ? previous.filter((id) => id !== jobId)
@@ -237,6 +318,22 @@ export function CandidateJobsPage() {
   };
 
   async function handleApply(job: Job) {
+    if (!user) {
+      const params = new URLSearchParams(searchParams);
+      params.set("autoApply", "1");
+      const query = params.toString();
+      requestCandidateAuth(`/jobs/${job.id}${query ? `?${query}` : ""}`);
+      return;
+    }
+
+    if (role !== "candidate") {
+      showFeedback(
+        "Candidate account required",
+        "Sign in with a candidate account to apply for jobs.",
+      );
+      return;
+    }
+
     if (appliedJobIds.includes(job.id)) return;
     if (profileReadyForApplication === false) {
       setShowCompleteProfileModal(true);
@@ -267,9 +364,12 @@ export function CandidateJobsPage() {
 
   if (selectedJob) {
     return (
-      <JobDetailsView
+        <JobDetailsView
         job={selectedJob}
-        onBack={() => setSelectedJob(null)}
+        onBack={() => {
+          setSelectedJob(null);
+          navigate("/jobs");
+        }}
         onSave={() => toggleSaveJob(selectedJob.id)}
         isSaved={savedJobs.includes(selectedJob.id)}
         onApply={() => handleApply(selectedJob)}
@@ -456,7 +556,7 @@ export function CandidateJobsPage() {
                   <JobCard
                     key={job.id}
                     job={job}
-                    onClick={() => setSelectedJob(job)}
+                    onClick={() => navigate(`/jobs/${job.id}`)}
                     onSave={() => toggleSaveJob(job.id)}
                     isSaved={savedJobs.includes(job.id)}
                     onApply={() => handleApply(job)}

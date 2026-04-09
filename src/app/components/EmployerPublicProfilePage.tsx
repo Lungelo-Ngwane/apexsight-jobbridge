@@ -104,7 +104,7 @@ export function EmployerPublicProfilePage() {
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
             This employer profile is not currently available to candidates.
           </p>
-          <Button className="mt-6" variant="outline" onClick={() => navigate("/candidate/jobs")}>
+          <Button className="mt-6" variant="outline" onClick={() => navigate("/jobs")}>
             Back to jobs
           </Button>
         </Card>
@@ -191,7 +191,7 @@ export function EmployerPublicProfilePage() {
                     Company website
                   </Button>
                 ) : null}
-                <Button className="w-full justify-start dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200" onClick={() => navigate("/candidate/jobs")}>
+                <Button className="w-full justify-start dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200" onClick={() => navigate("/jobs")}>
                   <Briefcase className="mr-2 h-4 w-4" />
                   Browse roles
                 </Button>
@@ -280,14 +280,14 @@ export function EmployerPublicProfilePage() {
                   <Button
                     variant="outline"
                     className="flex-1 dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800"
-                    onClick={() => navigate(`/candidate/jobs?job=${job.id}`)}
+                    onClick={() => navigate(`/jobs/${job.id}`)}
                   >
                     View role
                   </Button>
                   <Button
                     className="flex-1 text-white"
                     style={{ backgroundColor: brandColor }}
-                    onClick={() => navigate(`/candidate/jobs?job=${job.id}&autoApply=1`)}
+                    onClick={() => navigate(`/jobs/${job.id}?autoApply=1`)}
                   >
                     Apply
                   </Button>

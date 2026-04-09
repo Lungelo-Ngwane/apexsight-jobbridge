@@ -92,6 +92,11 @@ function withRouteSuspense(node: React.ReactNode, label?: string) {
 }
 
 type View = 'home' | 'candidate-dashboard' | 'employer-dashboard';
+type AuthRequestDetail = {
+  mode?: "login" | "register";
+  role?: "candidate" | "employer";
+  returnTo?: string;
+};
 
 function getCandidateSeenDashboardKey(userId: string) {
   return `candidate_seen_dashboard_${userId}`;
@@ -102,7 +107,19 @@ function getCandidatePostLoginPath(userId?: string | null) {
   const seen =
     typeof window !== "undefined" &&
     window.localStorage.getItem(getCandidateSeenDashboardKey(userId)) === "1";
-  return seen ? "/candidate/jobs" : "/candidate/dashboard";
+  return seen ? "/jobs" : "/candidate/dashboard";
+}
+
+function isPublicPath(pathname: string) {
+  if (pathname === "/" || pathname === "/skilllink" || pathname === "/jobbridge" || pathname === "/reset-password") {
+    return true;
+  }
+
+  if (pathname === "/jobs" || pathname.startsWith("/jobs/") || pathname.startsWith("/companies/")) {
+    return true;
+  }
+
+  return false;
 }
 
 export default function App() {
@@ -113,6 +130,7 @@ export default function App() {
   const [authInitialRole, setAuthInitialRole] = useState<"candidate" | "employer">("candidate");
   const [showPasswordRecoveryModal, setShowPasswordRecoveryModal] = useState(false);
   const [showRegistrationRequiredModal, setShowRegistrationRequiredModal] = useState(false);
+  const [pendingAuthReturnTo, setPendingAuthReturnTo] = useState<string | null>(null);
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [recoveryPasswordConfirm, setRecoveryPasswordConfirm] = useState("");
   const [recoverySaving, setRecoverySaving] = useState(false);
@@ -134,7 +152,6 @@ export default function App() {
 
   useEffect(() => {
     if (loading) return;
-    const publicPaths = ["/", "/skilllink", "/jobbridge", "/reset-password"];
     const currentPath = location.pathname;
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const isRecoveryFlow = currentPath === "/reset-password" || hashParams.get("type") === "recovery";
@@ -145,7 +162,7 @@ export default function App() {
 
     // Only redirect on initial load, not every role change
     if (!user) {
-      if (!publicPaths.includes(currentPath)) {
+      if (!isPublicPath(currentPath)) {
         navigate("/", { replace: true });
       }
     } else if (role === 'candidate' && currentPath === '/') {
@@ -213,13 +230,34 @@ export default function App() {
   const openRegisterModal = (selectedRole: "candidate" | "employer") => {
     setAuthInitialMode("register");
     setAuthInitialRole(selectedRole);
+    setPendingAuthReturnTo(null);
     setShowLoginModal(true);
   };
 
   const openLoginModal = () => {
     setAuthInitialMode("login");
+    setPendingAuthReturnTo(null);
     setShowLoginModal(true);
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleAuthRequired = (event: Event) => {
+      const detail = (event as CustomEvent<AuthRequestDetail>).detail ?? {};
+      setAuthInitialMode(detail.mode ?? "login");
+      setAuthInitialRole(detail.role ?? "candidate");
+      setPendingAuthReturnTo(detail.returnTo ?? null);
+      setShowLoginModal(true);
+    };
+
+    window.addEventListener("apexsight:auth-required", handleAuthRequired as EventListener);
+    return () => {
+      window.removeEventListener("apexsight:auth-required", handleAuthRequired as EventListener);
+    };
+  }, []);
 
   const openContextualRegisterModal = () => {
     const path = window.location.pathname.toLowerCase();
@@ -252,6 +290,11 @@ export default function App() {
     }
 
     if (resolvedRole === "candidate") {
+      if (pendingAuthReturnTo) {
+        navigate(pendingAuthReturnTo);
+        setPendingAuthReturnTo(null);
+        return;
+      }
       navigate(getCandidatePostLoginPath(authenticatedUserId ?? user?.id));
       return;
     }
@@ -262,11 +305,17 @@ export default function App() {
     }
 
     if (role === "candidate") {
+      if (pendingAuthReturnTo) {
+        navigate(pendingAuthReturnTo);
+        setPendingAuthReturnTo(null);
+        return;
+      }
       navigate(getCandidatePostLoginPath(authenticatedUserId ?? user?.id));
       return;
     }
 
     if (role === "employer") {
+      setPendingAuthReturnTo(null);
       navigate("/employer/dashboard");
     }
   };
@@ -362,9 +411,10 @@ export default function App() {
 
         <Route
           path="/candidate/dashboard"
-          element={withRouteSuspense(<CandidateDashboard onViewJobs={() => navigate("/candidate/jobs")} />, "Loading dashboard...")}
+          element={withRouteSuspense(<CandidateDashboard onViewJobs={() => navigate("/jobs")} />, "Loading dashboard...")}
         />
-        <Route path="/candidate/jobs" element={withRouteSuspense(<CandidateJobsPage />, "Loading jobs...")} />
+        <Route path="/jobs" element={withRouteSuspense(<CandidateJobsPage />, "Loading jobs...")} />
+        <Route path="/jobs/:jobId" element={withRouteSuspense(<CandidateJobsPage />, "Loading job...")} />
         <Route path="/candidate/my-jobs" element={withRouteSuspense(<CandidateMyJobsPage />, "Loading applications...")} />
         <Route path="/candidate/messages" element={withRouteSuspense(<MessagesPage />, "Loading messages...")} />
         <Route path="/candidate/profile" element={withRouteSuspense(<CandidateProfile />, "Loading profile...")} />

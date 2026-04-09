@@ -119,7 +119,7 @@ export default function CandidateMyJobsPage() {
             <p className="text-sm text-slate-600 dark:text-gray-400">Track jobs you applied for and jobs you saved.</p>
           </div>
           <Button
-            onClick={() => navigate("/candidate/jobs")}
+            onClick={() => navigate("/jobs")}
             className="bg-blue-600 text-white hover:bg-blue-700"
           >
             Browse Jobs
@@ -168,7 +168,7 @@ export default function CandidateMyJobsPage() {
                 : "Save roles from the Jobs page to keep a shortlist here."}
             </p>
             <Button
-              onClick={() => navigate("/candidate/jobs")}
+              onClick={() => navigate("/jobs")}
               variant="outline"
               className="dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800"
             >
@@ -237,7 +237,7 @@ export default function CandidateMyJobsPage() {
                   <Button
                     variant="outline"
                     className="flex-1 dark:border-white/10 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800"
-                    onClick={() => navigate("/candidate/jobs", { state: { selectedJobId: job.id } })}
+                    onClick={() => navigate(`/jobs/${job.id}`)}
                   >
                     View
                   </Button>
