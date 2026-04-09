@@ -181,10 +181,10 @@ export default function CandidateMyJobsPage() {
               <Card key={job.id} className="border-gray-200 p-5 dark:border-white/10 dark:bg-neutral-900">
                 <div className="flex items-start gap-3 mb-3">
                   <div
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-white/10"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 dark:border-white/10 dark:bg-neutral-800"
                     style={
                       !job.employer.logo_url
-                        ? { backgroundColor: job.employer.brand_primary_color ?? "#f5f5f5" }
+                        ? (job.employer.brand_primary_color ? { backgroundColor: job.employer.brand_primary_color } : undefined)
                         : undefined
                     }
                   >
@@ -195,7 +195,7 @@ export default function CandidateMyJobsPage() {
                         className="w-full h-full object-cover rounded-lg"
                       />
                     ) : (
-                      <Building2 className="w-5 h-5 text-white" />
+                      <Building2 className={`h-5 w-5 ${job.employer.brand_primary_color ? "text-white" : "text-gray-500 dark:text-gray-200"}`} />
                     )}
                   </div>
                   <div className="min-w-0">

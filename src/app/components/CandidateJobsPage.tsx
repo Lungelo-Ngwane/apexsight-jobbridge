@@ -626,8 +626,8 @@ function JobCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <div
-                className="w-10 h-10 border border-gray-200 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0"
-                style={!job.employer.logo_url || logoBroken ? { backgroundColor: job.employer.brand_primary_color ?? "#f5f5f5" } : undefined}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 shadow-sm dark:border-white/10 dark:bg-neutral-800"
+                style={!job.employer.logo_url || logoBroken ? (job.employer.brand_primary_color ? { backgroundColor: job.employer.brand_primary_color } : undefined) : undefined}
               >
                 {job.employer.logo_url && !logoBroken ? (
                   <img
@@ -637,7 +637,7 @@ function JobCard({
                     onError={() => setLogoBroken(true)}
                   />
                 ) : (
-                  <Building2 className="w-5 h-5 text-white" />
+                  <Building2 className={`h-5 w-5 ${job.employer.brand_primary_color ? "text-white" : "text-gray-500 dark:text-gray-200"}`} />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -912,8 +912,8 @@ function JobDetailsView({
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
                 <div
-                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-900"
-                  style={!job.employer.logo_url || logoBroken ? { backgroundColor: brandColor } : undefined}
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-gray-100 shadow-sm dark:border-white/10 dark:bg-neutral-800"
+                  style={!job.employer.logo_url || logoBroken ? (job.employer.brand_primary_color ? { backgroundColor: brandColor } : undefined) : undefined}
                 >
                   {job.employer.logo_url && !logoBroken ? (
                     <img
@@ -923,7 +923,7 @@ function JobDetailsView({
                       onError={() => setLogoBroken(true)}
                     />
                   ) : (
-                    <Building2 className="h-8 w-8 text-white" />
+                    <Building2 className={`h-8 w-8 ${job.employer.brand_primary_color ? "text-white" : "text-gray-500 dark:text-gray-200"}`} />
                   )}
                 </div>
                 <div className="space-y-3">

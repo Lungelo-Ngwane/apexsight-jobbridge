@@ -137,13 +137,13 @@ export function EmployerPublicProfilePage() {
             <div>
               <div className="flex items-start gap-4">
                 <div
-                  className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-900"
-                  style={!data.employer.logo_url ? { backgroundColor: brandColor } : undefined}
+                  className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-black/10 bg-gray-100 shadow-sm dark:border-white/10 dark:bg-neutral-800"
+                  style={!data.employer.logo_url ? (data.employer.brand_primary_color ? { backgroundColor: brandColor } : undefined) : undefined}
                 >
                   {data.employer.logo_url ? (
                     <img src={data.employer.logo_url} alt={`${data.employer.company_name} logo`} className="h-full w-full object-cover" />
                   ) : (
-                    <Building2 className="h-8 w-8 text-white" />
+                    <Building2 className={`h-8 w-8 ${data.employer.brand_primary_color ? "text-white" : "text-gray-500 dark:text-gray-200"}`} />
                   )}
                 </div>
                 <div className="min-w-0">
