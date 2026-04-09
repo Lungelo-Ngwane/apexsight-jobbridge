@@ -15,6 +15,24 @@ export interface RegistrationOutcome {
   userId: string | null;
 }
 
+function isTransientFetchError(error: unknown): boolean {
+  const message = String(
+    (error as { message?: string } | null)?.message ??
+    (error as { error_description?: string } | null)?.error_description ??
+    "",
+  ).toLowerCase();
+  const name = String((error as { name?: string } | null)?.name ?? "").toLowerCase();
+
+  return (
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("network request failed") ||
+    message.includes("cors") ||
+    name.includes("retryablefetcherror") ||
+    name === "typeerror"
+  );
+}
+
 export async function checkEmployerInvite(email: string): Promise<boolean> {
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
   if (!normalizedEmail) return false;
@@ -60,7 +78,28 @@ export async function registerUser(
 ): Promise<RegistrationOutcome> {
   try {
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
-    const invitedEmployer = role === "employer" ? await checkEmployerInvite(normalizedEmail) : false;
+    let invitedEmployer = false;
+
+    if (role === "employer") {
+      try {
+        invitedEmployer = await checkEmployerInvite(normalizedEmail);
+      } catch (error) {
+        if (!isTransientFetchError(error)) {
+          throw error;
+        }
+
+        if (!company || company.trim() === "") {
+          throw new Error(
+            "We couldn't verify whether this email has an employer invite. Enter your company name and try again.",
+          );
+        }
+
+        console.warn(
+          "Employer invite lookup is temporarily unavailable. Continuing with standard employer signup.",
+          error,
+        );
+      }
+    }
 
     // Prepare data for raw_user_meta_data
     const userData: Record<string, string> = {
@@ -168,22 +207,6 @@ export async function loginUser(email: string, password: string) {
 
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     throw new Error("You appear to be offline. Check your internet connection and try again.");
-  }
-
-  function isTransientFetchError(error: unknown): boolean {
-    const message = String(
-      (error as { message?: string } | null)?.message ??
-      (error as { error_description?: string } | null)?.error_description ??
-      "",
-    ).toLowerCase();
-    const name = String((error as { name?: string } | null)?.name ?? "").toLowerCase();
-
-    return (
-      message.includes("failed to fetch") ||
-      message.includes("networkerror") ||
-      message.includes("network request failed") ||
-      name.includes("retryablefetcherror")
-    );
   }
 
   async function attemptSignIn() {
