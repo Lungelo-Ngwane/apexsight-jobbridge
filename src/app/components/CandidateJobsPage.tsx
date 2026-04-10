@@ -938,7 +938,31 @@ function JobDetailsView({
   const visibleDescription = descriptionNeedsExpand && !showFullDescription
     ? `${descriptionText.slice(0, 520).trimEnd()}...`
     : descriptionText;
-  const postedDate = new Date(job.created_at).toLocaleDateString();
+  const postedDate = (() => {
+    const createdAt = new Date(job.created_at);
+    const diffMs = Date.now() - createdAt.getTime();
+
+    if (Number.isNaN(createdAt.getTime()) || diffMs < 0) {
+      return "recently";
+    }
+
+    const dayMs = 1000 * 60 * 60 * 24;
+    const weekMs = dayMs * 7;
+    const monthMs = dayMs * 30;
+
+    if (diffMs < weekMs) {
+      const days = Math.max(1, Math.floor(diffMs / dayMs));
+      return `${days} day${days === 1 ? "" : "s"} ago`;
+    }
+
+    if (diffMs < monthMs) {
+      const weeks = Math.max(1, Math.floor(diffMs / weekMs));
+      return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+    }
+
+    const months = Math.max(1, Math.floor(diffMs / monthMs));
+    return `${months} month${months === 1 ? "" : "s"} ago`;
+  })();
   const heroBackground =
     theme === "dark"
       ? `linear-gradient(135deg, ${brandColor}24 0%, rgba(255,255,255,0.02) 38%, rgba(10,10,11,0) 100%)`
@@ -947,28 +971,6 @@ function JobDetailsView({
     theme === "dark"
       ? `linear-gradient(180deg, ${brandColor}22 0%, rgba(24,24,27,0.98) 36%, rgba(9,9,11,1) 100%)`
       : `linear-gradient(180deg, ${brandColor}16 0%, #ffffff 42%, #ffffff 100%)`;
-  const detailStats = [
-    {
-      label: "Work setup",
-      value: job.location || "Location flexible",
-      icon: MapPin,
-    },
-    {
-      label: "Employment type",
-      value: job.employment_type || "Not specified",
-      icon: Briefcase,
-    },
-    {
-      label: "Experience level",
-      value: job.experience_level || "Open to multiple levels",
-      icon: Gauge,
-    },
-    {
-      label: "Posted",
-      value: postedDate,
-      icon: Clock,
-    },
-  ];
 
   const formatSalary = (min?: number | null, max?: number | null) => {
     if (!min && !max) return "Salary not disclosed";
@@ -1041,15 +1043,22 @@ function JobDetailsView({
                     <h1 className="text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl dark:text-white">
                       {job.title}
                     </h1>
-                    <p className="mt-2 max-w-3xl text-base leading-7 text-gray-600 dark:text-gray-300">
-                      A structured role summary with the key job facts upfront, followed by the full brief and company context.
-                    </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
                     {job.location ? (
                       <span className="flex items-center gap-1.5">
                         <MapPin className="h-4 w-4 text-gray-400" />
                         {job.location}
+                      </span>
+                    ) : null}
+                    <span className="flex items-center gap-1.5">
+                      <Briefcase className="h-4 w-4 text-gray-400" />
+                      {job.employment_type || "Not specified"}
+                    </span>
+                    {job.experience_level ? (
+                      <span className="flex items-center gap-1.5">
+                        <Gauge className="h-4 w-4 text-gray-400" />
+                        {job.experience_level}
                       </span>
                     ) : null}
                     <span className="flex items-center gap-1.5">
@@ -1087,27 +1096,6 @@ function JobDetailsView({
             </div>
           </div>
 
-          <div className="grid gap-3 border-t border-gray-200/80 bg-gray-50/80 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-4 dark:border-white/10 dark:bg-white/[0.02]">
-            {detailStats.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-white/10 dark:bg-neutral-900"
-                >
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5">
-                    <Icon className="h-4 w-4 text-gray-700 dark:text-gray-200" />
-                  </div>
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-                    {item.label}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                    {item.value}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -1116,9 +1104,6 @@ function JobDetailsView({
               <div className="mb-5 flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-950 dark:text-white">Role overview</h2>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Everything a candidate should understand before applying.
-                  </p>
                 </div>
                 <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200">
                   {formatSalary(job.salary_min, job.salary_max)}
