@@ -5,7 +5,11 @@ import { Seo } from '@/app/components/Seo';
 import { useAuth } from './context/AuthContext';
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 import { supabase } from "@/lib/supabase";
-import { clearPendingGoogleSignInIntent, hasPendingGoogleSignInIntent } from "@/lib/auth";
+import {
+  clearPendingGoogleSignInIntent,
+  deleteIncompleteGoogleUser,
+  hasPendingGoogleSignInIntent,
+} from "@/lib/auth";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -186,6 +190,12 @@ export default function App() {
     let active = true;
 
     void (async () => {
+      try {
+        await deleteIncompleteGoogleUser();
+      } catch (error) {
+        console.error("Failed to delete unregistered Google user", error);
+      }
+
       try {
         await supabase.auth.signOut();
       } catch (error) {
@@ -505,16 +515,6 @@ export default function App() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowRegistrationRequiredModal(false);
-                setAuthInitialMode("login");
-                setShowLoginModal(true);
-              }}
-            >
-              Back to Sign In
-            </Button>
             <Button
               onClick={() => {
                 setShowRegistrationRequiredModal(false);

@@ -194,6 +194,35 @@ export function clearPendingGoogleSignInIntent() {
   window.sessionStorage.removeItem(GOOGLE_SIGN_IN_INTENT_KEY);
 }
 
+export async function deleteIncompleteGoogleUser() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token ?? null;
+  if (!accessToken) {
+    return;
+  }
+
+  const anonKey = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "");
+  const functionsBaseUrl = `${String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "")}/functions/v1`;
+
+  const response = await fetch(`${functionsBaseUrl}/delete-incomplete-google-user`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ error: "Failed to delete incomplete Google account." }));
+    throw new Error(String((payload as { error?: string }).error ?? "Failed to delete incomplete Google account."));
+  }
+}
+
 /**
  * Log in a user with email and password
  */
