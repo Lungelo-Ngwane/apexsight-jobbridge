@@ -46,13 +46,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const providers = (user.identities ?? [])
+    const identityProviders = (user.identities ?? [])
       .map((identity) => String(identity.provider ?? "").toLowerCase())
       .filter(Boolean);
-    const isGoogleUser = providers.includes("google");
+    const appMetadataProvider = String(user.app_metadata?.provider ?? "").toLowerCase();
+    const appMetadataProviders = Array.isArray(user.app_metadata?.providers)
+      ? user.app_metadata.providers.map((provider) => String(provider ?? "").toLowerCase()).filter(Boolean)
+      : [];
+    const allProviders = Array.from(new Set([
+      ...identityProviders,
+      appMetadataProvider,
+      ...appMetadataProviders,
+    ].filter(Boolean)));
+    const isGoogleUser = allProviders.includes("google");
 
     if (!isGoogleUser) {
-      return new Response(JSON.stringify({ deleted: false, reason: "not_google_user" }), {
+      return new Response(JSON.stringify({
+        deleted: false,
+        reason: "not_google_user",
+        providers: allProviders,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -72,7 +85,12 @@ Deno.serve(async (req) => {
 
     const resolvedRole = String(profile?.role ?? "").trim().toLowerCase();
     if (resolvedRole === "candidate" || resolvedRole === "employer" || resolvedRole === "admin") {
-      return new Response(JSON.stringify({ deleted: false, reason: "profile_exists" }), {
+      return new Response(JSON.stringify({
+        deleted: false,
+        reason: "profile_exists",
+        role: resolvedRole,
+        providers: allProviders,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -85,7 +103,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ deleted: true }), {
+    return new Response(JSON.stringify({ deleted: true, providers: allProviders }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

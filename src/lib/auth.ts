@@ -217,10 +217,14 @@ export async function deleteIncompleteGoogleUser() {
     body: JSON.stringify({}),
   });
 
+  const payload = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({ error: "Failed to delete incomplete Google account." }));
     throw new Error(String((payload as { error?: string }).error ?? "Failed to delete incomplete Google account."));
   }
+
+  console.info("deleteIncompleteGoogleUser", payload);
+  return payload;
 }
 
 /**
