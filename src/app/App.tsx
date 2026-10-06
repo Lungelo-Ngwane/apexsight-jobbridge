@@ -1,25 +1,25 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { Header } from '@/app/components/Header';
 import { Seo } from '@/app/components/Seo';
-import { useAuth } from './context/AuthContext';
-import { CircularLoader } from "@/app/components/ui/circular-loader";
-import { supabase } from "@/lib/supabase";
-import {
-  clearPendingGoogleSignInIntent,
-  deleteIncompleteGoogleUser,
-  hasPendingGoogleSignInIntent,
-} from "@/lib/auth";
 import { Button } from "@/app/components/ui/button";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/app/components/ui/dialog";
+clearPendingGoogleSignInIntent,
+deleteIncompleteGoogleUser,
+hasPendingGoogleSignInIntent,
+} from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { lazy,Suspense,useEffect,useState } from "react";
+import { Route,Routes,useLocation,useNavigate } from "react-router-dom";
+import { useAuth } from './context/AuthContext';
 // import { useAuth } from '../context/AuthContext'; // adjust path
 
 const HomePage = lazy(() =>
@@ -95,7 +95,6 @@ function withRouteSuspense(node: React.ReactNode, label?: string) {
   return <Suspense fallback={<RouteLoader label={label} />}>{node}</Suspense>;
 }
 
-type View = 'home' | 'candidate-dashboard' | 'employer-dashboard';
 type AuthRequestDetail = {
   mode?: "login" | "register";
   role?: "candidate" | "employer";
@@ -128,7 +127,6 @@ function isPublicPath(pathname: string) {
 
 export default function App() {
   const { user, role, loading } = useAuth();
-  const [currentView, setCurrentView] = useState<View>('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<"login" | "register">("login");
   const [authInitialRole, setAuthInitialRole] = useState<"candidate" | "employer">("candidate");
@@ -150,7 +148,7 @@ export default function App() {
   //   } else if (role === 'employer') {
   //     setCurrentView('employer-dashboard');
   //   }
-  //   // if role is null but user exists → probably incomplete profile
+  //   // if role is null but user exists Ã¢â€ â€™ probably incomplete profile
   // }, [user, role, loading]);
   const navigate = useNavigate();
 
@@ -384,9 +382,7 @@ export default function App() {
         onPricingClick={openJobBridgePricing}
       />
 
-      {/* {currentView === 'home' && <HomePage />}
-      {currentView === 'candidate-dashboard' && <CandidateDashboard />}
-      {currentView === 'employer-dashboard' && <EmployerDashboard />} */}
+
       <Routes>
         <Route
           path="/"
@@ -461,7 +457,7 @@ export default function App() {
               className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-lg font-bold"
               onClick={() => setShowLoginModal(false)}
             >
-              ✕
+              Ã¢Å“â€¢
             </button>
             <Suspense fallback={<RouteLoader label="Loading sign-in..." />}>
               <Login

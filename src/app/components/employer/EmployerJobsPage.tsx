@@ -1,47 +1,47 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+AlertDialog,
+AlertDialogAction,
+AlertDialogCancel,
+AlertDialogContent,
+AlertDialogDescription,
+AlertDialogFooter,
+AlertDialogHeader,
+AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { Input } from "@/app/components/ui/input";
-import {
-  Plus,
-  Users,
-  Eye,
-  Star,
-  Search,
-  Filter,
-  Briefcase,
-  MapPin,
-  Clock,
-  CheckCircle,
-  Lock,
-} from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { featureJob, generateAiReport, getEmployerCredits, getEmployerJobs, getEmployerUsageSnapshot, renewJobVisibility, runAutoShortlist, updateJobStatus, type EmployerCreditBalance, type EmployerUsageSnapshot } from "@/lib/employer";
-import { PostJobModal } from "../PostJobModal";
-import { JobCandidatesModal } from "../JobCandidatesModal";
-import { AddonUpsellModal } from "./AddonUpsellModal";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/app/components/ui/dialog";
-import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/app/components/ui/alert-dialog";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from "@/app/components/ui/dialog";
+import { FeedbackDialog,useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { Input } from "@/app/components/ui/input";
+import { Tabs,TabsContent,TabsList,TabsTrigger } from "@/app/components/ui/tabs";
+import { featureJob,getEmployerCredits,getEmployerJobs,getEmployerUsageSnapshot,renewJobVisibility,runAutoShortlist,updateJobStatus,type EmployerCreditBalance,type EmployerUsageSnapshot } from "@/lib/employer";
+import {
+Briefcase,
+CheckCircle,
+Clock,
+Eye,
+Filter,
+Lock,
+MapPin,
+Plus,
+Search,
+Star,
+Users,
+} from "lucide-react";
+import { useEffect,useMemo,useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { JobCandidatesModal } from "../JobCandidatesModal";
+import { PostJobModal } from "../PostJobModal";
+import { AddonUpsellModal } from "./AddonUpsellModal";
 
 type JobStatusTab = "active" | "draft" | "closed";
 
@@ -119,7 +119,7 @@ export function EmployerJobsPage() {
   const [usageSnapshot, setUsageSnapshot] = useState<EmployerUsageSnapshot | null>(null);
   const [creditBalances, setCreditBalances] = useState<EmployerCreditBalance[]>([]);
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [latestReport, setLatestReport] = useState<Record<string, unknown> | null>(null);
+  const [latestReport] = useState<Record<string, unknown> | null>(null);
   const [upsell, setUpsell] = useState<{
     open: boolean;
     addonType: string | null;
@@ -584,9 +584,9 @@ export function EmployerJobsPage() {
                                   <MapPin className="w-3.5 h-3.5" />
                                   {job.location ?? "Remote"}
                                 </span>
-                                <span>•</span>
+                                <span>â€¢</span>
                                 <span>{job.employment_type ?? "N/A"}</span>
-                                <span>•</span>
+                                <span>â€¢</span>
                                 <span className="flex items-center gap-1">
                                   <Clock className="w-3.5 h-3.5" />
                                   {new Date(job.created_at).toLocaleDateString()}
@@ -867,7 +867,7 @@ export function EmployerJobsPage() {
                               <p className="text-[11px] uppercase tracking-wide text-slate-500">Hybrid</p>
                               <p className="mt-1 font-semibold text-indigo-600">{Number(candidate.hybrid_score ?? 0)}%</p>
                             </div>
-                            <p className="text-gray-600">Rule {Number(candidate.rule_based_score ?? 0)}% • AI {Number(candidate.ai_similarity ?? 0)}%</p>
+                            <p className="text-gray-600">Rule {Number(candidate.rule_based_score ?? 0)}% â€¢ AI {Number(candidate.ai_similarity ?? 0)}%</p>
                           </div>
                         </div>
                         {matchedSkills.length > 0 ? (
@@ -899,7 +899,7 @@ export function EmployerJobsPage() {
                             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Strengths</p>
                             <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-700">
                               {strengths.map((item) => (
-                                <li key={`${candidate.name ?? "candidate"}-strength-${item}`}>• {item}</li>
+                                <li key={`${candidate.name ?? "candidate"}-strength-${item}`}>â€¢ {item}</li>
                               ))}
                             </ul>
                           </div>
@@ -909,7 +909,7 @@ export function EmployerJobsPage() {
                             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Risks</p>
                             <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-700">
                               {risks.map((item) => (
-                                <li key={`${candidate.name ?? "candidate"}-risk-${item}`}>• {item}</li>
+                                <li key={`${candidate.name ?? "candidate"}-risk-${item}`}>â€¢ {item}</li>
                               ))}
                             </ul>
                           </div>
@@ -926,7 +926,7 @@ export function EmployerJobsPage() {
                 <h4 className="mb-2 font-semibold text-gray-900">Candidate Comparison</h4>
                 <ul className="space-y-2 text-sm leading-6 text-gray-700">
                   {reportArray(latestReport?.candidate_comparison).map((item) => (
-                    <li key={`comparison-${item}`}>• {item}</li>
+                    <li key={`comparison-${item}`}>â€¢ {item}</li>
                   ))}
                 </ul>
               </section>
@@ -969,7 +969,7 @@ export function EmployerJobsPage() {
                     }`}
                   >
                     {section.items.length > 0 ? (
-                      section.items.map((item) => <li key={`${section.title}-${item}`}>• {item}</li>)
+                      section.items.map((item) => <li key={`${section.title}-${item}`}>â€¢ {item}</li>)
                     ) : (
                       <li className="text-gray-500">No {section.title.toLowerCase()} generated.</li>
                     )}

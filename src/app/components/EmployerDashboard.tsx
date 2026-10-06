@@ -1,48 +1,45 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { EmployerDashboardJobCard } from "./employer/EmployerDashboardJobCard";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  Plus,
-  Users,
-  Briefcase,
-  Clock,
-  TrendingUp,
-  Eye,
-  Star,
-  CheckCircle,
-  MessageSquare,
-  Filter,
-  Search,
-  MoreVertical,
-  Crown,
-  Bot
-} from "lucide-react";
 import { Input } from "@/app/components/ui/input";
+import {
+Bot,
+Briefcase,
+CheckCircle,
+Clock,
+Crown,
+Eye,
+Filter,
+MessageSquare,
+Plus,
+Search,
+Star,
+TrendingUp,
+Users
+} from "lucide-react";
+import { lazy,Suspense,useCallback,useEffect,useRef,useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import { PostJobModal } from "./components/PostJobModal";
-import { useAuth } from "../context/AuthContext";
-import {
-  createJob,
-  getEmployerDashboardMetrics,
-  getEmployerCredits,
-  getEmployerJobs,
-  getEmployerPremiumDashboardInsights,
-  getJobApplicants,
-  startSubscriptionCheckout,
-  type EmployerRecentActivityItem,
-  type EmployerCreditBalance,
-  type EmployerPremiumDashboardInsights,
-  type EmployerUsageSnapshot,
-  updateApplicationStatus,
-  updateJobStatus,
-} from '@/lib/employer';
-import { useEmployerProfile } from "../../hooks/useEmployerProfile";
-import { Skeleton } from "./ui/skeleton";
-import { useDelayedLoading } from "@/hooks/useDelayedLoading";
-import { getCachedQuery, invalidateQueryCacheByPrefix } from "@/lib/queryCache";
-import { hasEmployerPaidAccess, hasEmployerProfessionalAccess } from "@/lib/subscriptionAccess";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
+import {
+getEmployerCredits,
+getEmployerDashboardMetrics,
+getEmployerJobs,
+getEmployerPremiumDashboardInsights,
+startSubscriptionCheckout,
+updateJobStatus,
+type EmployerCreditBalance,
+type EmployerPremiumDashboardInsights,
+type EmployerRecentActivityItem,
+type EmployerUsageSnapshot
+} from '@/lib/employer';
+import { getCachedQuery,invalidateQueryCacheByPrefix } from "@/lib/queryCache";
+import { hasEmployerPaidAccess,hasEmployerProfessionalAccess } from "@/lib/subscriptionAccess";
+import { useEmployerProfile } from "../../hooks/useEmployerProfile";
+import { useAuth } from "../context/AuthContext";
+import { Skeleton } from "./ui/skeleton";
 
 const PostJobModal = lazy(() =>
   import("./PostJobModal").then((module) => ({ default: module.PostJobModal })),
@@ -83,16 +80,17 @@ function mergeRecentActivities(
     .slice(0, limit);
 }
 
-export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashboardProps) {
+export function EmployerDashboard(_props: EmployerDashboardProps) {
   const navigate = useNavigate();
   const analyticsSectionRef = useRef<HTMLDivElement | null>(null);
   const { user, role, loading } = useAuth();
+  const accountRef = useRef(user?.id);
+  accountRef.current = user?.id;
   const [jobs, setJobs] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [showPostJob, setShowPostJob] = useState(false);
   const [jobToEdit, setJobToEdit] = useState<any | null>(null);
   const [activeJobMenuId, setActiveJobMenuId] = useState<string | null>(null);
-  const [totalOpenJobs, setTotalOpenJobs] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
@@ -135,6 +133,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
           getCachedQuery(keyFor("credits"), 45_000, getEmployerCredits, { force }),
         ]);
 
+        if (accountRef.current !== user.id) return;
         setStats({
           activeJobs: dashboardSnapshot.activeJobs,
           totalApplicants: dashboardSnapshot.totalApplicants,
@@ -155,7 +154,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       } catch (error) {
         console.error("Failed to load employer dashboard metrics", error);
       } finally {
-        setAnalyticsLoading(false);
+        if (accountRef.current === user.id) setAnalyticsLoading(false);
       }
     },
     [keyFor, user],
@@ -169,12 +168,13 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
       try {
         setJobsLoading(true);
         const data = await getCachedQuery(keyFor("jobs"), 20_000, getEmployerJobs, { force });
+        if (accountRef.current !== user.id) return;
         setJobs(data || []);
         setVisibleCount(JOBS_PER_PAGE);
       } catch (err) {
         console.error("Failed to load jobs", err);
       } finally {
-        setJobsLoading(false);
+        if (accountRef.current === user.id) setJobsLoading(false);
       }
     },
     [keyFor, user],
@@ -193,6 +193,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
           getEmployerPremiumDashboardInsights,
           { force },
         );
+        if (accountRef.current !== user.id) return;
         setPremiumInsights((prev) => {
           const mergedRecentActivity = mergeRecentActivities(
             data?.recentActivity ?? [],
@@ -203,42 +204,21 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
             recentActivity: mergedRecentActivity,
           };
 
-          if (recentActivityStorageKey && typeof window !== "undefined") {
-            window.localStorage.setItem(
-              recentActivityStorageKey,
-              JSON.stringify(mergedRecentActivity),
-            );
-          }
-
           return nextInsights;
         });
       } catch (error) {
         console.error("Failed to load premium dashboard insights", error);
       } finally {
-        setPremiumInsightsLoading(false);
+        if (accountRef.current === user.id) setPremiumInsightsLoading(false);
       }
     },
     [keyFor, recentActivityStorageKey, user],
   );
 
   useEffect(() => {
-    if (!recentActivityStorageKey || typeof window === "undefined") return;
-
-    const cachedValue = window.localStorage.getItem(recentActivityStorageKey);
-    if (!cachedValue) return;
-
-    try {
-      const parsed = JSON.parse(cachedValue) as EmployerRecentActivityItem[];
-      if (!Array.isArray(parsed) || parsed.length === 0) return;
-
-      setPremiumInsights((prev) => ({
-        recentActivity: mergeRecentActivities(parsed, prev?.recentActivity ?? []),
-        talentPoolInsights: prev?.talentPoolInsights ?? [],
-      }));
-    } catch (error) {
-      console.error("Failed to parse cached employer recent activity", error);
-    }
-  }, [recentActivityStorageKey]);
+    setJobs([]); setStats(null); setPremiumInsights(null); setCreditBalances([]); setUsageSnapshot(null);
+    if (recentActivityStorageKey) window.localStorage.removeItem(recentActivityStorageKey);
+  }, [user?.id, recentActivityStorageKey]);
 
   useEffect(() => {
     void loadDashboardMetrics();
@@ -423,7 +403,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
   const analyticsStats = [
     {
       label: "Open Job Postings",
-      value: stats?.activeJobs ?? "—",
+      value: stats?.activeJobs ?? "â€”",
       change: "Currently open jobs",
       icon: Briefcase,
       color: "bg-blue-500",
@@ -431,7 +411,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     },
     {
       label: "Total Applicants",
-      value: stats?.totalApplicants ?? "—",
+      value: stats?.totalApplicants ?? "â€”",
       change: "All-time applications",
       icon: Users,
       color: "bg-emerald-500",
@@ -447,7 +427,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     },
     {
       label: "Interview Ready",
-      value: stats?.shortlisted ?? "—",
+      value: stats?.shortlisted ?? "â€”",
       change: "Candidates shortlisted",
       icon: Star,
       color: "bg-amber-500",
@@ -588,7 +568,7 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
                   </div>
                 </Card>
 
-                {/* 🔒 Upgrade overlay */}
+                {/* ðŸ”’ Upgrade overlay */}
                 {isLocked && (
                   <button
                     onClick={() => {
@@ -757,173 +737,11 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
               )}
 
               {filteredOpenJobs.slice(0, visibleCount).map((job) => (
-                <Card
-                  key={job.id}
-                  className="p-6 border-gray-200 transition-shadow hover:shadow-md dark:border-white/10 dark:bg-neutral-950 dark:hover:shadow-black/30"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {job.title}
-                        </h3>
-                        <Badge className="bg-green-100 text-green-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-300">
-                          {job.status}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                        <span>{job.employment_type ?? "—"}</span>
-                        <span>•</span>
-                        <span>{job.location ?? "Remote"}</span>
-                        <span>•</span>
-                        <span>
-                          {new Date(job.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {/* <div>
-                        <p className="mt-2 text-sm text-gray-700">
-                          {job.description}
-                        </p>
-                      </div> */}
-                    </div>
-
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setActiveJobMenuId((prev) => (prev === job.id ? null : job.id));
-                        }}
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                      {activeJobMenuId === job.id && (
-                        <div
-                          className="absolute right-0 top-12 z-20 w-48 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-white/10 dark:bg-neutral-900"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                            Job Actions
-                          </p>
-                          <button
-                            type="button"
-                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-neutral-800"
-                            onClick={() => {
-                              setSelectedJobId(job.id);
-                              setActiveJobMenuId(null);
-                            }}
-                          >
-                            View candidates
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-neutral-800"
-                            onClick={() => {
-                              setJobToEdit(job);
-                              setShowPostJob(true);
-                              setActiveJobMenuId(null);
-                            }}
-                          >
-                            Edit job
-                          </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-neutral-800"
-                            onClick={() => {
-                              navigate("/employer/jobs");
-                              setActiveJobMenuId(null);
-                            }}
-                          >
-                            Open jobs page
-                          </button>
-                          <div className="my-1 h-px bg-gray-200 dark:bg-white/10" />
-                          <button
-                            type="button"
-                            className="flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
-                            onClick={() => {
-                              void handleCloseJob(job.id);
-                              setActiveJobMenuId(null);
-                            }}
-                          >
-                            Close job
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-neutral-900">
-                      <div className="mb-1 flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                        <Users className="w-4 h-4" />
-                        <span className="text-xs font-medium">Applicants</span>
-                      </div>
-                      <div className="text-xl font-bold text-gray-900 dark:text-white">{job.job_applications?.length ?? 0}</div>
-                    </div>
-                    {/* <StatBox
-                      icon={Users}
-                      label="Applicants"
-                      value={job.job_applications?.length ?? 0}
-                    /> */}
-                    {/* <StatBox
-                      icon={Star}
-                      label="Shortlisted"
-                      value={
-                        job.job_applications?.filter(
-                          (a) => a.status === "shortlisted"
-                        ).length ?? 0
-                      }
-                    /> */}
-                    <div className="rounded-lg border border-amber-100 bg-amber-50 p-3 dark:border-amber-400/15 dark:bg-neutral-900">
-                      <div className="mb-1 flex items-center gap-2 text-amber-600 dark:text-amber-300">
-                        <Star className="w-4 h-4" />
-                        <span className="text-xs font-medium">Shortlisted</span>
-                      </div>
-                      <div className="text-xl font-bold text-gray-900 dark:text-white">{job.job_applications?.filter(
-                        (a) => a.status === "shortlisted"
-                      ).length ?? 0}</div>
-                    </div>
-
-                    <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 dark:border-emerald-400/15 dark:bg-neutral-900">
-                      <div className="mb-1 flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-xs font-medium">Interviewed</span>
-                      </div>
-                      <div className="text-xl font-bold text-gray-900 dark:text-white">{job.job_applications?.filter(
-                        (a) => a.status === "interview"
-                      ).length ?? 0}</div>
-                    </div>
-
-                    <div className="rounded-lg border border-violet-100 bg-violet-50 p-3 dark:border-violet-400/15 dark:bg-neutral-900">
-                      <div className="mb-1 flex items-center gap-2 text-violet-600 dark:text-violet-300">
-                        <Eye className="w-4 h-4" />
-                        <span className="text-xs font-medium">Views</span>
-                      </div>
-                      <div className="text-xl font-bold text-gray-900 dark:text-white">{job.view_count ?? 0}</div>
-                    </div>
-
-                    {/* <StatBox icon={Eye} label="Views" value={job.view_count ?? 0} /> */}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => setSelectedJobId(job.id)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      View Candidates
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => navigate(`/employer/jobs/${job.id}/report`)}
-                    >
-                      AI Hiring Report
-                    </Button>
-                  </div>
-                </Card>
+                <EmployerDashboardJobCard key={job.id} job={job} menuOpen={activeJobMenuId === job.id}
+                  onToggleMenu={() => setActiveJobMenuId(prev => prev === job.id ? null : job.id)}
+                  onDismissMenu={() => setActiveJobMenuId(null)} onViewCandidates={() => setSelectedJobId(job.id)}
+                  onEdit={() => { setJobToEdit(job); setShowPostJob(true); }} onOpenJobs={() => navigate('/employer/jobs')}
+                  onCloseJob={() => void handleCloseJob(job.id)} onReport={() => navigate(`/employer/jobs/${job.id}/report`)} />
               ))}
 
             </div>
@@ -1129,4 +947,3 @@ export function EmployerDashboard({ onPostJob, onViewCandidates }: EmployerDashb
     </div>
   );
 }
-

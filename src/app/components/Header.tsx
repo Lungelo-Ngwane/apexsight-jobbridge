@@ -1,37 +1,37 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Button } from "@/app/components/ui/button";
-import { ChevronDown, Settings, LogOut, HelpCircle, MessageCircle, Briefcase, Inbox, CheckCheck, Moon, Sun, Menu, LayoutDashboard, Shield } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { Avatar,AvatarFallback,AvatarImage } from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogHeader,
+DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/app/components/ui/sheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
+import { Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle } from "@/app/components/ui/sheet";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
+import {
+type ConversationThread,
+getCandidateUnreadMessageCount,
+getConversationThreads,
+markAllMyMessagesRead,
+subscribeToMyMessageChanges,
+} from "@/lib/messages";
+import { Briefcase,CheckCheck,ChevronDown,HelpCircle,Inbox,LayoutDashboard,LogOut,Menu,MessageCircle,Moon,Settings,Shield,Sun } from "lucide-react";
+import { useEffect,useState } from "react";
+import { useLocation,useNavigate } from "react-router-dom";
 import whiteLogo from "../assets/apexsight_white_logo_transparent.png";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { useAdminAccess } from "@/hooks/useAdminAccess";
-import {
-  type ConversationThread,
-  getCandidateUnreadMessageCount,
-  getConversationThreads,
-  markAllMyMessagesRead,
-  subscribeToMyMessageChanges,
-} from "@/lib/messages";
 
 interface HeaderProps {
   currentProduct: "skilllink" | "jobbridge" | "landing";
@@ -64,7 +64,7 @@ export function Header({
 
   const isAuthenticated = !!user && !!role;
   const email = user?.email ?? "";
-  const fullName = user?.user_metadata?.full_name || email.split("@")[0];
+  const fullName = String(user?.user_metadata?.full_name || email.split("@")[0]);
   const displayRole = role === "employer" ? "Employer" : "Candidate";
   const avatarInitials = fullName
     .split(" ")

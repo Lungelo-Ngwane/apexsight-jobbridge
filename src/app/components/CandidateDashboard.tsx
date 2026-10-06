@@ -1,45 +1,43 @@
-import { useEffect, useState } from "react";
-import { ensureCandidateWelcomeEmailSent, getCandidateDashboardData, getCandidateUpcomingInterviews, getOpenJobs, removeCandidateCertification, removeCandidateSkill } from "@/lib/candidate";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { Progress } from "@/app/components/ui/progress";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/app/components/ui/dialog";
-import {
-  Award,
-  Building2,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  TrendingUp,
-  Target,
-  BookOpen,
-  ArrowRight,
-  CalendarDays,
-  Star,
-  Briefcase,
-  Circle,
-  FileText,
-  Plus,
-  Trash2,
-  UserCircle2
-} from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { applyForJob, uploadCandidateCV } from "../../lib/candidate";
-import { calculateProfileCompletion, isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
-import { AddSkillModal } from "./AddSkillModal";
-import { AddCertificationModal } from "./AddCertificationModal";
-import { EditProfileModal } from "./EditProfileModal";
-import { useNavigate } from "react-router-dom";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Progress } from "@/app/components/ui/progress";
+import { ensureCandidateWelcomeEmailSent,getCandidateDashboardData,getCandidateUpcomingInterviews,getOpenJobs,removeCandidateCertification,removeCandidateSkill } from "@/lib/candidate";
+import { calculateProfileCompletion,isCandidateProfileReadyForApplication } from "@/lib/profileCompletion";
+import {
+ArrowRight,
+BookOpen,
+Briefcase,
+Building2,
+CalendarDays,
+CheckCircle2,
+ChevronDown,
+ChevronUp,
+Circle,
+Clock,
+FileText,
+Star,
+Target,
+Trash2,
+TrendingUp,
+UserCircle2
+} from "lucide-react";
+import { useEffect,useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { uploadCandidateCV } from "../../lib/candidate";
+import { useAuth } from "../context/AuthContext";
+import { AddCertificationModal } from "./AddCertificationModal";
+import { AddSkillModal } from "./AddSkillModal";
+import { EditProfileModal } from "./EditProfileModal";
 
 
 interface CandidateDashboardProps {
@@ -154,14 +152,6 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const featuredSkills = showAllSkills ? allSkills : allSkills.slice(0, 6);
   const overflowSkills = showAllSkills ? [] : allSkills.slice(6);
   const certsCount = profile?.candidate_certifications?.length ?? 0;
-  const skillCategories = Array.from(
-    new Set(
-      allSkills
-        .map((item: any) => String(item?.skills?.category ?? "").trim())
-        .filter((category: string) => category.length > 0),
-    ),
-  );
-  const topSkillCategories = skillCategories.slice(0, 3);
   const readinessScore = Math.min(
     100,
     Math.round(skillsCount * 15 + certsCount * 10)
@@ -170,9 +160,6 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
   const assessmentRows = Array.isArray(profile?.candidate_assessments)
     ? profile.candidate_assessments
     : [];
-  const resumeAnalysis = profile?.resume_analysis ?? null;
-  const cvSkillsAdded = Number(resumeAnalysis?.skills_added ?? 0);
-  const cvWasAnalyzed = Boolean(profile?.resume_last_analyzed_at);
 
   const scoreFromLevel = (level?: string | null) => {
     const normalized = String(level ?? "").toLowerCase();
@@ -440,7 +427,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                                 </p>
                                 <p className="flex items-center gap-2 capitalize">
                                   <Clock className="h-4 w-4 text-blue-600" />
-                                  {interview.durationMinutes} minutes • {interview.mode}
+                                  {interview.durationMinutes} minutes â€¢ {interview.mode}
                                 </p>
                                 {interview.locationOrMeetingLink ? (
                                   <p className="flex items-center gap-2 break-all">
@@ -684,7 +671,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 text-sm">{cert.name}</h3>
-                        <p className="text-xs text-gray-600">{cert.issuer} · {cert.date}</p>
+                        <p className="text-xs text-gray-600">{cert.issuer} Â· {cert.date}</p>
                       </div>
                     </div>
                   ))}
@@ -791,7 +778,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                 />
 
                 {cvUploading && (
-                  <p className="text-xs text-blue-600">Uploading CV…</p>
+                  <p className="text-xs text-blue-600">Uploading CVâ€¦</p>
                 )}
               </Card>
             </div>
@@ -821,7 +808,7 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 text-sm">{item.title}</h3>
-                        <p className="text-xs text-gray-600">{item.type} · {item.duration}</p>
+                        <p className="text-xs text-gray-600">{item.type} Â· {item.duration}</p>
                       </div>
                     </div>
                   ))}
@@ -920,4 +907,3 @@ export function CandidateDashboard({ onViewJobs, onStartAssessment }: CandidateD
     </div>
   );
 }
-

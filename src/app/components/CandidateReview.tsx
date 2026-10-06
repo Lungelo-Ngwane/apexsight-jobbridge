@@ -1,20 +1,19 @@
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 import { Progress } from "@/app/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { 
-  Award,
-  CheckCircle2,
-  MapPin,
-  Star,
-  TrendingUp,
-  Target,
-  MessageSquare,
-  Calendar,
-  X,
-  ArrowLeft,
-  Download
+import { Tabs,TabsContent,TabsList,TabsTrigger } from "@/app/components/ui/tabs";
+import {
+ArrowLeft,
+Award,
+Calendar,
+CheckCircle2,
+Download,
+MapPin,
+MessageSquare,
+Star,
+Target,
+X
 } from "lucide-react";
 
 interface CandidateReviewProps {
@@ -81,7 +80,7 @@ export function CandidateReview({ onBack, onShortlist }: CandidateReviewProps) {
                           <MapPin className="w-4 h-4" />
                           Johannesburg, Gauteng
                         </div>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <span>3 years experience</span>
                       </div>
                     </div>
@@ -266,7 +265,7 @@ export function CandidateReview({ onBack, onShortlist }: CandidateReviewProps) {
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900 mb-1">{cert.name}</h4>
                           <p className="text-sm text-gray-600 mb-1">
-                            {cert.issuer} · {cert.date}
+                            {cert.issuer} Â· {cert.date}
                           </p>
                           <p className="text-xs text-gray-500 font-mono">ID: {cert.id}</p>
                         </div>
@@ -321,7 +320,7 @@ export function CandidateReview({ onBack, onShortlist }: CandidateReviewProps) {
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
                           <span>{assessment.questions} questions</span>
-                          <span>•</span>
+                          <span>â€¢</span>
                           <span>{assessment.duration}</span>
                         </div>
                       </div>

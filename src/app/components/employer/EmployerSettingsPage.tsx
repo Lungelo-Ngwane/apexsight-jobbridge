@@ -1,56 +1,54 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/app/components/ui/button";
+import {
+AlertDialog,
+AlertDialogAction,
+AlertDialogCancel,
+AlertDialogContent,
+AlertDialogDescription,
+AlertDialogFooter,
+AlertDialogHeader,
+AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Avatar,AvatarFallback,AvatarImage } from "@/app/components/ui/avatar";
 import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { FeedbackDialog,useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Textarea } from "@/app/components/ui/textarea";
-import { 
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-  Users,
-  Bell,
-  Lock,
-  Palette,
-  Save,
-  CheckCircle,
-  Upload,
-  Shield,
-  Key,
-  Trash2,
-  AlertCircle
-} from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Switch } from "@/app/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/app/components/ui/alert-dialog";
+import { Tabs,TabsContent,TabsList,TabsTrigger } from "@/app/components/ui/tabs";
+import { Textarea } from "@/app/components/ui/textarea";
+import { useAuth } from "@/app/context/AuthContext";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import {
-  getEmployerTeamMembers,
-  inviteEmployerTeamMember,
-  revokeEmployerTeamMember,
-  updateEmployerProfile,
-  updateEmployerTeamMember,
-  uploadEmployerBanner,
-  uploadEmployerLogo,
-  type EmployerMembershipRole,
-  type EmployerTeamMember,
+getEmployerTeamMembers,
+inviteEmployerTeamMember,
+revokeEmployerTeamMember,
+updateEmployerProfile,
+updateEmployerTeamMember,
+uploadEmployerBanner,
+uploadEmployerLogo,
+type EmployerMembershipRole,
+type EmployerTeamMember,
 } from "@/lib/employer";
-import { useAuth } from "@/app/context/AuthContext";
-import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
-import { CircularLoader } from "@/app/components/ui/circular-loader";
+import {
+AlertCircle,
+Building2,
+CheckCircle,
+Globe,
+Key,
+Lock,
+Mail,
+MapPin,
+Phone,
+Save,
+Shield,
+Trash2,
+Upload,
+Users
+} from "lucide-react";
+import { useEffect,useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function EmployerSettingsPage() {

@@ -1,11 +1,8 @@
 import { supabase } from '@/lib/supabase';
-// src/lib/employer/permissions.ts
-// import { supabase } from "@/lib/supabase";
 import { PLAN_LIMITS } from "./plan";
-// import { PLAN_LIMITS } from "../plans";
 
 export async function canPostJob(employerId: string) {
-  // 1️⃣ Get employer plan
+  // 1ï¸âƒ£ Get employer plan
   const { data: employer, error: empError } = await supabase
     .from("employer_profiles")
     .select("plan")
@@ -14,9 +11,10 @@ export async function canPostJob(employerId: string) {
 
   if (empError) throw empError;
 
-  const plan = employer.plan ?? "free";
+  const rawPlan = String(employer.plan ?? "free");
+  const plan: keyof typeof PLAN_LIMITS = rawPlan === "starter" || rawPlan === "professional" || rawPlan === "enterprise" ? rawPlan : "free";
 
-  // 2️⃣ Count active jobs
+  // 2ï¸âƒ£ Count active jobs
   const { count, error: jobError } = await supabase
     .from("jobs")
     .select("*", { count: "exact", head: true })
@@ -25,13 +23,13 @@ export async function canPostJob(employerId: string) {
 
   if (jobError) throw jobError;
 
-  // 3️⃣ Compare with plan limits
+  // 3ï¸âƒ£ Compare with plan limits
   const limit = PLAN_LIMITS[plan].maxActiveJobs;
 
   return {
-    allowed: count < limit,
+    allowed: (count ?? 0) < limit,
     plan,
     limit,
-    current: count,
+    current: count ?? 0,
   };
 }

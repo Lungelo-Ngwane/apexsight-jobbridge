@@ -1,6 +1,6 @@
-import { Search, MapPin, Filter } from 'lucide-react';
-import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
+import { Filter,Search } from 'lucide-react';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -9,7 +9,7 @@ interface SearchBarProps {
   showMobileFilters: boolean;
 }
 
-export function SearchBar({ searchQuery, onSearchChange, onFilterToggle, showMobileFilters }: SearchBarProps) {
+export function SearchBar({ searchQuery, onSearchChange, onFilterToggle }: SearchBarProps) {
   return (
     <div className="bg-white border-b">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">

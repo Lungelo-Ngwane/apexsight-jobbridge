@@ -1,28 +1,28 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { FeedbackDialog,useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import {
-    ArrowLeft,
-    Building2,
-    Briefcase,
-    Users,
-    Upload
-} from "lucide-react";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue
 } from "@/app/components/ui/select";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/app/context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { uploadEmployerLogo } from "@/lib/employer";
-import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { supabase } from "@/lib/supabase";
+import {
+ArrowLeft,
+Briefcase,
+Building2,
+Upload,
+Users
+} from "lucide-react";
+import { useEffect,useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface EmployerProfileProps {
     onBack?: () => void;
@@ -53,7 +53,7 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
             const { data, error } = await supabase
                 .from("employer_profiles")
                 .select("company_name, industry, company_size, logo_url")
-                .eq("user_id", user.id)
+                .eq("user_id", user?.id)
                 .single();
 
             if (error) {
@@ -228,10 +228,10 @@ export function EmployerProfile({ onBack }: EmployerProfileProps) {
                                 <SelectValue placeholder="Select company size" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="1-10">1–10</SelectItem>
-                                <SelectItem value="11-50">11–50</SelectItem>
-                                <SelectItem value="51-200">51–200</SelectItem>
-                                <SelectItem value="201-500">201–500</SelectItem>
+                                <SelectItem value="1-10">1â€“10</SelectItem>
+                                <SelectItem value="11-50">11â€“50</SelectItem>
+                                <SelectItem value="51-200">51â€“200</SelectItem>
+                                <SelectItem value="201-500">201â€“500</SelectItem>
                                 <SelectItem value="500+">500+</SelectItem>
                             </SelectContent>
                         </Select>

@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
+import * as React from "react";
 
 import { cn } from "./utils";
 
@@ -49,8 +49,9 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
+  showCloseButton = true,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+}: React.ComponentProps<typeof DialogPrimitive.Content> & { showCloseButton?: boolean }) {
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -63,10 +64,10 @@ function DialogContent({
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute top-4 right-4 rounded-full p-1.5 text-gray-500 opacity-80 transition hover:bg-gray-100 hover:text-gray-900 hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+        {showCloseButton && <DialogPrimitive.Close className="absolute top-4 right-4 rounded-full p-1.5 text-gray-500 opacity-80 transition hover:bg-gray-100 hover:text-gray-900 hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
           <XIcon />
           <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
+        </DialogPrimitive.Close>}
       </DialogPrimitive.Content>
     </DialogPortal>
   );
@@ -122,14 +123,14 @@ function DialogDescription({
 }
 
 export {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
+Dialog,
+DialogClose,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogOverlay,
+DialogPortal,
+DialogTitle,
+DialogTrigger
 };

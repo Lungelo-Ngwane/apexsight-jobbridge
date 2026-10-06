@@ -1,48 +1,47 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+AlertDialog,
+AlertDialogAction,
+AlertDialogCancel,
+AlertDialogContent,
+AlertDialogDescription,
+AlertDialogFooter,
+AlertDialogHeader,
+AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  cancelSubscription,
-  confirmSubscriptionCheckout,
-  getBillingInvoiceDownloadUrl,
-  getBillingInvoices,
-  getActivePlans,
-  getEmployerUsageSnapshot,
-  startSubscriptionCheckout,
-  type BillingInvoice,
-  type BillingPlan,
-  type BillingPlanName,
-  type EmployerUsageSnapshot,
-} from "@/lib/employer";
-import { useEmployerProfile } from "@/hooks/useEmployerProfile";
-import { 
-  CreditCard,
-  Crown,
-  Zap,
-  CheckCircle,
-  AlertCircle,
-  Calendar,
-  Download,
-  FileText,
-  Building2,
-  Users,
-  Briefcase
-} from "lucide-react";
-import { Progress } from "@/app/components/ui/progress";
-import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { FeedbackDialog,useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { Progress } from "@/app/components/ui/progress";
+import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/app/components/ui/alert-dialog";
+cancelSubscription,
+confirmSubscriptionCheckout,
+getActivePlans,
+getBillingInvoiceDownloadUrl,
+getBillingInvoices,
+getEmployerUsageSnapshot,
+startSubscriptionCheckout,
+type BillingInvoice,
+type BillingPlan,
+type BillingPlanName,
+type EmployerUsageSnapshot,
+} from "@/lib/employer";
+import {
+AlertCircle,
+Briefcase,
+Calendar,
+CheckCircle,
+CreditCard,
+Crown,
+Download,
+FileText,
+Users,
+Zap
+} from "lucide-react";
+import { useEffect,useMemo,useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function EmployerBillingPage() {
   const navigate = useNavigate();
@@ -320,58 +319,6 @@ export function EmployerBillingPage() {
     : 0;
   const showUsageAlert = Boolean(finiteJobLimit && finiteJobLimit > 0 && jobUsagePercent >= 80);
 
-  const availablePlans = [
-    {
-      name: "Starter",
-      icon: Building2,
-      price: formatZarFromKobo(plans.find((p) => p.name === "starter")?.priceMonthly ?? 99900),
-      period: "per month",
-      description: "Perfect for small businesses",
-      features: [
-        `${plans.find((p) => p.name === "starter")?.jobLimit ?? 2} active job postings`,
-        `${plans.find((p) => p.name === "starter")?.candidateViewLimit ?? 50} candidate views/month`,
-        "Basic analytics",
-        "Email support",
-        `${plans.find((p) => p.name === "starter")?.userLimit ?? 2} users`,
-      ],
-      color: "from-gray-500 to-gray-600"
-    },
-    {
-      name: "Professional",
-      icon: Zap,
-      price: formatZarFromKobo(plans.find((p) => p.name === "professional")?.priceMonthly ?? 299900),
-      period: "per month",
-      description: "Most popular for growing teams",
-      features: [
-        `${plans.find((p) => p.name === "professional")?.jobLimit ?? 3} active job postings`,
-        `${plans.find((p) => p.name === "professional")?.candidateViewLimit ?? 300} candidate views/month`,
-        "Advanced analytics",
-        "Priority support",
-        `Team collaboration (${plans.find((p) => p.name === "professional")?.userLimit ?? 5} users)`,
-      ],
-      color: "from-neutral-700 to-neutral-900",
-      current: true,
-      popular: true
-    },
-    {
-      name: "Enterprise",
-      icon: Crown,
-      price: formatZarFromKobo(plans.find((p) => p.name === "enterprise")?.priceMonthly ?? 999900),
-      period: "per month",
-      description: "For large organizations",
-      features: [
-        `${plans.find((p) => p.name === "enterprise")?.jobLimit ?? 4} active job postings`,
-        `${plans.find((p) => p.name === "enterprise")?.candidateViewLimit ?? 9999} candidate views/month`,
-        "Custom analytics & reporting",
-        "Dedicated account manager",
-        `${plans.find((p) => p.name === "enterprise")?.userLimit ?? 50} users`,
-        "API access",
-        "White-label options"
-      ],
-      color: "from-neutral-500 to-neutral-700"
-    }
-  ];
-
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-gray-100/60 to-gray-50 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900">
       {/* Header */}
@@ -610,7 +557,7 @@ export function EmployerBillingPage() {
                         <div>
                           <p className="text-sm font-medium text-gray-900">{invoice.invoiceNumber}</p>
                           <p className="text-xs text-gray-600">
-                            {formatInvoiceDate(invoice.issuedAt)} • {invoice.kind}
+                            {formatInvoiceDate(invoice.issuedAt)} â€¢ {invoice.kind}
                           </p>
                         </div>
                       </div>
@@ -755,7 +702,7 @@ export function EmployerBillingPage() {
                 <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Service commitment</p>
                   <p className="mt-2 text-sm text-gray-700">
-                    {slaTier || "Enterprise"}{slaUptimeTarget ? ` • ${slaUptimeTarget} uptime target` : ""}{slaResponseTimeHours ? ` • ${slaResponseTimeHours}h initial response` : ""}
+                    {slaTier || "Enterprise"}{slaUptimeTarget ? ` â€¢ ${slaUptimeTarget} uptime target` : ""}{slaResponseTimeHours ? ` â€¢ ${slaResponseTimeHours}h initial response` : ""}
                   </p>
                 </div>
               ) : (

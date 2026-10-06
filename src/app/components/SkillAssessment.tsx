@@ -1,24 +1,23 @@
-import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { Progress } from "@/app/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Label } from "@/app/components/ui/label";
-import { 
-  Clock,
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
-  Flag,
-  AlertCircle
+import { Progress } from "@/app/components/ui/progress";
+import { RadioGroup,RadioGroupItem } from "@/app/components/ui/radio-group";
+import {
+AlertCircle,
+ArrowLeft,
+ArrowRight,
+Clock,
+Flag
 } from "lucide-react";
+import { useState } from "react";
 
 interface SkillAssessmentProps {
   onComplete: () => void;
   onBack: () => void;
 }
 
-export function SkillAssessment({ onComplete, onBack }: SkillAssessmentProps) {
+export function SkillAssessment({ onComplete }: SkillAssessmentProps) {
   const [currentQuestion, setCurrentQuestion] = useState(1);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const totalQuestions = 20;
@@ -108,7 +107,7 @@ export function SkillAssessment({ onComplete, onBack }: SkillAssessmentProps) {
               <div className="mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
                   <span className="font-medium">Question {currentQuestion}</span>
-                  <span className="text-gray-400">•</span>
+                  <span className="text-gray-400">â€¢</span>
                   <span>Multiple Choice</span>
                 </div>
                 

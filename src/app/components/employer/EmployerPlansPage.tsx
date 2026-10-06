@@ -1,30 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
+import { FeedbackDialog,useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
 import {
-  getActivePlans,
-  getEmployerUsageSnapshot,
-  startSubscriptionCheckout,
-  type BillingPlan,
-  type BillingPlanName,
-  type EmployerUsageSnapshot,
+getActivePlans,
+getEmployerUsageSnapshot,
+startSubscriptionCheckout,
+type BillingPlan,
+type BillingPlanName,
+type EmployerUsageSnapshot,
 } from "@/lib/employer";
 import { hasEmployerPaidAccess } from "@/lib/subscriptionAccess";
 import {
-  ArrowRight,
-  Briefcase,
-  Building2,
-  CheckCircle2,
-  Crown,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Users,
-  Zap,
+ArrowRight,
+Briefcase,
+Building2,
+CheckCircle2,
+Crown,
+ShieldCheck,
+Sparkles,
+Star,
+Users,
+Zap,
 } from "lucide-react";
+import { useEffect,useMemo,useState } from "react";
 
 type PlanCardConfig = {
   name: "free" | BillingPlanName;
@@ -198,7 +198,6 @@ export function EmployerPlansPage() {
             <div className="grid gap-5 p-6 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
               {planRows.map((plan) => {
                 const isCurrent = currentPlanName === plan.name;
-                const canUpgrade = plan.name !== "free" && plan.name !== currentPlanName;
                 return (
                   <div
                     key={plan.name}
