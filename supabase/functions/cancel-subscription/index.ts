@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
       if (!paystackRes.ok || !paystackData?.status) {
         return jsonResponse(
-          { error: paystackData?.message ?? "Failed to disable subscription" },
+          { error: "The request could not be completed" },
           400,
         );
       }
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     if (updateError) {
       return jsonResponse(
         {
-          error: `Failed to update employer subscription: ${updateError.message}`,
+          error: "The request could not be completed",
           detail: updateError.message,
           code: updateError.code,
         },
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       cancelled: true,
       downgradedPlan: "free",
     });
-  } catch (error) {
-    return jsonResponse({ error: String(error) }, 500);
+  } catch {
+    return jsonResponse({ error: "The request could not be completed" }, 500);
   }
 });

@@ -1,6 +1,7 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import OpenAI from "https://esm.sh/openai@4.28.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,7 +105,7 @@ async function ensureCandidateEmbeddings(jobId: string) {
   }
 
   const candidates = (rows ?? [])
-    .filter((candidate): candidate is Record<string, unknown> => Boolean((candidate as { id?: unknown }).id));
+    .filter(candidate => Boolean(candidate.id));
 
   if (candidates.length === 0) {
     return;
@@ -140,7 +141,8 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    const { job_id } = await req.json();
+    const body = await requestObject(req);
+    const job_id = typeof body.job_id === "string" ? body.job_id : "";
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing access token" }), {
@@ -219,15 +221,11 @@ Deno.serve(async (req) => {
         });
       }
 
-      const { error: deductError } = await supabase
-        .from("employer_credits")
-        .update({ remaining: current - 1 })
-        .eq("id", creditRow.id)
-        .eq("remaining", current);
+      const { error: deductError } = await supabase.rpc("consume_employer_credit", { p_employer_id: employer.id, p_credit_type: "ai_credit", p_amount: 1 });
 
       if (deductError) {
         return new Response(
-          JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
+          JSON.stringify({ error: "The request could not be completed" }),
           {
             status: 409,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -246,14 +244,14 @@ Deno.serve(async (req) => {
     );
 
     if (matchError) {
-      return new Response(JSON.stringify({ error: matchError.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (matches?.length) {
-      const payload = matches.map((match) => ({
+      const payload = matches.map((match: { id: string; similarity: number }) => ({
         job_id,
         candidate_id: match.id,
         similarity: match.similarity,
@@ -266,7 +264,7 @@ Deno.serve(async (req) => {
         });
 
       if (upsertError) {
-        return new Response(JSON.stringify({ error: upsertError.message }), {
+        return new Response(JSON.stringify({ error: "The request could not be completed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -292,8 +290,8 @@ Deno.serve(async (req) => {
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

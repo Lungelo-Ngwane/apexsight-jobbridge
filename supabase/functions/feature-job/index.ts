@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
@@ -20,7 +21,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    const { jobId, days = 7 } = await req.json();
+    const { jobId, days = 7 } = await requestObject(req);
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing access token" }), {
@@ -76,15 +77,11 @@ Deno.serve(async (req) => {
     const current = Number(creditRow?.remaining ?? 0);
     const { error: deductError } = hasIncludedFeaturedAccess
       ? { error: null }
-      : await supabase
-          .from("employer_credits")
-          .update({ remaining: current - 1 })
-          .eq("id", String(creditRow?.id ?? ""))
-          .eq("remaining", current);
+      : await supabase.rpc("consume_employer_credit", { p_employer_id: employer.employerId, p_credit_type: "featured_job", p_amount: 1 });
 
     if (deductError) {
       return new Response(
-        JSON.stringify({ error: `Failed to deduct credit: ${deductError.message}` }),
+        JSON.stringify({ error: "The request could not be completed" }),
         {
           status: 409,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -107,7 +104,7 @@ Deno.serve(async (req) => {
 
     if (featureError) {
       return new Response(
-        JSON.stringify({ error: `Failed to feature job: ${featureError.message}` }),
+        JSON.stringify({ error: "The request could not be completed" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -136,8 +133,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -1,5 +1,6 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
+
 import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
@@ -88,7 +89,7 @@ function computeFinalMatchScore(input: {
   return baseHybrid === null ? 0 : clampScore(baseHybrid + recencyBonus - penalty);
 }
 
-async function sendShortlistNotifications(applicationIds: string[]) {
+async function sendShortlistNotifications(applicationIds: string[], token: string) {
   const functionBaseUrl = `${String(Deno.env.get("SUPABASE_URL") ?? "").replace(/\/+$/, "")}/functions/v1`;
   if (!functionBaseUrl || applicationIds.length === 0) return;
 
@@ -98,6 +99,7 @@ async function sendShortlistNotifications(applicationIds: string[]) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           type: "CANDIDATE_SHORTLISTED",
@@ -123,7 +125,10 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    const { jobId, threshold = 70 } = await req.json();
+    const body = await requestObject(req);
+    const jobId = typeof body.jobId === "string" ? body.jobId : "";
+    const threshold = Number(body.threshold ?? 70);
+    if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) return new Response(JSON.stringify({error:"Invalid threshold"}), {status:400,headers:corsHeaders});
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing access token" }), {
@@ -190,7 +195,7 @@ Deno.serve(async (req) => {
       .eq("job_id", jobId);
 
     if (applicationsError) {
-      return new Response(JSON.stringify({ error: applicationsError.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -235,15 +240,11 @@ Deno.serve(async (req) => {
         });
       }
 
-      const { error: deductError } = await supabase
-        .from("employer_credits")
-        .update({ remaining: currentCredits - 1 })
-        .eq("id", creditRow.id)
-        .eq("remaining", currentCredits);
+      const { error: deductError } = await supabase.rpc("consume_employer_credit", { p_employer_id: employer.employerId, p_credit_type: "auto_shortlist", p_amount: 1 });
 
       if (deductError) {
         return new Response(
-          JSON.stringify({ error: `Failed to deduct auto_shortlist credit: ${deductError.message}` }),
+          JSON.stringify({ error: "The request could not be completed" }),
           {
             status: 409,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -269,7 +270,7 @@ Deno.serve(async (req) => {
       : { data: [], error: null };
 
     if (matchesError) {
-      return new Response(JSON.stringify({ error: matchesError.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -323,13 +324,13 @@ Deno.serve(async (req) => {
         .in("id", applicationIdsToShortlist);
 
       if (updateError) {
-        return new Response(JSON.stringify({ error: updateError.message }), {
+        return new Response(JSON.stringify({ error: "The request could not be completed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      await sendShortlistNotifications(applicationIdsToShortlist);
+      await sendShortlistNotifications(applicationIdsToShortlist, token);
     }
 
     if (!hasIncludedAccess) {
@@ -363,8 +364,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

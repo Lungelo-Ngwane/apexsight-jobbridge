@@ -1,5 +1,6 @@
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import OpenAI from "https://esm.sh/openai@4.28.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
@@ -114,7 +115,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    const { jobId } = await req.json();
+    const { jobId } = await requestObject(req);
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing access token" }), {
@@ -266,6 +267,7 @@ Deno.serve(async (req) => {
           location?: string | null;
           years_experience?: number | null;
           professional_bio_ai?: string | null;
+          resume_analysis?: { work_experience?: Array<{ title?: string | null }>; debug?: { extraction_method?: string | null } } | null;
           resume_summary?: string | null;
           bio?: string | null;
           candidate_skills?: Array<{
@@ -343,15 +345,11 @@ Deno.serve(async (req) => {
     const current = Number(creditRow?.remaining ?? 0);
     const { error: deductError } = hasIncludedAiReportAccess
       ? { error: null }
-      : await supabase
-          .from("employer_credits")
-          .update({ remaining: current - 1 })
-          .eq("id", String(creditRow?.id ?? ""))
-          .eq("remaining", current);
+      : await supabase.rpc("consume_employer_credit", { p_employer_id: employer.employerId, p_credit_type: "ai_report", p_amount: 1 });
 
     if (deductError) {
       return new Response(
-        JSON.stringify({ error: `Failed to deduct credit: ${deductError.message}` }),
+        JSON.stringify({ error: "The request could not be completed" }),
         {
           status: 409,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -424,7 +422,6 @@ ${JSON.stringify({
       report = JSON.parse(raw);
     } catch {
       const stackHighlights = requiredSkills.slice(0, 3);
-      const topCandidateNames = topApplicants.slice(0, 3).map((candidate) => candidate.candidate.full_name);
       const applicantsWithStrongFit = topApplicants.filter((candidate) => candidate.final_match_score >= 75).length;
       const candidatesMissingSkills = topApplicants.filter((candidate) => candidate.missing_required_skills.length > 0).length;
       report = {
@@ -537,8 +534,8 @@ ${JSON.stringify({
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
