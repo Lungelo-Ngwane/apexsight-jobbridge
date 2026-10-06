@@ -1,14 +1,17 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { supabase } from "../../lib/supabase";
 import { Button } from "@/app/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from "@/app/components/ui/dialog";
+import { resetCandidateCaches } from "@/lib/candidate";
+import { resetQueryCache } from "@/lib/queryCache";
+import type { User } from "@supabase/supabase-js";
+import { createContext,useContext,useEffect,useRef,useState,type ReactNode } from "react";
+import { supabase } from "../../lib/supabase";
 
 export type UserRole = "candidate" | "employer" | null;
 
@@ -16,7 +19,7 @@ const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 const INACTIVITY_WARNING_MS = 9 * 60 * 1000;
 
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   role: UserRole;
   loading: boolean;
   signOut: () => Promise<void>;
@@ -25,7 +28,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
   const [showInactivityWarning, setShowInactivityWarning] = useState(false);
@@ -35,6 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const lastProfileUserIdRef = useRef<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
   const roleRef = useRef<UserRole>(null);
+  const authGeneration = useRef(0);
+  const restartInactivityRef = useRef<(() => void) | null>(null);
   const inactivityWarningTimeoutRef = useRef<number | null>(null);
   const inactivityLogoutTimeoutRef = useRef<number | null>(null);
   const inactivityCountdownIntervalRef = useRef<number | null>(null);
@@ -49,14 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     inactivityWarningVisibleRef.current = showInactivityWarning;
   }, [showInactivityWarning]);
 
-  const loadUserProfile = async (user: {
-    id: string;
-    email?: string | null;
-    user_metadata?: {
-      full_name?: string | null;
-      role?: string | null;
-    } | null;
-  }) => {
+  const loadUserProfile = async (user: User, generation: number) => {
     const userId = user.id;
     const maxAttempts = 8;
 
@@ -68,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("id", userId)
           .maybeSingle();
 
-        if (currentUserIdRef.current !== userId) {
+        if (currentUserIdRef.current !== userId || authGeneration.current !== generation) {
           return;
         }
 
@@ -87,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (currentUserIdRef.current === userId) {
+    if (currentUserIdRef.current === userId && authGeneration.current === generation) {
       setRole(null);
     }
   };
@@ -95,12 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    const hydrationGeneration = authGeneration.current;
     async function hydrateSession() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!mounted) return;
+      if (!mounted || hydrationGeneration !== authGeneration.current) return;
 
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -115,14 +114,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       lastProfileUserIdRef.current = currentUser.id;
       currentUserIdRef.current = currentUser.id;
-      await loadUserProfile(currentUser);
+      await loadUserProfile(currentUser, hydrationGeneration);
 
-      if (mounted) {
+      if (mounted && hydrationGeneration === authGeneration.current) {
         setLoading(false);
       }
     }
 
-    void hydrateSession();
+    void hydrateSession().catch(() => {
+      if (mounted && hydrationGeneration === authGeneration.current) {
+        setUser(null); setRole(null); setLoading(false);
+      }
+    });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
@@ -153,6 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      const generation = ++authGeneration.current;
+      if (currentUserIdRef.current !== nextUserId) {
+        resetQueryCache(); resetCandidateCaches(); setRole(null); roleRef.current = null;
+      }
       setUser(currentUser);
 
       if (!currentUser) {
@@ -174,11 +181,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (shouldRefreshRole) {
         setLoading(true);
-        void loadUserProfile(currentUser).finally(() => {
-          if (mounted && currentUserIdRef.current === currentUser.id) {
+        // Supabase auth callbacks must return before starting further auth/client work.
+        window.setTimeout(() => void loadUserProfile(currentUser, generation).finally(() => {
+          if (mounted && authGeneration.current === generation && currentUserIdRef.current === currentUser.id) {
             setLoading(false);
           }
-        });
+        }), 0);
         return;
       }
 
@@ -187,12 +195,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      authGeneration.current += 1;
       listener.subscription.unsubscribe();
     };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    currentUserIdRef.current = null;
+    authGeneration.current += 1;
+    resetQueryCache();
+    resetCandidateCaches();
     lastProfileUserIdRef.current = null;
     setUser(null);
     setRole(null);
@@ -228,7 +242,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       inactivitySigningOutRef.current = true;
 
       try {
-        await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
       } catch (error) {
         console.error("Failed to sign out inactive user", error);
       } finally {
@@ -270,6 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }, INACTIVITY_WARNING_MS);
     };
 
+    restartInactivityRef.current = scheduleInactivityTimers;
     if (!user) {
       inactivitySigningOutRef.current = false;
       inactivityWarningVisibleRef.current = false;
@@ -303,6 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return () => {
+      restartInactivityRef.current = null;
       clearInactivityTimers();
       for (const eventName of activityEvents) {
         window.removeEventListener(eventName, handleActivity);
@@ -330,9 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       inactivityCountdownIntervalRef.current = null;
     }
 
-    inactivityWarningVisibleRef.current = false;
-    setShowInactivityWarning(false);
-    setWarningCountdownSeconds(Math.floor((INACTIVITY_TIMEOUT_MS - INACTIVITY_WARNING_MS) / 1000));
+    restartInactivityRef.current?.();
   };
 
   return (

@@ -146,7 +146,7 @@ export async function registerUser(
       role,
       userId: createdUser?.id ?? null,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Registration failed:", err);
     throw err;
   }
@@ -223,7 +223,6 @@ export async function deleteIncompleteGoogleUser() {
     throw new Error(String((payload as { error?: string }).error ?? "Failed to delete incomplete Google account."));
   }
 
-  console.info("deleteIncompleteGoogleUser", payload);
   return payload;
 }
 
@@ -290,7 +289,7 @@ export async function loginUser(email: string, password: string) {
         : null;
 
     return { user, role: resolvedRole };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("loginUser error:", err);
 
     if (isTransientFetchError(err)) {

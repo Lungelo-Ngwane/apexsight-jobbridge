@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { getCurrentEmployerContext, getEmployerProfile, type EmployerMembershipRole } from "@/lib/employer";
+import { getCurrentEmployerContext,getEmployerProfile,type EmployerMembershipRole } from "@/lib/employer";
+import { useEffect,useRef,useState } from "react";
 
 const EMPLOYER_PROFILE_CACHE_TTL_MS = 10_000;
 
@@ -95,14 +95,17 @@ export function useEmployerProfile() {
       return;
     }
 
+    let active = true;
+    setProfile(null); setMembershipRole(null);
     async function loadProfile() {
       const shouldShowLoading = lastLoadedUserIdRef.current !== userId || profile === null;
       if (shouldShowLoading) {
         setLoading(true);
       }
 
-      const snapshot = await loadEmployerProfileSnapshot(userId);
+      const snapshot = await loadEmployerProfileSnapshot(userId!);
 
+      if (!active) return;
       lastLoadedUserIdRef.current = userId;
       setProfile(snapshot.profile); // profile may be null for new users
       setMembershipRole(snapshot.membershipRole);
@@ -110,6 +113,7 @@ export function useEmployerProfile() {
     }
 
     void loadProfile();
+    return () => { active = false; };
   }, [user?.id]);
 
   return { profile, membershipRole, loading };
