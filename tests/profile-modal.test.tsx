@@ -1,0 +1,20 @@
+import { render,screen,waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach,expect,it,vi } from 'vitest';
+import { EditProfileModal } from '../src/app/components/EditProfileModal';
+const update = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/candidate',() => ({ updateCandidateProfile:update }));
+beforeEach(() => { update.mockReset(); });
+it('labels fields, keeps the dialog open on failure, and permits retry', async () => {
+  update.mockRejectedValueOnce(new Error('sensitive server detail')).mockResolvedValueOnce(undefined);
+  const close=vi.fn(), success=vi.fn(), user=userEvent.setup();
+  render(<EditProfileModal profile={{headline:'Engineer'}} onClose={close} onSuccess={success} />);
+  expect(screen.getByRole('dialog')).toHaveAccessibleName('Edit Profile');
+  await user.clear(screen.getByLabelText('Headline')); await user.type(screen.getByLabelText('Headline'),'Senior Engineer');
+  await user.click(screen.getByRole('button',{name:'Save'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent("couldn't be saved"); expect(close).not.toHaveBeenCalled();
+  expect(screen.queryByText('sensitive server detail')).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button',{name:'Save'}));
+  await waitFor(() => expect(success).toHaveBeenCalledTimes(1)); expect(close).toHaveBeenCalledTimes(1);
+  expect(update).toHaveBeenLastCalledWith({headline:'Senior Engineer',bio:'',location:'',years_experience:0});
+});

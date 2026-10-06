@@ -7,11 +7,18 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "typecheck": "tsc --noEmit",
-    "validate": "npm run typecheck && npm run build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
+    "validate": "npm run lint && npm run typecheck && npm test && npm run typecheck:edge && npm run test:edge && npm run security:scan && npm run build",
     "loadtest:env": "node ./load-tests/generate-loadtest-env.mjs",
     "loadtest:smoke": "k6 run ./load-tests/smoke.js",
-    "loadtest:run": "k6 run ./load-tests/supabase-backend.js"
+    "loadtest:run": "k6 run ./load-tests/supabase-backend.js",
+    "lint": "eslint src supabase/functions tests scripts vite.config.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "security:scan": "node scripts/security-scan.mjs",
+    "typecheck:edge": "node scripts/check-edge.mjs",
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "test:edge": "node scripts/test-edge.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
