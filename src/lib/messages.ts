@@ -1,4 +1,5 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { getCandidateSummaries,getPublicEmployers } from "./publicProfiles";
 import { supabase } from "./supabase";
 
 export type MessagingRole = "employer" | "candidate";
@@ -136,9 +137,11 @@ export async function getConversationThreads(): Promise<ConversationThread[]> {
   const { data, error } = await query;
   if (error) throw error;
 
+  const summaries = actor.role === "employer" ? await getCandidateSummaries((data ?? []).map(row => String(row.candidate_profile_id))) : new Map();
+  const companies = actor.role === "candidate" ? new Map((await getPublicEmployers((data ?? []).map(row => String(row.employer_id)))).map(row => [row.id, row])) : new Map();
   return (data ?? []).map((row) => {
-    const employer = Array.isArray(row.employer) ? row.employer[0] : row.employer;
-    const candidate = Array.isArray(row.candidate) ? row.candidate[0] : row.candidate;
+    const employer = companies.get(String(row.employer_id)) ?? (Array.isArray(row.employer) ? row.employer[0] : row.employer);
+    const candidate = summaries.get(String(row.candidate_profile_id)) ?? (Array.isArray(row.candidate) ? row.candidate[0] : row.candidate);
 
     if (actor.role === "employer") {
       return {

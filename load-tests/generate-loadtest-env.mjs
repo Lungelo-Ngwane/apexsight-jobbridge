@@ -189,20 +189,7 @@ async function main() {
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
 
-  console.log("Generated load-test env values:\n");
-  console.log(envText);
-  console.log("\nRun full test with:\n");
-  console.log(
-    "k6 run .\\load-tests\\supabase-backend.js " +
-      "-e SUPABASE_URL=$env:SUPABASE_URL " +
-      "-e SUPABASE_ANON_KEY=$env:SUPABASE_ANON_KEY " +
-      "-e EMPLOYER_JWTS=$env:EMPLOYER_JWTS " +
-      "-e CANDIDATE_JWTS=$env:CANDIDATE_JWTS " +
-      "-e JOB_IDS=$env:JOB_IDS " +
-      "-e APPLICATION_IDS=$env:APPLICATION_IDS " +
-      "-e CONVERSATION_IDS=$env:CONVERSATION_IDS",
-  );
-
+  console.log("Generated load-test configuration. Credentials are never printed.");
   if (writeEnvFile) {
     const outputPath = "load-tests/.env.generated";
     fs.writeFileSync(outputPath, `${envText}\n`, "utf8");
@@ -210,7 +197,7 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
+main().catch(() => {
+  console.error("Load-test configuration generation failed. Check the isolated test environment and account configuration.");
   process.exit(1);
 });

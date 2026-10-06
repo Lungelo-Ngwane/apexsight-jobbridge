@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (profileError) {
-      return new Response(JSON.stringify({ error: profileError.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 
     const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
     if (deleteError) {
-      return new Response(JSON.stringify({ error: deleteError.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -106,8 +106,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ deleted: true, providers: allProviders }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

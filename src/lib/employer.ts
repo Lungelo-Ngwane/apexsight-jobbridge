@@ -1,5 +1,7 @@
-import { supabase } from "./supabase";
+import { computeMatchIntelligence } from "./employer/matching";
+import { getCandidateSummaries } from "./publicProfiles";
 import { hasEmployerPaidAccess } from "./subscriptionAccess";
+import { supabase } from "./supabase";
 
 const JOB_VISIBILITY_DAYS = 30;
 
@@ -804,9 +806,9 @@ export async function createJob(data: {
   title: string;
   description: string;
   location?: string;
-  employment_type?: string;
-  work_mode?: string;
-  department?: string;
+  employment_type?: string | null;
+  work_mode?: string | null;
+  department?: string | null;
   min_years_experience?: number | null;
   salary_min?: number | null;
   salary_max?: number | null;
@@ -876,7 +878,6 @@ export async function createJob(data: {
   // 5) Ensure new jobs get embeddings without charging AI credits.
   await invokeAuthedFunction("generate-job-embedding", {
     job_id: job.id,
-    skip_credit: true,
   }).then(({ error }) => {
     if (error) {
       console.warn("Failed to auto-generate job embedding", error);
@@ -1035,9 +1036,9 @@ export async function updateJob(
     title: string;
     description: string;
     location?: string;
-    employment_type?: string;
-    work_mode?: string;
-    department?: string;
+    employment_type?: string | null;
+    work_mode?: string | null;
+    department?: string | null;
     min_years_experience?: number | null;
     salary_min?: number | null;
     salary_max?: number | null;
@@ -1113,7 +1114,6 @@ export async function updateJob(
 
   await invokeAuthedFunction("generate-job-embedding", {
     job_id: jobId,
-    skip_credit: true,
   }).then(({ error }) => {
     if (error) {
       console.warn("Failed to refresh job embedding after update", error);
@@ -1235,40 +1235,12 @@ export async function getJobApplicants(jobId: string) {
 
   if (jobError) throw jobError;
 
-  const { data, error } = await supabase
-    .from("job_applications")
-    .select(
-      `
-      id,
-      status,
-      score,
-      score_breakdown,
-      created_at,
-      candidate:candidate_profiles (
-        id,
-        full_name,
-        headline,
-        location,
-        preferred_job_type,
-        cv_url,
-        resume_analysis,
-        years_experience,
-        bio,
-        candidate_skills (
-          skill_id,
-          skill,
-          skills ( name ),
-          level
-        )
-      )
-    `,
-    )
-    .eq("job_id", jobId)
-    .order("created_at", { ascending: false });
-
+  const { data, error } = await supabase.from("job_applications")
+    .select("id, status, score, score_breakdown, created_at, candidate_profile_id")
+    .eq("job_id", jobId).order("created_at", { ascending: false }).limit(500);
   if (error) throw error;
-
-  const applications = data ?? [];
+  const summaries = await getCandidateSummaries((data ?? []).map(row => String(row.candidate_profile_id)));
+  const applications = (data ?? []).map(row => ({ ...row, candidate: summaries.get(String(row.candidate_profile_id)) ?? null }));
   const candidateIds = applications
     .map((row) => String((row as { candidate?: { id?: string | null } | null }).candidate?.id ?? "").trim())
     .filter((id) => id.length > 0);
@@ -1463,190 +1435,6 @@ export async function getJobSkillSummary(jobId: string) {
     totalCount: (data ?? []).length,
     requiredCount,
     optionalCount,
-  };
-}
-
-function clampScore(value: number): number {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function normalizeComparable(value: string): string {
-  return String(value ?? "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function tokenizeComparable(value: string): string[] {
-  const stopWords = new Set(["senior", "junior", "mid", "developer", "engineer", "software", "full", "time"]);
-  return normalizeComparable(value)
-    .split(" ")
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 3 && !stopWords.has(token));
-}
-
-function computeMatchIntelligence(input: {
-  applicationScore: number | null;
-  aiSimilarity: number | null;
-  scoreBreakdown?: { required?: number; optional?: number; experience?: number; skill_level?: number } | null;
-  job: {
-    title?: string | null;
-    location?: string | null;
-    employment_type?: string | null;
-    experience_level?: string | null;
-    job_skills?: Array<{ required?: boolean | null; skill_id?: string | null; skills?: { name?: string | null } | null }> | null;
-  };
-  candidate: {
-    headline?: string | null;
-    location?: string | null;
-    preferred_job_type?: string | null;
-    resume_analysis?: {
-      work_experience?: Array<{ title?: string | null }>;
-      debug?: { extraction_method?: string | null };
-    } | null;
-    candidate_skills?: Array<{ skill_id?: string | null; skill?: string | null; skills?: { name?: string | null } | null }> | null;
-    cv_url?: string | null;
-  };
-}) {
-  const applicationScore = Number.isFinite(Number(input.applicationScore)) ? Number(input.applicationScore) : null;
-  const aiSimilarity = Number.isFinite(Number(input.aiSimilarity)) ? Number(input.aiSimilarity) : null;
-  const baseHybrid =
-    applicationScore === null || aiSimilarity === null
-      ? (applicationScore ?? aiSimilarity ?? null)
-      : clampScore((applicationScore * 0.7) + (aiSimilarity * 0.3));
-
-  const matchingConfig = {
-    total_job_skills: Array.isArray(input.job.job_skills) ? input.job.job_skills.length : 0,
-    required_job_skills: Array.isArray(input.job.job_skills)
-      ? input.job.job_skills.filter((row) => Boolean(row.required)).length
-      : 0,
-    optional_job_skills: Array.isArray(input.job.job_skills)
-      ? input.job.job_skills.filter((row) => !row.required).length
-      : 0,
-  };
-
-  const knockoutFilters: Array<{ label: string; status: "pass" | "warning" | "fail"; detail: string }> = [];
-  let penalty = 0;
-  let recencyBonus = 0;
-  const explanations: string[] = [];
-  const normalizeSkillKey = (skill: { skill_id?: string | null; skill?: string | null; skills?: { name?: string | null } | null }) =>
-    String(
-      skill.skills?.name ??
-      skill.skill ??
-      skill.skill_id ??
-      "",
-    )
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9+#]/g, "");
-
-  const preferredJobType = normalizeComparable(String(input.candidate.preferred_job_type ?? ""));
-  const jobEmploymentType = normalizeComparable(String(input.job.employment_type ?? ""));
-  if (preferredJobType && jobEmploymentType) {
-    if (preferredJobType === jobEmploymentType) {
-      knockoutFilters.push({ label: "Job type", status: "pass", detail: "Candidate preference matches job type." });
-    } else {
-      knockoutFilters.push({ label: "Job type", status: "warning", detail: "Candidate usually prefers a different job type, but may still consider this role." });
-    }
-  }
-
-  const candidateLocation = normalizeComparable(String(input.candidate.location ?? ""));
-  const jobLocation = normalizeComparable(String(input.job.location ?? ""));
-  const remoteLike = (value: string) => value.includes("remote");
-  if (candidateLocation && jobLocation && !remoteLike(candidateLocation) && !remoteLike(jobLocation)) {
-    const candidateTokens = new Set(tokenizeComparable(candidateLocation));
-    const jobTokens = tokenizeComparable(jobLocation);
-    const overlap = jobTokens.filter((token) => candidateTokens.has(token)).length;
-    if (overlap > 0) {
-      knockoutFilters.push({ label: "Location", status: "pass", detail: "Candidate location aligns with the job location." });
-    } else {
-      knockoutFilters.push({ label: "Location", status: "warning", detail: "Candidate location may not align with this job location." });
-    }
-  }
-
-  const requiredScore = Number(input.scoreBreakdown?.required ?? 0);
-  const experienceScore = Number(input.scoreBreakdown?.experience ?? 0);
-  const requiredJobSkills = (input.job.job_skills ?? []).filter((row) => Boolean(row.required));
-  const candidateSkillKeys = new Set(
-    (input.candidate.candidate_skills ?? [])
-      .map((row) => normalizeSkillKey(row))
-      .filter((value) => value.length > 0),
-  );
-  const matchedRequiredSkills = requiredJobSkills.filter((row) => candidateSkillKeys.has(normalizeSkillKey(row))).length;
-
-  if (matchingConfig.required_job_skills > 0 && requiredScore <= 0) {
-    knockoutFilters.push({ label: "Required skills", status: "fail", detail: "Candidate did not match any configured required skills." });
-    penalty += 20;
-  } else if (matchingConfig.required_job_skills > 0) {
-    explanations.push(`Matched ${matchedRequiredSkills} of ${matchingConfig.required_job_skills} required skills for this role.`);
-  }
-
-  if (normalizeComparable(String(input.job.experience_level ?? "")) && experienceScore <= 0) {
-    knockoutFilters.push({ label: "Experience", status: "fail", detail: "Candidate experience level is materially below the job expectation." });
-    penalty += 10;
-  } else if (experienceScore > 0) {
-    const experienceMessage =
-      experienceScore >= 13 ? "Candidate experience is strongly aligned with the level of this role." :
-      experienceScore >= 8 ? "Candidate experience is broadly aligned with the level of this role." :
-      "Candidate experience shows partial alignment with the level of this role.";
-    explanations.push(experienceMessage);
-  }
-
-  const recentRoleTitle = String(input.candidate.resume_analysis?.work_experience?.[0]?.title ?? "").trim();
-  const comparisonPool = `${input.candidate.headline ?? ""} ${recentRoleTitle}`.trim();
-  if (comparisonPool && input.job.title) {
-    const candidateTokens = new Set(tokenizeComparable(comparisonPool));
-    const jobTokens = tokenizeComparable(String(input.job.title));
-    const overlap = jobTokens.filter((token) => candidateTokens.has(token)).length;
-    if (overlap >= 2) {
-      recencyBonus += 8;
-      explanations.push("Recent role/title strongly aligns with the current job title.");
-    } else if (overlap >= 1) {
-      recencyBonus += 4;
-      explanations.push("Recent role/title shows partial alignment with this job.");
-    }
-  }
-
-  if (aiSimilarity !== null) {
-    explanations.push(`AI similarity is ${aiSimilarity}%, based on semantic overlap between the job and candidate profile.`);
-  }
-
-  const extractionMethod = String(input.candidate.resume_analysis?.debug?.extraction_method ?? "").trim();
-  let confidence = 0;
-  if (aiSimilarity !== null) confidence += 25;
-  if (matchingConfig.total_job_skills > 0) confidence += 25;
-  if (matchingConfig.required_job_skills > 0) confidence += 15;
-  if (String(input.candidate.cv_url ?? "").trim()) confidence += 15;
-  if (Array.isArray(input.candidate.candidate_skills) && input.candidate.candidate_skills.length >= 5) confidence += 10;
-  if (extractionMethod === "openai_pdf") confidence += 10;
-  confidence -= knockoutFilters.filter((item) => item.status === "fail").length * 8;
-  confidence = clampScore(confidence);
-
-  const finalMatchScore = baseHybrid === null ? null : clampScore(baseHybrid + recencyBonus - penalty);
-  const displayedMatchLevel =
-    (finalMatchScore ?? 0) >= 90 ? "Elite" :
-    (finalMatchScore ?? 0) >= 75 ? "Strong" :
-    (finalMatchScore ?? 0) >= 60 ? "Good" :
-    (finalMatchScore ?? 0) >= 40 ? "Potential" : "Weak";
-  const displayedRecommendation =
-    (finalMatchScore ?? 0) >= 75 ? "Interview Recommended" :
-    (finalMatchScore ?? 0) >= 50 ? "Consider" : "Not Recommended";
-
-  if (matchingConfig.total_job_skills === 0) {
-    explanations.push("This job has no structured skills configured, which lowers confidence in the rule-based match.");
-  }
-
-  return {
-    matchingConfig,
-    knockoutFilters,
-    explanations,
-    confidenceScore: confidence,
-    baseHybridScore: baseHybrid,
-    finalMatchScore,
-    displayedMatchLevel,
-    displayedRecommendation,
-    recencyBonus,
-    penalty,
   };
 }
 
@@ -2113,27 +1901,10 @@ export async function getTalentPoolCandidates(): Promise<TalentPoolCandidate[]> 
 
   if (userError || !user) throw new Error("Not authenticated");
 
-  const { data, error } = await supabase
-    .from("candidate_profiles")
-    .select(
-      `
-      id,
-      full_name,
-      headline,
-      location,
-      bio,
-      years_experience,
-      cv_url,
-      candidate_skills (
-        skill,
-        level
-      )
-    `,
-    );
-
+  const { data, error } = await supabase.rpc("discover_candidates", { p_offset: 0, p_limit: 100 });
   if (error) throw error;
 
-  return (data ?? []).map((row) => ({
+  return ((data ?? []) as import("./publicProfiles").CandidateSummary[]).map((row) => ({
     id: String(row.id),
     fullName: String(row.full_name ?? "Unknown Candidate"),
     headline: row.headline ?? null,
@@ -2143,7 +1914,7 @@ export async function getTalentPoolCandidates(): Promise<TalentPoolCandidate[]> 
       row.years_experience === null || row.years_experience === undefined
         ? null
         : Number(row.years_experience),
-    cvUrl: row.cv_url ?? null,
+    cvUrl: null,
     skills: Array.isArray(row.candidate_skills)
       ? row.candidate_skills.map((skillRow) => ({
           skill: String(skillRow.skill ?? ""),
@@ -2154,25 +1925,7 @@ export async function getTalentPoolCandidates(): Promise<TalentPoolCandidate[]> 
 }
 
 export async function getRankedCandidates(jobId: string) {
-  const { data, error } = await supabase
-    .from("job_applications")
-    .select(
-      `
-    id,
-    status,
-    score,
-    score_breakdown,
-    created_at,
-    candidate:candidate_profiles (
-      id,
-      full_name,
-      headline,
-      years_experience
-    )
-  `,
-    )
-    .eq("job_id", jobId)
-    .order("score", { ascending: false });
+  return getJobApplicants(jobId);
 }
 
 export async function startSubscriptionCheckout(
@@ -2475,6 +2228,7 @@ export async function confirmAddonCheckout(reference: string): Promise<ConfirmAd
     throw new Error(String(message));
   }
 
+  if (!data) throw new Error("Missing add-on confirmation result");
   return data;
 }
 
@@ -2805,14 +2559,7 @@ export async function updateEmployerProfile(payload: {
   sla_uptime_target?: string | null;
   sla_response_time_hours?: number | null;
   onboarding_step?: number;
-  plan?: string;
   selected_plan?: string | null;
-  subscription_status?:
-    | "inactive"
-    | "active"
-    | "past_due"
-    | "cancelled"
-    | "pending_payment";
 }) {
   const employer = await getCurrentEmployerContext({ requiredRoles: ["owner", "admin"] });
 

@@ -1,7 +1,8 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import OpenAI from "https://esm.sh/openai@4.28.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import JSZip from "https://esm.sh/jszip@3.10.1";
+import JSZip from "npm:jszip@3.10.1";
+
 
 const ANALYZER_VERSION = "2026-03-16-docx-extraction-v3";
 
@@ -110,7 +111,7 @@ function escapeRegExp(value: string): string {
 async function inflateBytes(bytes: Uint8Array): Promise<string> {
   for (const format of ["deflate-raw", "deflate"]) {
     try {
-      const stream = new Response(bytes).body;
+      const stream = new Response(new Uint8Array(bytes)).body;
       if (!stream) continue;
       const decompressed = stream.pipeThrough(
         new DecompressionStream(format as "deflate" | "deflate-raw"),
@@ -289,8 +290,8 @@ async function extractPdfText(bytes: Uint8Array): Promise<string> {
     );
 
     return text.slice(0, 60000);
-  } catch (error) {
-    console.error("Failed to parse PDF text from content streams", error);
+  } catch {
+    console.error("Failed to parse PDF text from content streams");
     return "";
   }
 }
@@ -331,8 +332,8 @@ async function extractDocxText(bytes: Uint8Array): Promise<string> {
     }
 
     return normalizeWhitespace(chunks.join("\n")).slice(0, 60000);
-  } catch (error) {
-    console.error("Failed to parse DOCX text", error);
+  } catch {
+    console.error("Failed to parse DOCX text");
     return "";
   }
 }
@@ -452,7 +453,7 @@ async function extractStructuredDataFromPdfWithOpenAI(params: {
             skill: { type: "string" },
             category: {
               type: ["string", "null"],
-              enum: Array.from(allowedSkillCategories).concat([null]),
+              enum: [...Array.from(allowedSkillCategories), null],
             },
             level: {
               type: ["string", "null"],
@@ -584,7 +585,11 @@ Deno.serve(async (req) => {
       userId = user?.id ?? null;
     }
 
-    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+    const body = await requestObject(req).catch(() => ({} as Record<string, unknown>));
     const requestedProfileId = String(body.profile_id ?? "").trim();
     if (!requestedProfileId) {
       return new Response(JSON.stringify({ error: "Missing profile_id" }), {
@@ -660,8 +665,8 @@ Deno.serve(async (req) => {
             cvText = normalizeWhitespace(String(extracted.extracted_resume_text ?? "")).slice(0, 60000);
             extractionMethod = "openai_pdf";
           }
-        } catch (error) {
-          console.error("Failed OpenAI PDF extraction, falling back to text parsing", error);
+        } catch {
+          console.error("Failed OpenAI PDF extraction, falling back to text parsing");
         }
 
         if (!cvText) {
@@ -971,11 +976,7 @@ ${resumeInput.slice(0, 50000)}
         .single();
 
       if (createError || !created?.id) {
-        console.error("Failed to create skill from CV analysis", {
-          skill: normalizedName,
-          category,
-          error: createError,
-        });
+        console.error("Failed to create skill from CV analysis");
         return null;
       }
 
@@ -1133,7 +1134,7 @@ ${resumeInput.slice(0, 50000)}
       .eq("user_id", profile.user_id);
 
     if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -1151,8 +1152,8 @@ ${resumeInput.slice(0, 50000)}
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

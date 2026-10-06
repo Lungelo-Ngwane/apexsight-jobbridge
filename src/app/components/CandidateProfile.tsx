@@ -1,23 +1,23 @@
-"use client";
+import { ensureCurrentCandidateProfile } from "@/lib/candidate";
 
+
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from "@/app/components/ui/select";
 import { Textarea } from "@/app/components/ui/textarea";
-import { ArrowLeft, ChevronDown, ChevronUp, FileText, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
-import { Badge } from "@/app/components/ui/badge";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { ArrowLeft,ChevronDown,ChevronUp,FileText,Loader2,Plus,Trash2,Upload,X } from "lucide-react";
+import { useCallback,useEffect,useRef,useState } from "react";
 // import { supabase } from "@/lib/supabaseClient";
+import { CircularLoader } from "@/app/components/ui/circular-loader";
+import { FeedbackDialog,useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
 import { useAuth } from "@/app/context/AuthContext";
+import { addCandidateCertification,addCandidateSkillByName,refreshCandidateEmbedding,removeCandidateCertification,uploadCandidateCV } from "@/lib/candidate";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { addCandidateCertification, addCandidateSkillByName, removeCandidateCertification, refreshCandidateEmbedding, uploadCandidateCV } from "@/lib/candidate";
-import { FeedbackDialog, useFeedbackDialog } from "@/app/components/ui/feedback-dialog";
-import { CircularLoader } from "@/app/components/ui/circular-loader";
 
-interface CandidateProfileProps { }
 
 const EXPERIENCE_LEVEL_OPTIONS = [
     { value: "junior", label: "Junior" },
@@ -63,7 +63,7 @@ function getCandidateProfileDraftKey(userId: string) {
     return `candidate_profile_draft_${userId}`;
 }
 
-export function CandidateProfile({ }: CandidateProfileProps) {
+export function CandidateProfile() {
     const { user, role } = useAuth();
     const navigate = useNavigate();
     const profileDraftHydratedRef = useRef(false);
@@ -85,9 +85,9 @@ export function CandidateProfile({ }: CandidateProfileProps) {
         contact_number: "",
     });
 
-    const [skills, setSkills] = useState<{ id?: string; skill_id?: string; skill: string; level?: string }[]>([]);
+    const [skills, setSkills] = useState<{ id?: string; skill_id?: string; skill: string; level?: string | null }[]>([]);
     const [certifications, setCertifications] = useState<{ id?: string; name: string; issuer?: string | null; issued_at?: string | null }[]>([]);
-    const [allSkills, setAllSkills] = useState<{ id: string; name: string }[]>([]);
+    const [, setAllSkills] = useState<{ id: string; name: string }[]>([]);
     const [candidateProfileId, setCandidateProfileId] = useState<string | null>(null);
     const [newSkill, setNewSkill] = useState("");
     const [newCertification, setNewCertification] = useState({ name: "" });
@@ -118,34 +118,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
 
         if (!createIfMissing) return null;
 
-        const { data: createdProfile, error: createError } = await supabase
-            .from("candidate_profiles")
-            .insert({
-                user_id: user.id,
-                full_name: String(profile.full_name ?? user.user_metadata?.full_name ?? user.email ?? "").trim(),
-                surname: profile.surname || null,
-                headline: profile.headline || null,
-                bio: profile.bio || null,
-                location: profile.location || null,
-                years_experience: Number(profile.years_experience ?? 0),
-                experience_level: normalizeExperienceLevel(profile.experience_level) || "junior",
-                availability: profile.availability || null,
-                preferred_job_type: profile.preferred_job_type || null,
-                work_mode: profile.work_mode || null,
-                date_of_birth: profile.date_of_birth || null,
-                id_number: profile.id_number || null,
-                gender: normalizeGender(profile.gender) || null,
-                contact_number: profile.contact_number || null,
-            })
-            .select("id")
-            .single();
-
-        if (createError || !createdProfile?.id) {
-            console.error("Failed to create candidate profile", createError);
-            return null;
-        }
-
-        const createdId = String(createdProfile.id);
+        const createdId = await ensureCurrentCandidateProfile();
         setCandidateProfileId(createdId);
         return createdId;
     }, [candidateProfileId, profile, user]);
@@ -349,7 +322,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                 updated_at: new Date().toISOString(),
             };
             const profileId = await resolveCandidateProfileId(true);
-            let finalProfileId = profileId;
+            const finalProfileId = profileId;
 
             if (profileId) {
                 const { error: updateError } = await supabase
@@ -358,18 +331,7 @@ export function CandidateProfile({ }: CandidateProfileProps) {
                     .eq("id", profileId);
                 if (updateError) throw updateError;
             } else {
-                const { data: createdProfile, error: createProfileError } = await supabase
-                    .from("candidate_profiles")
-                    .insert({
-                        ...updateData,
-                        user_id: user.id,
-                        experience_level: normalizeExperienceLevel(updateData.experience_level) || "junior",
-                    })
-                    .select("id")
-                    .single();
-                if (createProfileError) throw createProfileError;
-                finalProfileId = createdProfile?.id ? String(createdProfile.id) : null;
-                if (finalProfileId) setCandidateProfileId(finalProfileId);
+                throw new Error("Candidate profile unavailable.");
             }
 
             if (finalProfileId) {

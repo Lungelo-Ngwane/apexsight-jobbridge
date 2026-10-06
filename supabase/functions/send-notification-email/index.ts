@@ -1,6 +1,8 @@
-import { serve } from "https://deno.land/std/http/server.ts";
-import { Resend } from "npm:resend";
-import { createClient } from "npm:@supabase/supabase-js";
+import { record } from "../_shared/payment-validation.ts";
+import { requestObject } from "../_shared/http.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
+import { Resend } from "https://esm.sh/resend@6.32.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -139,7 +141,7 @@ function candidateWelcomeEmailHtml(params: {
         <tr>
           <td style="padding:24px 28px;background:linear-gradient(135deg,#0f172a,#1d4ed8 56%,#38bdf8);color:#ffffff;">
             <div style="font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.82;">ApexSight Talent Infrastructure</div>
-            <div style="margin-top:8px;font-size:28px;font-weight:700;line-height:1.2;">Welcome to ApexSight 🎉</div>
+            <div style="margin-top:8px;font-size:28px;font-weight:700;line-height:1.2;">Welcome to ApexSight ðŸŽ‰</div>
             <div style="margin-top:12px;display:inline-block;padding:7px 12px;border:1px solid rgba(255,255,255,.45);border-radius:999px;font-size:12px;font-weight:600;background:rgba(255,255,255,.14);">
               Early Candidate Access
             </div>
@@ -147,12 +149,12 @@ function candidateWelcomeEmailHtml(params: {
         </tr>
         <tr>
           <td style="padding:32px 28px 22px 28px;">
-            <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#334155;">Hi ${escapeHtml(params.candidateName)} 👋</p>
+            <p style="margin:0 0 18px 0;font-size:15px;line-height:1.7;color:#334155;">Hi ${escapeHtml(params.candidateName)} ðŸ‘‹</p>
             <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">Thanks for creating your profile on ApexSight.</p>
-            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">You are among the first candidates on the platform, which means you will have priority visibility when companies begin posting opportunities. 🚀</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">You are among the first candidates on the platform, which means you will have priority visibility when companies begin posting opportunities. ðŸš€</p>
             <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">Right now we are onboarding candidates before opening the platform to employers, which gives early candidates like you a major advantage.</p>
-            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">In the meantime, make sure your profile is complete so companies can discover you easily and our AI can match you to relevant opportunities. ✨</p>
-            <p style="margin:0 0 24px 0;font-size:15px;line-height:1.75;color:#334155;">We'll notify you as soon as employers start posting opportunities. 🔔</p>
+            <p style="margin:0 0 16px 0;font-size:15px;line-height:1.75;color:#334155;">In the meantime, make sure your profile is complete so companies can discover you easily and our AI can match you to relevant opportunities. âœ¨</p>
+            <p style="margin:0 0 24px 0;font-size:15px;line-height:1.75;color:#334155;">We'll notify you as soon as employers start posting opportunities. ðŸ””</p>
             <a href="${escapeHtml(params.dashboardUrl)}" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:10px;">Complete Your Profile</a>
             <a href="${escapeHtml(params.jobsUrl)}" style="display:inline-block;margin-left:10px;color:#1d4ed8;text-decoration:none;font-size:14px;font-weight:600;padding:12px 2px;">Open Candidate Area -&gt;</a>
             <p style="margin:24px 0 0 0;font-size:15px;line-height:1.75;color:#334155;">ApexSight Talent Infrastructure</p>
@@ -176,7 +178,7 @@ async function isAdminUser(userId: string) {
     .maybeSingle();
 
   if (error) {
-    console.error("Failed to resolve admin membership", error);
+    console.error("Failed to resolve admin membership");
     return false;
   }
 
@@ -234,9 +236,11 @@ serve(async (req) => {
       }
     }
 
-    const payload = await req.json();
+    if (!actor) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
+
+    const payload = await requestObject(req);
     const type = String(payload?.type ?? "") as SupportedEmailType;
-    const data = payload?.data;
+    const data = record(payload.data);
     const applicationId = data?.applicationId as string | undefined;
     const interviewId = data?.interviewId as string | undefined;
 
@@ -375,7 +379,7 @@ serve(async (req) => {
       `,
       )
       .eq("id", applicationId)
-      .single();
+      .single().overrideTypes<{ id: string; candidate_profiles: { id: string; user_id: string; full_name: string | null }; jobs: { id: string; title: string; employer_id: string; employer_profiles: { id: string; user_id: string; company_name: string | null } } }, { merge: false }>();
 
     if (applicationError || !application) {
       return new Response(JSON.stringify({ error: "Application not found" }), {
@@ -392,6 +396,8 @@ serve(async (req) => {
 
     const candidateUserId = application.candidate_profiles?.user_id;
     const employerUserId = application.jobs?.employer_profiles?.user_id;
+    const { data: actorMembership } = await supabase.from("employer_memberships").select("id").eq("employer_id", application.jobs?.employer_id).eq("user_id", actor.id).eq("status", "active").maybeSingle();
+    const employerActorAllowed = employerUserId === actor.id || Boolean(actorMembership?.id);
 
     if (type === "APPLICATION_CREATED" && actor && candidateUserId !== actor.id) {
       return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
@@ -400,14 +406,14 @@ serve(async (req) => {
       });
     }
 
-    if (type === "CANDIDATE_SHORTLISTED" && actor && employerUserId !== actor.id) {
+    if (type === "CANDIDATE_SHORTLISTED" && actor && !employerActorAllowed) {
       return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
         status: 403,
         headers,
       });
     }
 
-    if (type === "CANDIDATE_INTERVIEW_SCHEDULED" && actor && employerUserId !== actor.id) {
+    if (type === "CANDIDATE_INTERVIEW_SCHEDULED" && actor && !employerActorAllowed) {
       return new Response(JSON.stringify({ error: "Forbidden for this application" }), {
         status: 403,
         headers,
@@ -598,7 +604,7 @@ serve(async (req) => {
               { label: "Company", value: companyName },
               { label: "Stage", value: stageLabel },
               { label: "When", value: formattedDate },
-              { label: "Format", value: `${modeLabel} • ${interviewDetails?.durationMinutes ?? 30} minutes` },
+              { label: "Format", value: `${modeLabel} â€¢ ${interviewDetails?.durationMinutes ?? 30} minutes` },
               ...(interviewDetails?.locationOrMeetingLink
                 ? [{ label: modeLabel === "Onsite" ? "Location" : "Joining Details", value: interviewDetails.locationOrMeetingLink }]
                 : []),
@@ -626,7 +632,7 @@ serve(async (req) => {
           const interviewMessageParts = [
             `${companyName} scheduled your ${stageLabel.toLowerCase()} for ${jobTitle}.`,
             `When: ${formattedDate} (${interviewDetails?.timezone ?? "Africa/Johannesburg"})`,
-            `Format: ${modeLabel}${interviewDetails?.durationMinutes ? ` • ${interviewDetails.durationMinutes} min` : ""}`,
+            `Format: ${modeLabel}${interviewDetails?.durationMinutes ? ` â€¢ ${interviewDetails.durationMinutes} min` : ""}`,
             interviewDetails?.locationOrMeetingLink
               ? `${modeLabel === "Onsite" ? "Location" : "Joining details"}: ${interviewDetails.locationOrMeetingLink}`
               : null,
@@ -641,10 +647,10 @@ serve(async (req) => {
           });
 
           if (messageError) {
-            console.error("Failed to create interview inbox notification", messageError);
+            console.error("Failed to create interview inbox notification");
           }
         } else if (conversationError) {
-          console.error("Failed to create interview conversation", conversationError);
+          console.error("Failed to create interview conversation");
         }
       }
     }
@@ -679,10 +685,9 @@ serve(async (req) => {
       status: 200,
       headers,
     });
-  } catch (error) {
-    console.error(error);
-    const message = error instanceof Error ? error.message : "Failed to send email";
-    return new Response(JSON.stringify({ error: message }), {
+  } catch {
+    console.error("Notification delivery failed");
+    return new Response(JSON.stringify({ error: "Notification delivery failed" }), {
       status: 500,
       headers,
     });

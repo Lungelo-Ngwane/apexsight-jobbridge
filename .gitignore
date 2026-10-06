@@ -75,3 +75,13 @@ prisma/migrations/
 # Docker
 # ==============================
 docker-data/
+
+# Private database exports and crash artifacts (keep migrations and seeds)
+backups/
+*backup*.sql
+*dumps*/
+*.dump
+*.bak
+*.stackdump
+playwright-report/
+test-results/

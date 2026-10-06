@@ -1,20 +1,20 @@
-import { useEffect, useState } from "react";
-import {
-  getCandidateCertificate,
-  getCandidateCV,
-  getCandidateDeepView,
-  getEmployerCredits,
-  updateApplicationStatus,
-  type EmployerCreditBalance,
-} from "../../lib/employer";
-import { Badge } from "./ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Download, X } from "lucide-react";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
-import { AddonUpsellModal } from "./employer/AddonUpsellModal";
-import { UpgradeModal } from "./UpgradeModal";
-import { hasEmployerPaidAccess, hasEmployerProfessionalAccess } from "@/lib/subscriptionAccess";
+import { hasEmployerPaidAccess,hasEmployerProfessionalAccess } from "@/lib/subscriptionAccess";
+import { Download,X } from "lucide-react";
+import { useEffect,useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+getCandidateCertificate,
+getCandidateCV,
+getCandidateDeepView,
+getEmployerCredits,
+updateApplicationStatus,
+type EmployerCreditBalance,
+} from "../../lib/employer";
+import { AddonUpsellModal } from "./employer/AddonUpsellModal";
+import { Badge } from "./ui/badge";
+import { UpgradeModal } from "./UpgradeModal";
 
 export function CandidateProfileDrawer({
   applicationId,
@@ -27,6 +27,7 @@ export function CandidateProfileDrawer({
 }) {
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { profile } = useEmployerProfile();
   const [credits, setCredits] = useState<EmployerCreditBalance[]>([]);
   const [loadingCredits, setLoadingCredits] = useState(true);
@@ -39,7 +40,15 @@ export function CandidateProfileDrawer({
   const [shortlisting, setShortlisting] = useState(false);
 
   useEffect(() => {
-    getCandidateDeepView(applicationId).then(setData);
+    let active = true;
+    setData(null); setLoadError(null);
+    getCandidateDeepView(applicationId).then(value => {
+      if (active) {
+        if (!value?.candidate_profiles) setLoadError("This profile is unavailable or requires an authorized unlock.");
+        else setData(value);
+      }
+    }).catch(() => { if (active) setLoadError("This profile couldn't be loaded. Close it and try again."); });
+    return () => { active = false; };
   }, [applicationId]);
 
   useEffect(() => {
@@ -88,12 +97,12 @@ export function CandidateProfileDrawer({
     }
 
     let cancelled = false;
-    const paths = certifications
+    const paths: Array<{ id: string; path: string }> = certifications
       .map((cert: any) => ({
         id: String(cert?.id ?? "").trim(),
         path: String(cert?.certificate_file_path ?? "").trim(),
       }))
-      .filter((item) => item.id && item.path);
+      .filter((item: { id: string; path: string }) => item.id && item.path);
 
     setLoadingCertificateIds(paths.map((item) => item.id));
 
@@ -120,7 +129,9 @@ export function CandidateProfileDrawer({
   }, [data?.candidate_profiles?.candidate_certifications]);
 
 
-  if (!data) return null;
+  if (!data) return <div role={loadError ? "alert" : "status"} className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-white p-6 dark:bg-neutral-950">
+    <p>{loadError ?? "Loading candidate profile..."}</p><Button onClick={onClose}>Close</Button>
+  </div>;
   const applicationScore = Number(data.score ?? 0);
   const aiSimilarity = data.ai_similarity === null || data.ai_similarity === undefined ? null : Number(data.ai_similarity);
   const hybridScore = data.hybrid_score === null || data.hybrid_score === undefined ? null : Number(data.hybrid_score);
@@ -367,7 +378,7 @@ export function CandidateProfileDrawer({
           <h4 className="font-semibold mb-2">Why This Match</h4>
           <div className="space-y-2 text-sm text-gray-700">
             {matchExplanations.map((item: string, index: number) => (
-              <p key={`${item}-${index}`}>• {item}</p>
+              <p key={`${item}-${index}`}>â€¢ {item}</p>
             ))}
           </div>
         </section>

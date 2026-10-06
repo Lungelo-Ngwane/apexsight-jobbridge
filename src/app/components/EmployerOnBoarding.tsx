@@ -1,19 +1,19 @@
-import { useEffect, useState } from "react";
-import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
+import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import {
-    Building2,
-    Briefcase,
-    CheckCircle2,
-    Sparkles,
-    ArrowRight,
-    Crown,
-    Zap
-} from "lucide-react";
-import { updateEmployerProfile } from "../../lib/employer";
 import { useEmployerProfile } from "@/hooks/useEmployerProfile";
+import {
+ArrowRight,
+Briefcase,
+Building2,
+CheckCircle2,
+Crown,
+Sparkles,
+Zap
+} from "lucide-react";
+import { useEffect,useState } from "react";
+import { updateEmployerProfile } from "../../lib/employer";
 
 export function EmployerOnboarding({
     initialStep
@@ -24,7 +24,6 @@ export function EmployerOnboarding({
     const [step, setStep] = useState(initialStep);
     const [companyName, setCompanyName] = useState("");
     const [industry, setIndustry] = useState("");
-    const [companySize, setCompanySize] = useState("");
     const [selectedPlanIntent, setSelectedPlanIntent] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const pendingPlan =
@@ -54,16 +53,12 @@ export function EmployerOnboarding({
         setSelectedPlanIntent(plan);
         if (plan === "free") {
             await updateEmployerProfile({
-                plan: "free",
                 selected_plan: null,
-                subscription_status: "inactive",
                 onboarding_step: 2,
             });
         } else {
             await updateEmployerProfile({
-                plan: "free",
                 selected_plan: plan,
-                subscription_status: "pending_payment",
                 onboarding_step: 2,
             });
         }
@@ -97,8 +92,8 @@ export function EmployerOnboarding({
                     /> */}
                     <div className="flex items-center justify-center gap-2">
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">ApexSight</h2>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-blue-600 font-semibold">JobBridge™</span>
+                        <span className="text-gray-400">â€¢</span>
+                        <span className="text-blue-600 font-semibold">JobBridgeâ„¢</span>
                     </div>
                 </div>
 
@@ -129,7 +124,7 @@ export function EmployerOnboarding({
                                     <Building2 className="w-8 h-8 text-white" />
                                 </div>
                                 <h1 className="text-xl font-bold text-gray-900 mb-3 dark:text-white">
-                                    Welcome to JobBridge™
+                                    Welcome to JobBridgeâ„¢
                                 </h1>
                                 <p className="text-lg text-gray-600">
                                     Let's set up your employer profile to start hiring skill-verified talent
@@ -275,12 +270,12 @@ export function EmployerOnboarding({
                                     <CheckCircle2 className="w-10 h-10 text-white" />
                                 </div>
                                 <h1 className="text-3xl font-bold text-gray-900 mb-3 dark:text-white">
-                                    You're All Set! 🚀
+                                    You're All Set! ðŸš€
                                 </h1>
                                 <p className="text-lg text-gray-600 mb-8 dark:text-gray-300">
                                     {pendingPlan && pendingPlan !== "free"
                                         ? `Your account is ready. Complete payment for the ${pendingPlan} plan from your dashboard to unlock premium features.`
-                                        : "Your JobBridge™ account is ready. Start posting jobs and discover South Africa's best skill-verified talent."}
+                                        : "Your JobBridgeâ„¢ account is ready. Start posting jobs and discover South Africa's best skill-verified talent."}
                                 </p>
 
                                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 dark:border-white/10 dark:bg-neutral-950">

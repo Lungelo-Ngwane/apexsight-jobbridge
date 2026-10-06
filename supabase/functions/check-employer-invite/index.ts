@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json().catch(() => ({ email: "" }));
+    const { email } = await requestObject(req).catch(() => ({ email: "" }));
     const normalizedEmail = String(email ?? "").trim().toLowerCase();
 
     if (!normalizedEmail) {
@@ -42,7 +43,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -56,8 +57,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

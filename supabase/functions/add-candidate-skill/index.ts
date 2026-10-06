@@ -1,5 +1,6 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,7 +60,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    const { data: account } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (account?.role !== "candidate") return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+    const body = await requestObject(req).catch(() => ({} as Record<string, unknown>));
     const skillName = normalizeSkillName(body.skill_name);
     const rawLevel = String(body.level ?? "beginner").trim().toLowerCase();
     const level: SkillLevel = isValidLevel(rawLevel) ? rawLevel : "beginner";
@@ -85,7 +90,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (profileError) {
-      return new Response(JSON.stringify({ error: profileError.message }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -102,7 +107,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (createProfileError || !createdProfile?.id) {
-        return new Response(JSON.stringify({ error: createProfileError?.message ?? "Failed to create profile" }), {
+        return new Response(JSON.stringify({ error: "The request could not be completed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -138,7 +143,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (fallbackError || !fallbackSkill?.id) {
-          return new Response(JSON.stringify({ error: createSkillError.message }), {
+          return new Response(JSON.stringify({ error: "The request could not be completed" }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -185,7 +190,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (candidateSkillError || !candidateSkill?.id) {
-      return new Response(JSON.stringify({ error: candidateSkillError?.message ?? "Failed to add candidate skill" }), {
+      return new Response(JSON.stringify({ error: "The request could not be completed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -203,8 +208,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

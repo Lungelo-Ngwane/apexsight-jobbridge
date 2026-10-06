@@ -1,6 +1,7 @@
+import { getPublicEmployers } from "./publicProfiles";
 import { supabase } from "./supabase";
 
-const CANDIDATE_SAVED_JOBS_KEY_PREFIX = "candidate_saved_jobs_";
+export { getCandidateSavedJobIds,setCandidateSavedJobIds,toggleCandidateSavedJob } from "./candidate/saved-jobs";
 const ENFORCE_JOB_EXPIRY =
   String(import.meta.env.VITE_ENFORCE_JOB_EXPIRY ?? "false").toLowerCase() === "true";
 const CANDIDATE_PROFILE_CACHE_TTL_MS = 10_000;
@@ -14,12 +15,6 @@ export interface SkillCatalogItem {
   name: string;
 }
 
-export interface CandidateSkillRow {
-  id?: string;
-  skill_id?: string;
-  skill: string;
-  level?: string | null;
-}
 
 interface CandidateProfileContext {
   userId: string;
@@ -72,19 +67,12 @@ export interface CandidateSkillRow {
   level?: string | null;
 }
 
-function getSavedJobsStorageKey(userId: string) {
-  return `${CANDIDATE_SAVED_JOBS_KEY_PREFIX}${userId}`;
-}
-
-function parseSavedJobIds(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return Array.from(new Set(parsed.map((value) => String(value)).filter(Boolean)));
-  } catch {
-    return [];
-  }
+let cacheGeneration = 0;
+export function resetCandidateCaches(): void {
+  cacheGeneration += 1;
+  candidateProfileContextCache = null; candidateProfileContextInFlight = null;
+  invalidateCandidateProfileCaches(); invalidateCandidateApplicationCaches();
+  openJobsCache = null; openJobsInFlight = null;
 }
 
 async function resolveCurrentUserId() {
@@ -94,42 +82,19 @@ async function resolveCurrentUserId() {
   return session?.user?.id ?? null;
 }
 
-async function ensureCandidateProfile(user: {
-  id: string;
-  email?: string | null;
-  user_metadata?: {
-    full_name?: string | null;
-    role?: string | null;
-  } | null;
-}) {
-  const normalizedRole = String(user.user_metadata?.role ?? "").trim().toLowerCase();
-
-  if (normalizedRole && normalizedRole !== "candidate") {
-    throw new Error("Candidate profile not available for this account");
-  }
-
-  const fullName = String(
-    user.user_metadata?.full_name ?? user.email ?? "",
-  ).trim();
-
-  const { data: createdProfile, error: createError } = await supabase
-    .from("candidate_profiles")
-    .insert({
-      user_id: user.id,
-      full_name: fullName || "Candidate",
-      experience_level: "junior",
-    })
-    .select("id")
-    .single();
-
-  if (createError) throw createError;
-  if (!createdProfile?.id) throw new Error("Candidate profile not found");
-
-  return createdProfile;
+export async function ensureCurrentCandidateProfile(): Promise<string> {
+  const {data,error}=await supabase.rpc('ensure_candidate_profile');
+  if(error) throw error;
+  if(typeof data !== 'string') throw new Error('Candidate profile unavailable');
+  return data;
 }
+async function ensureCandidateProfile(_user: { id: string }) { return {id: await ensureCurrentCandidateProfile()}; }
 
 async function resolveCandidateProfileContext(options?: { force?: boolean }): Promise<CandidateProfileContext> {
   const force = Boolean(options?.force);
+  const currentUserId = await resolveCurrentUserId();
+  if (!currentUserId) throw new Error("Not authenticated");
+  if (candidateProfileContextCache && candidateProfileContextCache.value.userId !== currentUserId) resetCandidateCaches();
   const now = Date.now();
 
   if (!force && candidateProfileContextCache && candidateProfileContextCache.expiresAt > now) {
@@ -140,6 +105,7 @@ async function resolveCandidateProfileContext(options?: { force?: boolean }): Pr
     return candidateProfileContextInFlight;
   }
 
+  const generation = cacheGeneration;
   const request = (async () => {
     const {
       data: { session },
@@ -168,7 +134,7 @@ async function resolveCandidateProfileContext(options?: { force?: boolean }): Pr
       profileId: String(profile.id),
     } satisfies CandidateProfileContext;
 
-    candidateProfileContextCache = {
+    if (generation === cacheGeneration) candidateProfileContextCache = {
       value,
       expiresAt: Date.now() + CANDIDATE_PROFILE_CACHE_TTL_MS,
     };
@@ -412,6 +378,7 @@ export async function getCandidateDashboardData() {
     return candidateDashboardInFlight;
   }
 
+  const generation = cacheGeneration;
   const request = (async () => {
     const context = await resolveCandidateProfileContext();
     const { data, error } = await supabase
@@ -463,7 +430,7 @@ export async function getCandidateDashboardData() {
 
     if (error) throw error;
 
-    candidateDashboardCache = {
+    if (generation === cacheGeneration) candidateDashboardCache = {
       value: data,
       expiresAt: Date.now() + CANDIDATE_DASHBOARD_CACHE_TTL_MS,
     };
@@ -489,6 +456,7 @@ export async function getCandidateUpcomingInterviews(): Promise<CandidateUpcomin
     return upcomingInterviewsInFlight;
   }
 
+  const generation = cacheGeneration;
   const request = (async () => {
     const context = await resolveCandidateProfileContext();
     const { data, error } = await supabase
@@ -533,7 +501,7 @@ export async function getCandidateUpcomingInterviews(): Promise<CandidateUpcomin
       companyName: String(row.employer_profiles?.company_name ?? "Employer"),
     }));
 
-    upcomingInterviewsCache = {
+    if (generation === cacheGeneration) upcomingInterviewsCache = {
       value: rows,
       expiresAt: Date.now() + UPCOMING_INTERVIEWS_CACHE_TTL_MS,
     };
@@ -560,7 +528,7 @@ export async function addCandidateSkill(
 
   return addCandidateSkillByName(normalizedSkillName, level);
 
-  // 1️⃣ Try get candidate profile
+  // 1ï¸âƒ£ Try get candidate profile
   /*
   let { data: profile, error } = await supabase
     .from("candidate_profiles")
@@ -568,7 +536,7 @@ export async function addCandidateSkill(
     .eq("user_id", user.id)
     .single();
 
-  // 2️⃣ If not found → create it
+  // 2ï¸âƒ£ If not found â†’ create it
   if (!profile) {
     const { data: newProfile, error: createError } = await supabase
       .from("candidate_profiles")
@@ -584,7 +552,7 @@ export async function addCandidateSkill(
     profile = newProfile;
   }
 
-  // 3️⃣ Insert skill
+  // 3ï¸âƒ£ Insert skill
   const { error: skillError } = await supabase.from("candidate_skills").insert({
     candidate_profile_id: profile.id,
     skill_id: normalizedSkillId,
@@ -798,6 +766,11 @@ export async function removeCandidateCertification(certificationId: string) {
 }
 
 export async function uploadCandidateCV(file: File) {
+  if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf") || file.size === 0 || file.size > 10 * 1024 * 1024) {
+    throw new Error("Upload a PDF between 1 byte and 10 MB.");
+  }
+  const signature = new TextDecoder().decode(await file.slice(0, 5).arrayBuffer());
+  if (signature !== "%PDF-") throw new Error("This file is not a PDF.");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -823,20 +796,10 @@ export async function uploadCandidateCV(file: File) {
   if (updateError) throw updateError;
 
   if (!updatedProfile?.id) {
-    const { data: createdProfile, error: createProfileError } = await supabase
-      .from("candidate_profiles")
-      .insert({
-        user_id: user.id,
-        full_name: String(user.user_metadata?.full_name ?? user.email ?? "Candidate"),
-        experience_level: "junior",
-        cv_url: filePath,
-        cv_file_name: originalFileName,
-      })
-      .select("id")
-      .single();
-
+    const createdId = await ensureCurrentCandidateProfile();
+    const {error: createProfileError} = await supabase.from('candidate_profiles').update({cv_url:filePath,cv_file_name:originalFileName}).eq('id',createdId);
     if (createProfileError) throw createProfileError;
-    updatedProfile = createdProfile;
+    updatedProfile = {id:createdId};
   }
 
   if (updatedProfile?.id) {
@@ -871,6 +834,7 @@ export async function getOpenJobs() {
     return openJobsInFlight;
   }
 
+  const generation = cacheGeneration;
   const request = (async () => {
     const withVisibility = await supabase
       .from("jobs")
@@ -886,6 +850,7 @@ export async function getOpenJobs() {
         is_featured,
         featured_until,
         created_at,
+        expires_at,
         employer_id
       `)
       .eq("status", "open")
@@ -927,7 +892,7 @@ export async function getOpenJobs() {
 
     if (jobsError) throw jobsError;
     if (!jobs || jobs.length === 0) {
-      openJobsCache = {
+      if (generation === cacheGeneration) openJobsCache = {
         value: [],
         expiresAt: Date.now() + OPEN_JOBS_CACHE_TTL_MS,
       };
@@ -947,7 +912,7 @@ export async function getOpenJobs() {
     }
 
     if (visibleJobs.length === 0) {
-      openJobsCache = {
+      if (generation === cacheGeneration) openJobsCache = {
         value: [],
         expiresAt: Date.now() + OPEN_JOBS_CACHE_TTL_MS,
       };
@@ -955,7 +920,7 @@ export async function getOpenJobs() {
     }
 
     const enrichedJobs = await attachEmployerDetailsToJobs(visibleJobs);
-    openJobsCache = {
+    if (generation === cacheGeneration) openJobsCache = {
       value: enrichedJobs,
       expiresAt: Date.now() + OPEN_JOBS_CACHE_TTL_MS,
     };
@@ -1009,28 +974,7 @@ async function attachEmployerDetailsToJobs(jobs: any[]) {
       }, {} as Record<string, string[]>)
     : {};
 
-  const { data: employers, error: empError } = await supabase
-    .from("employer_profiles")
-    .select("id, company_name, industry, logo_url, brand_primary_color, custom_domain, careers_page_headline, public_company_page, plan")
-    .in("id", employerIds);
-  if (empError) {
-    // Do not block job listing when employer metadata is restricted by RLS.
-    return jobs.map((job) => ({
-      ...job,
-      skills_required: requiredSkillsMap[String(job.id)] ?? [],
-      employer: {
-        company_name: "Company",
-        industry: null,
-        logo_url: null,
-        brand_primary_color: null,
-        custom_domain: null,
-        careers_page_headline: null,
-        public_company_page: true,
-        plan: "free",
-      },
-    }));
-  }
-
+  const employers = await getPublicEmployers(employerIds);
   const resolveLogoUrl = (value: unknown): string | null => {
     const raw = String(value ?? "").trim();
     if (!raw) return null;
@@ -1104,34 +1048,7 @@ export async function getPublicEmployerProfile(employerId: string) {
   const normalizedEmployerId = String(employerId ?? "").trim();
   if (!normalizedEmployerId) return null;
 
-  const { data: employer, error: employerError } = await supabase
-    .from("employer_profiles")
-    .select(`
-      id,
-      company_name,
-      industry,
-      company_size,
-      description,
-      website,
-      address,
-      logo_url,
-      banner_image_url,
-      show_on_platform,
-      public_company_page,
-      plan,
-      brand_primary_color,
-      custom_domain,
-      careers_page_headline,
-      enterprise_account_manager_name,
-      enterprise_account_manager_email,
-      sla_tier,
-      sla_uptime_target,
-      sla_response_time_hours
-    `)
-    .eq("id", normalizedEmployerId)
-    .maybeSingle();
-
-  if (employerError) throw employerError;
+  const [employer] = await getPublicEmployers([normalizedEmployerId]);
   if (!employer) return null;
   const normalizedPlan = String(employer.plan ?? "free").toLowerCase();
   if (
@@ -1205,30 +1122,6 @@ export async function getPublicEmployerProfile(employerId: string) {
   };
 }
 
-export async function getCandidateSavedJobIds() {
-  const userId = await resolveCurrentUserId();
-  if (!userId || typeof window === "undefined") return [];
-  return parseSavedJobIds(window.localStorage.getItem(getSavedJobsStorageKey(userId)));
-}
-
-export async function setCandidateSavedJobIds(jobIds: string[]) {
-  const userId = await resolveCurrentUserId();
-  if (!userId || typeof window === "undefined") return [];
-  const normalizedJobIds = Array.from(new Set((jobIds ?? []).map((id) => String(id)).filter(Boolean)));
-  window.localStorage.setItem(getSavedJobsStorageKey(userId), JSON.stringify(normalizedJobIds));
-  return normalizedJobIds;
-}
-
-export async function toggleCandidateSavedJob(jobId: string) {
-  const normalizedId = String(jobId ?? "").trim();
-  if (!normalizedId) return [];
-  const current = await getCandidateSavedJobIds();
-  const next = current.includes(normalizedId)
-    ? current.filter((id) => id !== normalizedId)
-    : [...current, normalizedId];
-  return setCandidateSavedJobIds(next);
-}
-
 export async function recordJobView(jobId: string) {
   const normalizedJobId = String(jobId ?? "").trim();
   if (!normalizedJobId) return 0;
@@ -1265,16 +1158,7 @@ export async function applyForJob(jobId: string) {
 
   if (existing) throw new Error("Already applied");
 
-  // 🔥 Calculate match score
-  const { data: matchScore, error: scoreError } = await supabase.rpc(
-    "calculate_skill_match",
-    {
-      p_job_id: jobId,
-      p_candidate_profile_id: context.profileId,
-    },
-  );
-
-  if (scoreError) throw scoreError;
+  // The database trigger computes scores from trusted stored skills.
 
   const { data: application, error } = await supabase
     .from("job_applications")
@@ -1282,7 +1166,6 @@ export async function applyForJob(jobId: string) {
       job_id: jobId,
       candidate_profile_id: context.profileId,
       status: "applied",
-      score: matchScore,
     })
     .select("id")
     .single();
@@ -1314,6 +1197,7 @@ export async function getAppliedJobIds() {
     return appliedJobIdsInFlight;
   }
 
+  const generation = cacheGeneration;
   const request = (async () => {
     const context = await resolveCandidateProfileContext();
     const { data, error } = await supabase
@@ -1324,7 +1208,7 @@ export async function getAppliedJobIds() {
     if (error) throw error;
 
     const value = (data ?? []).map((row) => row.job_id as string);
-    appliedJobIdsCache = {
+    if (generation === cacheGeneration) appliedJobIdsCache = {
       value,
       expiresAt: Date.now() + APPLIED_JOB_IDS_CACHE_TTL_MS,
     };

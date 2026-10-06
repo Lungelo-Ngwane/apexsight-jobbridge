@@ -1,4 +1,4 @@
-import type { SupabaseClient, User } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient,User } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 
 export type EmployerMembershipRole = "owner" | "admin" | "recruiter";
 
@@ -33,7 +33,7 @@ export async function resolveEmployerContext(
   }
 
   const normalizedEmail = String(user.email ?? "").trim().toLowerCase();
-  if (normalizedEmail) {
+  if (normalizedEmail && user.email_confirmed_at) {
     await supabase
       .from("employer_memberships")
       .update({

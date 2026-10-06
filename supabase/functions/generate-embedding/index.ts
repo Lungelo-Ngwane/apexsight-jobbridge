@@ -1,6 +1,7 @@
-import { serve } from "https://deno.land/std/http/server.ts";
+import { requestObject } from "../_shared/http.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import OpenAI from "https://esm.sh/openai@4.28.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +49,8 @@ serve(async (req) => {
     });
   }
 
-  const { profile_id } = await req.json().catch(() => ({}));
+  const body = await requestObject(req).catch(() => ({} as Record<string, unknown>));
+  const profile_id = typeof body.profile_id === "string" ? body.profile_id : "";
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -64,6 +66,10 @@ serve(async (req) => {
       data: { user },
     } = await supabase.auth.getUser(token);
     userId = user?.id ?? null;
+  }
+
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
   if (!profile_id) {

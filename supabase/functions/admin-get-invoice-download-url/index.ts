@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,7 +45,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    const { invoiceId } = await req.json();
+    const { invoiceId } = await requestObject(req);
 
     if (!token) return jsonResponse({ error: "Missing access token" }, 401);
     if (!invoiceId) return jsonResponse({ error: "Missing invoiceId" }, 400);
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
       .createSignedUrl(String(invoice.storage_path), 60);
 
     if (signedError || !signed?.signedUrl) {
-      return jsonResponse({ error: signedError?.message ?? "Failed to create download URL" }, 500);
+      return jsonResponse({ error: "The request could not be completed" }, 500);
     }
 
     await supabase.from("admin_audit_logs").insert({
@@ -81,7 +82,7 @@ Deno.serve(async (req) => {
       url: signed.signedUrl,
       filename: `${String(invoice.invoice_number)}.txt`,
     });
-  } catch (error) {
-    return jsonResponse({ error: String(error) }, 500);
+  } catch {
+    return jsonResponse({ error: "The request could not be completed" }, 500);
   }
 });

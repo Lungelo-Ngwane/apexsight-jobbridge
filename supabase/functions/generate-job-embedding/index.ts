@@ -1,6 +1,8 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import OpenAI from "https://esm.sh/openai@4.28.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -161,7 +163,7 @@ async function ensureStructuredJobSkills(jobId: string, job: {
       .single();
 
     if (createError || !created?.id) {
-      console.error("Failed to create extracted job skill", { skillName, createError });
+      console.error("Failed to create extracted job skill");
       return null;
     }
 
@@ -201,8 +203,18 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
+  if (req.method !== "POST") return new Response(null, { status: 405, headers: corsHeaders });
   try {
-    const { job_id, skip_credit = false } = await req.json();
+    const body = await requestObject(req);
+    const job_id = typeof body.job_id === "string" ? body.job_id : "";
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+    let employer;
+    try { employer = await resolveEmployerContext(supabase, token); } catch {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    // Embedding on a job write is included for its authorized workspace.
+    // Callers cannot use this flag to bypass paid matching or reports.
+    const skip_credit = true;
 
     const { data: job, error: jobError } = await supabase
       .from("jobs")
@@ -210,7 +222,7 @@ Deno.serve(async (req) => {
       .eq("id", job_id)
       .maybeSingle();
 
-    if (jobError || !job) {
+    if (jobError || !job || String(job.employer_id) !== employer.employerId) {
       return new Response(JSON.stringify({ error: "Job not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -256,7 +268,7 @@ Deno.serve(async (req) => {
 
       if (deductError) {
         return new Response(
-          JSON.stringify({ error: `Failed to deduct ai_credit: ${deductError.message}` }),
+          JSON.stringify({ error: "The request could not be completed" }),
           {
             status: 409,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -340,8 +352,8 @@ Optional Skills: ${optionalSkills}
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

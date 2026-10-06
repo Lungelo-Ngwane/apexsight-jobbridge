@@ -1,5 +1,6 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requestObject } from "../_shared/http.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
+
 import { resolveEmployerContext } from "../_shared/employer.ts";
 
 const corsHeaders = {
@@ -50,7 +51,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    const body = await requestObject(req).catch(() => ({} as Record<string, unknown>));
     const skillName = normalizeSkillName(body.skill_name);
 
     if (!skillName) {
@@ -94,7 +95,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (fallbackError || !fallbackSkill?.id) {
-          return new Response(JSON.stringify({ error: createSkillError.message }), {
+          return new Response(JSON.stringify({ error: "The request could not be completed" }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -117,8 +118,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "The request could not be completed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
